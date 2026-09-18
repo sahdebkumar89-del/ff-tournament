@@ -15,13 +15,13 @@ export default function Tournaments() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const filtered = useMemo(
-    () =>
-      filter === "ALL"
-        ? tournaments
-        : tournaments.filter((tournament) => tournament.mode === filter),
-    [tournaments, filter]
-  );
+  const filtered = useMemo(() => {
+    const visible = filter === "ALL"
+      ? tournaments
+      : tournaments.filter((tournament) => tournament.mode === filter);
+
+    return [...visible].sort((a, b) => tournamentDisplayOrder(a, now) - tournamentDisplayOrder(b, now));
+  }, [tournaments, filter, now]);
 
   if (selectedTournament) {
     return (
@@ -127,6 +127,31 @@ function Stat({ label, value }) {
   );
 }
 
+function tournamentStartTimestamp(tournament) {
+  if (!tournament?.tournament_date || !tournament?.scheduled_start_time) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return new Date(
+    `${tournament.tournament_date}T${tournament.scheduled_start_time.slice(0, 8)}+06:00`
+  ).getTime();
+}
+
+function tournamentDisplayOrder(tournament, now) {
+  const start = tournamentStartTimestamp(tournament);
+  const isCompleted = tournament.status === "COMPLETED" ||
+    (Number.isFinite(start) && now >= start && tournament.status !== "CANCELLED");
+
+  // Active/upcoming tournaments stay in time order.
+  // Completed matches accumulate at the bottom in completion order.
+  if (!isCompleted) return start;
+
+  const completionTime = tournament.completed_at
+    ? new Date(tournament.completed_at).getTime()
+    : start;
+
+  return 1e20 + (Number.isFinite(completionTime) ? completionTime : start);
+}
 function formatTime(value) {
   return value ? value.slice(0, 5) : "—";
 }
