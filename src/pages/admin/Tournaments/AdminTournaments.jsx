@@ -5,6 +5,10 @@ export default function AdminTournaments({ onBack }) {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
+  const [roomBusyId, setRoomBusyId] = useState(null);
+  const [roomOpenId, setRoomOpenId] = useState(null);
+  const [rooms, setRooms] = useState({});
+  const [roomForms, setRoomForms] = useState({});
   const [message, setMessage] = useState("");
 
   async function loadTournaments() {
@@ -51,6 +55,89 @@ export default function AdminTournaments({ onBack }) {
     setBusyId(null);
   }
 
+  async function openRoomControl(tournament) {
+    setRoomOpenId(tournament.id);
+    setMessage("");
+
+    const { data, error } = await supabase.rpc("admin_get_tournament_room", {
+      p_tournament_id: tournament.id,
+    });
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    const room = data?.[0] || null;
+    setRooms((current) => ({ ...current, [tournament.id]: room }));
+    setRoomForms((current) => ({
+      ...current,
+      [tournament.id]: {
+        roomId: room?.room_id || "",
+        password: room?.room_password || "",
+      },
+    }));
+  }
+
+  function updateRoomForm(tournamentId, field, value) {
+    setRoomForms((current) => ({
+      ...current,
+      [tournamentId]: {
+        ...(current[tournamentId] || { roomId: "", password: "" }),
+        [field]: value,
+      },
+    }));
+  }
+
+  async function saveRoom(tournament) {
+    const form = roomForms[tournament.id] || { roomId: "", password: "" };
+    if (!form.roomId.trim() || !form.password.trim()) {
+      setMessage("Room ID and password are required.");
+      return;
+    }
+
+    setRoomBusyId(tournament.id);
+    setMessage("");
+
+    const { error } = await supabase.rpc("admin_upsert_tournament_room", {
+      p_tournament_id: tournament.id,
+      p_room_id: form.roomId.trim(),
+      p_room_password: form.password.trim(),
+    });
+
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setMessage("Room credentials saved. Release status was reset.");
+      await openRoomControl(tournament);
+    }
+
+    setRoomBusyId(null);
+  }
+
+  async function releaseRoom(tournament) {
+    const confirmed = window.confirm(
+      "Release this room now to joined players?"
+    );
+    if (!confirmed) return;
+
+    setRoomBusyId(tournament.id);
+    setMessage("");
+
+    const { error } = await supabase.rpc("admin_release_tournament_room", {
+      p_tournament_id: tournament.id,
+    });
+
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setMessage("Room released successfully.");
+      await openRoomControl(tournament);
+    }
+
+    setRoomBusyId(null);
+  }
+
   function scheduledStart(tournament) {
     return new Date(
       `${tournament.tournament_date}T${tournament.scheduled_start_time.slice(0, 8)}+06:00`
@@ -82,36 +169,114 @@ export default function AdminTournaments({ onBack }) {
         <div style={styles.empty}>No tournaments available.</div>
       ) : (
         <div style={styles.list}>
-          {tournaments.map((tournament) => (
-            <article key={tournament.id} style={styles.card}>
-              <div style={styles.cardTop}>
-                <div>
-                  <span style={styles.mode}>{tournament.mode}</span>
-                  <h2 style={styles.cardTitle}>Tournament #{tournament.id}</h2>
+          {tournaments.map((tournament) => {
+            const room = rooms[tournament.id];
+            const form = roomForms[tournament.id] || { roomId: "", password: "" };
+            const roomIsOpen = roomOpenId === tournament.id;
+
+            return (
+              <article key={tournament.id} style={styles.card}>
+                <div style={styles.cardTop}>
+                  <div>
+                    <span style={styles.mode}>{tournament.mode}</span>
+                    <h2 style={styles.cardTitle}>Tournament #{tournament.id}</h2>
+                  </div>
+                  <span style={statusStyle(tournament.status)}>
+                    {tournament.status}
+                  </span>
                 </div>
-                <span style={statusStyle(tournament.status)}>
-                  {tournament.status}
-                </span>
-              </div>
 
-              <div style={styles.meta}>
-                <span>{tournament.tournament_date}</span>
-                <span>{tournament.scheduled_start_time.slice(0, 5)}</span>
-                <span>Capacity {tournament.max_players}</span>
-              </div>
+                <div style={styles.meta}>
+                  <span>{tournament.tournament_date}</span>
+                  <span>{tournament.scheduled_start_time.slice(0, 5)}</span>
+                  <span>Capacity {tournament.max_players}</span>
+                </div>
 
-              {canManualStart(tournament) && (
+                {canManualStart(tournament) && (
+                  <button
+                    type="button"
+                    disabled={busyId === tournament.id}
+                    onClick={() => startTournament(tournament)}
+                    style={styles.startButton}
+                  >
+                    {busyId === tournament.id ? "Starting..." : "Start Tournament"}
+                  </button>
+                )}
+
                 <button
                   type="button"
-                  disabled={busyId === tournament.id}
-                  onClick={() => startTournament(tournament)}
-                  style={styles.startButton}
+                  onClick={() =>
+                    roomIsOpen
+                      ? setRoomOpenId(null)
+                      : openRoomControl(tournament)
+                  }
+                  style={styles.roomButton}
                 >
-                  {busyId === tournament.id ? "Starting..." : "Start Tournament"}
+                  {roomIsOpen ? "Close Room Control" : "Room & Password"}
                 </button>
-              )}
-            </article>
-          ))}
+
+                {roomIsOpen && (
+                  <section style={styles.roomPanel}>
+                    <div style={styles.roomPanelTitle}>Room Delivery</div>
+
+                    <label style={styles.label}>
+                      Room ID
+                      <input
+                        value={form.roomId}
+                        onChange={(event) =>
+                          updateRoomForm(tournament.id, "roomId", event.target.value)
+                        }
+                        style={styles.input}
+                        placeholder="Enter Room ID"
+                      />
+                    </label>
+
+                    <label style={styles.label}>
+                      Password
+                      <input
+                        value={form.password}
+                        onChange={(event) =>
+                          updateRoomForm(tournament.id, "password", event.target.value)
+                        }
+                        style={styles.input}
+                        placeholder="Enter Room Password"
+                      />
+                    </label>
+
+                    <div style={styles.roomStatus}>
+                      <span>
+                        Release:{" "}
+                        <strong>
+                          {room?.released_at ? "Released" : "Not released"}
+                        </strong>
+                      </span>
+                      <span>Auto release: 10 min before match</span>
+                    </div>
+
+                    <div style={styles.roomActions}>
+                      <button
+                        type="button"
+                        disabled={roomBusyId === tournament.id}
+                        onClick={() => saveRoom(tournament)}
+                        style={styles.saveRoomButton}
+                      >
+                        {roomBusyId === tournament.id ? "Saving..." : "Save Room"}
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={roomBusyId === tournament.id || !room}
+                        onClick={() => releaseRoom(tournament)}
+                        style={styles.releaseButton}
+                      >
+                        Release Now
+                      </button>
+                    </div>
+                  </section>
+                )}
+              </article>
+            );
+          })}
         </div>
       )}
     </div>
@@ -222,6 +387,77 @@ const styles = {
     borderRadius: "10px",
     background: "linear-gradient(135deg, #ff7a2f, #e94231)",
     color: "#fff",
+    fontWeight: "900",
+  },
+  roomButton: {
+    width: "100%",
+    marginTop: "10px",
+    padding: "11px",
+    border: "1px solid #5a2a20",
+    borderRadius: "10px",
+    background: "#1b1415",
+    color: "#ff9b4a",
+    fontWeight: "900",
+  },
+  roomPanel: {
+    marginTop: "12px",
+    padding: "14px",
+    borderRadius: "14px",
+    background: "#0e0e12",
+    border: "1px solid #332628",
+  },
+  roomPanelTitle: {
+    color: "#ff795f",
+    fontSize: "12px",
+    fontWeight: "900",
+    letterSpacing: "1px",
+    marginBottom: "12px",
+  },
+  label: {
+    display: "grid",
+    gap: "6px",
+    marginTop: "10px",
+    color: "#aaa5ac",
+    fontSize: "11px",
+    fontWeight: "800",
+  },
+  input: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "11px 12px",
+    borderRadius: "10px",
+    border: "1px solid #302d32",
+    background: "#17171c",
+    color: "#fff",
+    outline: "none",
+  },
+  roomStatus: {
+    display: "grid",
+    gap: "6px",
+    marginTop: "12px",
+    color: "#8f8b92",
+    fontSize: "10px",
+  },
+  roomActions: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "8px",
+    marginTop: "12px",
+  },
+  saveRoomButton: {
+    padding: "11px",
+    border: "none",
+    borderRadius: "10px",
+    background: "linear-gradient(135deg, #ff7a2f, #e94231)",
+    color: "#fff",
+    fontWeight: "900",
+  },
+  releaseButton: {
+    padding: "11px",
+    border: "1px solid #6b3228",
+    borderRadius: "10px",
+    background: "#241517",
+    color: "#ff9b4a",
     fontWeight: "900",
   },
   empty: {
