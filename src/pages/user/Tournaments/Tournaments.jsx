@@ -165,6 +165,12 @@ function formatTime(value) {
 function registrationLabel(tournament, now) {
   if (tournament.status !== "REGISTRATION") return tournament.status.replace("_", " ");
 
+  const registrationOpen = tournament.registration_opens_at
+    ? new Date(tournament.registration_opens_at).getTime()
+    : Number.NEGATIVE_INFINITY;
+
+  if (now < registrationOpen) return "Registration not open yet";
+
   const start = new Date(
     `${tournament.tournament_date}T${tournament.scheduled_start_time.slice(0, 8)}+06:00`
   ).getTime();
