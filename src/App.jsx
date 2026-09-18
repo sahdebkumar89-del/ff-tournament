@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import Login from "./pages/user/Auth/Login.jsx";
+import Signup from "./pages/user/Auth/Signup.jsx";
 import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
 
 export default function App() {
   const { user, loading: authLoading } = useAuthContext();
+  const [authPage, setAuthPage] = useState("login");
 
   if (authLoading) {
     return (
@@ -15,7 +17,11 @@ export default function App() {
   }
 
   if (!user) {
-    return <Login />;
+    if (authPage === "signup") {
+      return <Signup onBackToLogin={() => setAuthPage("login")} />;
+    }
+
+    return <Login onCreateAccount={() => setAuthPage("signup")} />;
   }
 
   return <Home />;
