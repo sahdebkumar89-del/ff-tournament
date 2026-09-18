@@ -1,14 +1,9 @@
 import React from "react";
-import { TOURNAMENT_CONFIG } from "./constants/tournament.js";
-
-const tournaments = Object.entries(TOURNAMENT_CONFIG).map(
-  ([mode, config]) => ({
-    mode,
-    ...config,
-  })
-);
+import { useTournaments } from "./hooks/useTournaments.js";
 
 export default function App() {
+  const { tournaments, loading, error } = useTournaments();
+
   return (
     <div style={styles.app}>
       <header style={styles.header}>
@@ -35,45 +30,67 @@ export default function App() {
 
         <section>
           <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>Tournament Types</h2>
+            <h2 style={styles.sectionTitle}>Tournaments</h2>
             <span style={styles.brBadge}>BR ONLY</span>
           </div>
 
-          <div style={styles.list}>
-            {tournaments.map((tournament) => (
-              <article key={tournament.mode} style={styles.card}>
-                <div style={styles.cardHeader}>
-                  <h3 style={styles.mode}>{tournament.mode}</h3>
-                  <span style={styles.openBadge}>OPEN</span>
-                </div>
+          {loading && (
+            <div style={styles.statusCard}>
+              Loading tournaments...
+            </div>
+          )}
 
-                <div style={styles.row}>
-                  <span>Entry Fee</span>
-                  <strong>৳{tournament.entryFee}</strong>
-                </div>
+          {error && (
+            <div style={styles.statusCard}>
+              Unable to load tournaments.
+            </div>
+          )}
 
-                <div style={styles.row}>
-                  <span>1st Prize</span>
-                  <strong>৳{tournament.firstPrize}</strong>
-                </div>
+          {!loading && !error && tournaments.length === 0 && (
+            <div style={styles.statusCard}>
+              No tournaments available right now.
+            </div>
+          )}
 
-                <div style={styles.row}>
-                  <span>2nd Prize</span>
-                  <strong>৳{tournament.secondPrize}</strong>
-                </div>
+          {!loading && !error && tournaments.length > 0 && (
+            <div style={styles.list}>
+              {tournaments.map((tournament) => (
+                <article key={tournament.id} style={styles.card}>
+                  <div style={styles.cardHeader}>
+                    <h3 style={styles.mode}>{tournament.mode}</h3>
+                    <span style={styles.openBadge}>
+                      {tournament.status}
+                    </span>
+                  </div>
 
-                <div style={styles.row}>
-                  <span>3rd Prize</span>
-                  <strong>৳{tournament.thirdPrize}</strong>
-                </div>
+                  <div style={styles.row}>
+                    <span>Entry Fee</span>
+                    <strong>৳{tournament.entry_fee}</strong>
+                  </div>
 
-                <div style={styles.row}>
-                  <span>Kill Reward</span>
-                  <strong>৳{tournament.killReward}</strong>
-                </div>
-              </article>
-            ))}
-          </div>
+                  <div style={styles.row}>
+                    <span>1st Prize</span>
+                    <strong>৳{tournament.first_prize}</strong>
+                  </div>
+
+                  <div style={styles.row}>
+                    <span>2nd Prize</span>
+                    <strong>৳{tournament.second_prize}</strong>
+                  </div>
+
+                  <div style={styles.row}>
+                    <span>3rd Prize</span>
+                    <strong>৳{tournament.third_prize}</strong>
+                  </div>
+
+                  <div style={styles.row}>
+                    <span>Kill Reward</span>
+                    <strong>৳{tournament.kill_reward}</strong>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       </main>
     </div>
@@ -171,6 +188,15 @@ const styles = {
   list: {
     display: "grid",
     gap: "12px",
+  },
+
+  statusCard: {
+    padding: "18px",
+    borderRadius: "18px",
+    background: "#131a28",
+    border: "1px solid #283247",
+    color: "#aeb7c7",
+    fontSize: "14px",
   },
 
   card: {
