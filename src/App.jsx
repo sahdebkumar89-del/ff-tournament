@@ -9,6 +9,7 @@ import Profile from "./pages/user/Profile/Profile.jsx";
 import Wallet from "./pages/user/Wallet/Wallet.jsx";
 import Notifications from "./pages/user/Notifications/Notifications.jsx";
 import Room from "./pages/user/Room/Room.jsx";
+import AdminTournaments from "./pages/admin/Tournaments/AdminTournaments.jsx";
 import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
 import { supabase } from "./lib/supabase/client.js";
@@ -16,6 +17,9 @@ import { supabase } from "./lib/supabase/client.js";
 export default function App() {
   const { user, loading: authLoading } = useAuthContext();
   const [authPage, setAuthPage] = useState("login");
+  const [role, setRole] = useState(null);
+  const [roleLoading, setRoleLoading] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   if (authLoading) {
     return <div style={styles.loadingPage}>Loading FF Tournament...</div>;
@@ -29,10 +33,10 @@ export default function App() {
     );
   }
 
-  return <Home />;
+  return <AuthenticatedApp user={user} role={role} setRole={setRole} roleLoading={roleLoading} setRoleLoading={setRoleLoading} showAdmin={showAdmin} setShowAdmin={setShowAdmin} />;
 }
 
-function Home() {
+function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, showAdmin, setShowAdmin }) {\n  useEffect(() => {\n    let active = true;\n    async function loadRole() {\n      setRoleLoading(true);\n      const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();\n      if (active) {\n        setRole(data?.role || "USER");\n        setRoleLoading(false);\n      }\n    }\n    loadRole();\n    return () => { active = false; };\n  }, [user.id, setRole, setRoleLoading]);\n\n  if (roleLoading || !role) return <div style={styles.loadingPage}>Loading FF Tournament...</div>;\n  if (showAdmin && role === "ADMIN") return <AdminTournaments onBack={() => setShowAdmin(false)} />;\n  return <Home isAdmin={role === "ADMIN"} onOpenAdmin={() => setShowAdmin(true)} />;\n}\n\nfunction Home({ isAdmin, onOpenAdmin }) {
   const { tournaments, loading, error } = useTournaments();
   const [activePage, setActivePage] = useState("home");
   const [selectedTournament, setSelectedTournament] = useState(null);
@@ -107,15 +111,22 @@ function Home() {
             <h1 style={styles.headerTitle}>Battle Royale</h1>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setActivePage("notifications")}
-            style={styles.notificationButton}
-            aria-label="Notifications"
-          >
-            <span style={styles.bell}>♢</span>
-            <span style={styles.notificationDot}>0</span>
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {isAdmin && (
+              <button type="button" onClick={onOpenAdmin} style={styles.adminButton}>
+                Admin
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setActivePage("notifications")}
+              style={styles.notificationButton}
+              aria-label="Notifications"
+            >
+              <span style={styles.bell}>♢</span>
+              <span style={styles.notificationDot}>0</span>
+            </button>
+          </div>
         </header>
       )}
 
@@ -321,6 +332,15 @@ const styles = {
     margin: "5px 0 0",
     fontSize: "26px",
     letterSpacing: "-.5px",
+  },
+  adminButton: {
+    border: "1px solid #71351f",
+    borderRadius: "10px",
+    background: "#1b1415",
+    color: "#ff9b4a",
+    padding: "9px 10px",
+    fontSize: "10px",
+    fontWeight: "900",
   },
   notificationButton: {
     position: "relative",
