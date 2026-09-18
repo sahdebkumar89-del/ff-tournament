@@ -1,31 +1,12 @@
 import React from "react";
+import { TOURNAMENT_CONFIG } from "./constants/tournament.js";
 
-const tournaments = [
-  {
-    mode: "SOLO",
-    entryFee: 10,
-    firstPrize: 50,
-    secondPrize: 40,
-    thirdPrize: 30,
-    killReward: 5,
-  },
-  {
-    mode: "DUO",
-    entryFee: 20,
-    firstPrize: 70,
-    secondPrize: 50,
-    thirdPrize: 30,
-    killReward: 5,
-  },
-  {
-    mode: "SQUAD",
-    entryFee: 50,
-    firstPrize: 120,
-    secondPrize: 80,
-    thirdPrize: 60,
-    killReward: 5,
-  },
-];
+const tournaments = Object.entries(TOURNAMENT_CONFIG).map(
+  ([mode, config]) => ({
+    mode,
+    ...config,
+  })
+);
 
 export default function App() {
   return (
@@ -47,7 +28,7 @@ export default function App() {
             <div style={styles.smallText}>WELCOME</div>
             <h2 style={styles.welcomeTitle}>Battle. Compete. Earn.</h2>
             <p style={styles.muted}>
-              Daily Battle Royale tournaments from 9:00 AM to 12:00 AM.
+              Daily Battle Royale tournaments from 9:00 AM to 11:30 PM.
             </p>
           </div>
         </section>
