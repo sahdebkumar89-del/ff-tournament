@@ -73,13 +73,16 @@ function Home() {
     const result = { SOLO: null, DUO: null, SQUAD: null };
 
     tournaments
-      .filter((t) => t.status === "REGISTRATION")
-      .forEach((t) => {
-        if (!result[t.mode]) result[t.mode] = t;
+      .filter((tournament) => isRegistrationOpen(tournament, now))
+      .sort((a, b) => tournamentStartTimestamp(a) - tournamentStartTimestamp(b))
+      .forEach((tournament) => {
+        if (!result[tournament.mode]) {
+          result[tournament.mode] = tournament;
+        }
       });
 
     return result;
-  }, [tournaments]);
+  }, [tournaments, now]);
 
   const liveTournament = tournaments.find((t) => t.status === "STARTED");
 
@@ -150,7 +153,7 @@ function Home() {
                       <article key={mode} style={styles.matchCard}>
                         <div style={styles.matchTop}>
                           <span style={styles.modeBadge}>{mode}</span>
-                          <span style={styles.openBadge}>OPEN</span>
+                          {tournament && <span style={styles.openBadge}>OPEN</span>}
                         </div>
 
                         {tournament ? (
@@ -239,22 +242,40 @@ function formatTime(value) {
   return value.slice(0, 5);
 }
 
-function registrationCountdown(tournament, now) {
+function tournamentStartTimestamp(tournament) {
   if (!tournament?.tournament_date || !tournament?.scheduled_start_time) {
-    return "Registration open";
+    return Number.POSITIVE_INFINITY;
   }
 
-  const start = new Date(
+  return new Date(
     `${tournament.tournament_date}T${tournament.scheduled_start_time.slice(0, 8)}+06:00`
   ).getTime();
+}
 
-  const close = start - 30 * 60 * 1000;
-  const remaining = close - now;
+function isRegistrationOpen(tournament, now) {
+  if (!tournament || tournament.status !== "REGISTRATION") return false;
 
-  if (remaining > 0) return "Registration open";
-  if (remaining <= 0 && now < start) {
-    return `Closes in ${formatCountdown(start - now)}`;
-  }
+  const start = tournamentStartTimestamp(tournament);
+  if (!Number.isFinite(start) || now >= start) return false;
+
+  const registrationOpen = tournament.registration_opens_at
+    ? new Date(tournament.registration_opens_at).getTime()
+    : Number.NEGATIVE_INFINITY;
+
+  const registrationClose = start - 30 * 60 * 1000;
+
+  return now >= registrationOpen && now < registrationClose;
+}
+
+function registrationCountdown(tournament, now) {
+  const start = tournamentStartTimestamp(tournament);
+
+  if (!Number.isFinite(start)) return "Registration open";
+
+  const remaining = start - now;
+
+  if (remaining > 30 * 60 * 1000) return "Registration open";
+  if (remaining > 0) return `Closes in ${formatCountdown(remaining)}`;
   return "Registration closed";
 }
 
