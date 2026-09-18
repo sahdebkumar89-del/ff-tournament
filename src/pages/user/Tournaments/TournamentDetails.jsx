@@ -1,6 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
+import { joinTournament } from "../../../services/tournaments/tournamentService.js";
 
 export default function TournamentDetails({ tournament, onBack }) {
+  const [joining, setJoining] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
   if (!tournament) {
     return (
       <main style={styles.page}>
@@ -13,6 +18,35 @@ export default function TournamentDetails({ tournament, onBack }) {
         </div>
       </main>
     );
+  }
+
+  const isSolo = tournament.mode === "SOLO";
+  const canJoin =
+    isSolo &&
+    tournament.status === "REGISTRATION" &&
+    !joining &&
+    !message;
+
+  async function handleJoin() {
+    if (!isSolo) {
+      return;
+    }
+
+    setJoining(true);
+    setMessage("");
+    setError("");
+
+    try {
+      await joinTournament(tournament.id);
+
+      setMessage(
+        "Tournament joined successfully. Your entry fee has been deducted from your wallet."
+      );
+    } catch (err) {
+      setError(err?.message || "Unable to join tournament.");
+    } finally {
+      setJoining(false);
+    }
   }
 
   return (
@@ -114,20 +148,59 @@ export default function TournamentDetails({ tournament, onBack }) {
         <div style={styles.rule}>
           • Room ID and Password will be released 10 minutes before the match
         </div>
+
+        {tournament.mode !== "SOLO" && (
+          <div style={styles.rule}>
+            • Duo and Squad team joining will be available after the team system is connected
+          </div>
+        )}
       </section>
+
+      {message && (
+        <div style={styles.successBox}>
+          {message}
+        </div>
+      )}
+
+      {error && (
+        <div style={styles.errorBox}>
+          {error}
+        </div>
+      )}
 
       <button
         type="button"
-        disabled
-        style={styles.joinButton}
+        onClick={handleJoin}
+        disabled={!canJoin}
+        style={{
+          ...styles.joinButton,
+          ...(canJoin ? styles.joinButtonActive : styles.joinButtonDisabled),
+        }}
       >
-        Join Tournament
+        {joining
+          ? "Joining..."
+          : message
+            ? "Joined Successfully"
+            : !isSolo
+              ? "Team Joining Coming Soon"
+              : tournament.status !== "REGISTRATION"
+                ? "Registration Closed"
+                : "Join Tournament"}
       </button>
 
-      <p style={styles.note}>
-        Joining will be enabled after the secure participant and wallet
-        system is connected.
-      </p>
+      {!message && !error && isSolo && tournament.status === "REGISTRATION" && (
+        <p style={styles.note}>
+          Entry fee will be deducted from your wallet only after the secure
+          tournament join check succeeds.
+        </p>
+      )}
+
+      {!message && !error && !isSolo && (
+        <p style={styles.note}>
+          Duo and Squad joining will be enabled after the team system is
+          completed.
+        </p>
+      )}
     </main>
   );
 }
@@ -236,14 +309,45 @@ const styles = {
     lineHeight: 1.5,
   },
 
+  successBox: {
+    padding: "13px 14px",
+    marginBottom: "12px",
+    borderRadius: "12px",
+    background: "#123322",
+    border: "1px solid #23643d",
+    color: "#86efac",
+    fontSize: "13px",
+    lineHeight: 1.5,
+  },
+
+  errorBox: {
+    padding: "13px 14px",
+    marginBottom: "12px",
+    borderRadius: "12px",
+    background: "#35191d",
+    border: "1px solid #713039",
+    color: "#fca5a5",
+    fontSize: "13px",
+    lineHeight: 1.5,
+  },
+
   joinButton: {
     width: "100%",
     padding: "14px",
     border: "none",
     borderRadius: "12px",
+    fontWeight: "800",
+  },
+
+  joinButtonActive: {
+    background: "#7c3aed",
+    color: "#ffffff",
+    cursor: "pointer",
+  },
+
+  joinButtonDisabled: {
     background: "#3b4354",
     color: "#8f98aa",
-    fontWeight: "800",
     cursor: "not-allowed",
   },
 
