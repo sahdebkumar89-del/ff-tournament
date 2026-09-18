@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AdminNotifications from "../Notifications/AdminNotifications.jsx";
+import AdminResults from "../Results/AdminResults.jsx";
 import { supabase } from "../../../lib/supabase/client.js";
 
 export default function AdminTournaments({ onBack }) {
@@ -15,6 +16,7 @@ export default function AdminTournaments({ onBack }) {
   const [roomId, setRoomId] = useState("");
   const [roomPassword, setRoomPassword] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showResults, setShowResults] = useState(false);
 
   async function loadTournaments() {
     setLoading(true);
