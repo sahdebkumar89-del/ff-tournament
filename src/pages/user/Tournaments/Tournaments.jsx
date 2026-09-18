@@ -1,8 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTournaments } from "../../../hooks/useTournaments.js";
+import TournamentDetails from "./TournamentDetails.jsx";
 
 export default function Tournaments() {
   const { tournaments, loading, error } = useTournaments();
+  const [selectedTournament, setSelectedTournament] = useState(null);
+
+  if (selectedTournament) {
+    return (
+      <TournamentDetails
+        tournament={selectedTournament}
+        onBack={() => setSelectedTournament(null)}
+      />
+    );
+  }
 
   return (
     <main style={styles.page}>
@@ -30,9 +41,11 @@ export default function Tournaments() {
       {!loading && !error && tournaments.length === 0 && (
         <div style={styles.emptyCard}>
           <div style={styles.emptyIcon}>🏆</div>
+
           <h2 style={styles.emptyTitle}>
             No tournaments available
           </h2>
+
           <p style={styles.emptyText}>
             New Battle Royale tournaments will appear here when
             they are available for registration.
@@ -87,7 +100,11 @@ export default function Tournaments() {
                 <strong>৳{tournament.kill_reward}</strong>
               </div>
 
-              <button type="button" style={styles.joinButton}>
+              <button
+                type="button"
+                onClick={() => setSelectedTournament(tournament)}
+                style={styles.joinButton}
+              >
                 View Tournament
               </button>
             </article>
