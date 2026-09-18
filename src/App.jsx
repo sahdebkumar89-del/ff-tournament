@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Login from "./pages/user/Auth/Login.jsx";
 import Signup from "./pages/user/Auth/Signup.jsx";
+import BottomNav from "./components/common/BottomNav.jsx";
 import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
 
@@ -29,6 +30,7 @@ export default function App() {
 
 function Home() {
   const { tournaments, loading, error } = useTournaments();
+  const [activePage, setActivePage] = useState("home");
 
   return (
     <div style={styles.app}>
@@ -127,6 +129,11 @@ function Home() {
           )}
         </section>
       </main>
+
+      <BottomNav
+        activePage={activePage}
+        onChange={setActivePage}
+      />
     </div>
   );
 }
@@ -145,6 +152,7 @@ const styles = {
 
   app: {
     minHeight: "100vh",
+    paddingBottom: "82px",
     background: "#0b0f19",
     color: "#f5f7fb",
     fontFamily:
