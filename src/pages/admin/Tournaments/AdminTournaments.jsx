@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import AdminNotifications from "../Notifications/AdminNotifications.jsx";
 import AdminResults from "../Results/AdminResults.jsx";
 import { supabase } from "../../../lib/supabase/client.js";
+import AdminWallet from "../Wallet/AdminWallet.jsx";
 
 export default function AdminTournaments({ onBack }) {
   const [tournaments, setTournaments] = useState([]);
@@ -17,6 +18,7 @@ export default function AdminTournaments({ onBack }) {
   const [roomPassword, setRoomPassword] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [showWallet, setShowWallet] = useState(false);
 
   async function loadTournaments() {
     setLoading(true);
@@ -150,12 +152,12 @@ export default function AdminTournaments({ onBack }) {
           <div style={styles.kicker}>ADMIN PANEL</div>
           <h1 style={styles.title}>Tournament Control</h1>
         </div>
-        <button type="button" onClick={onBack} style={styles.backButton}>
+        <button type="button" onClick={() => setShowWallet(true)} style={styles.walletButton}>Wallet</button>\n        <button type="button" onClick={onBack} style={styles.backButton}>
           User App
         </button>
       </div>
 
-      {message && <div style={styles.message}>{message}</div>}
+      {showWallet ? (\n        <AdminWallet onBack={() => setShowWallet(false)} />\n      ) : (\n        <>\n      {message && <div style={styles.message}>{message}</div>}
 
       {loading ? (
         <div style={styles.empty}>Loading tournaments...</div>
@@ -331,7 +333,7 @@ const styles = {
     margin: "5px 0 0",
     fontSize: "24px",
   },
-  backButton: {
+  walletButton: { padding:"9px 12px", border:"1px solid #743021", borderRadius:"10px", background:"#291716", color:"#ffae6d", fontWeight:"900", marginRight:"8px" },\n  backButton: {
     border: "1px solid #5a2a20",
     borderRadius: "10px",
     background: "#1b1415",
