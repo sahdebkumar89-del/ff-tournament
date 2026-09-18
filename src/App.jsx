@@ -4,6 +4,7 @@ import Signup from "./pages/user/Auth/Signup.jsx";
 import BottomNav from "./components/common/BottomNav.jsx";
 import Tournaments from "./pages/user/Tournaments/Tournaments.jsx";
 import TournamentDetails from "./pages/user/Tournaments/TournamentDetails.jsx";
+import MyTournaments from "./pages/user/MyTournaments/MyTournaments.jsx";
 import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
 
@@ -175,11 +176,7 @@ function Home() {
 
         {activePage === "tournaments" && <Tournaments />}
 
-        {activePage === "my-tournaments" && (
-          <div style={styles.statusCard}>
-            My Tournaments page will be added next.
-          </div>
-        )}
+        {activePage === "my-tournaments" && <MyTournaments />}
 
         {activePage === "wallet" && (
           <div style={styles.statusCard}>
