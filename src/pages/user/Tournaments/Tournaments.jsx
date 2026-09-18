@@ -139,8 +139,7 @@ function tournamentStartTimestamp(tournament) {
 
 function tournamentDisplayOrder(tournament, now) {
   const start = tournamentStartTimestamp(tournament);
-  const isCompleted = tournament.status === "COMPLETED" ||
-    (Number.isFinite(start) && now >= start && tournament.status !== "CANCELLED");
+  const isCompleted = tournament.status === "COMPLETED";
 
   // Active/upcoming tournaments stay in time order.
   // Completed matches accumulate at the bottom in completion order.
