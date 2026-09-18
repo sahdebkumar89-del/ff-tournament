@@ -14,9 +14,22 @@ export async function getTournaments() {
   return data ?? [];
 }
 
-export async function joinTournament(tournamentId) {
-  const { data, error } = await supabase.rpc("join_tournament", {
+export async function requestTournamentJoin(tournamentId, freeFireUids) {
+  const { data, error } = await supabase.rpc("request_tournament_join", {
     p_tournament_id: tournamentId,
+    p_free_fire_uids: freeFireUids,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function confirmTournamentJoin(requestId) {
+  const { data, error } = await supabase.rpc("confirm_tournament_join", {
+    p_request_id: requestId,
   });
 
   if (error) {
