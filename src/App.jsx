@@ -3,6 +3,7 @@ import Login from "./pages/user/Auth/Login.jsx";
 import Signup from "./pages/user/Auth/Signup.jsx";
 import BottomNav from "./components/common/BottomNav.jsx";
 import Tournaments from "./pages/user/Tournaments/Tournaments.jsx";
+import TournamentDetails from "./pages/user/Tournaments/TournamentDetails.jsx";
 import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
 
@@ -32,9 +33,27 @@ export default function App() {
 function Home() {
   const { tournaments, loading, error } = useTournaments();
   const [activePage, setActivePage] = useState("home");
+  const [selectedTournament, setSelectedTournament] = useState(null);
 
   function handlePageChange(page) {
+    setSelectedTournament(null);
     setActivePage(page);
+  }
+
+  if (selectedTournament) {
+    return (
+      <div style={styles.app}>
+        <TournamentDetails
+          tournament={selectedTournament}
+          onBack={() => setSelectedTournament(null)}
+        />
+
+        <BottomNav
+          activePage={activePage}
+          onChange={handlePageChange}
+        />
+      </div>
+    );
   }
 
   return (
@@ -46,6 +65,7 @@ function Home() {
         </div>
 
         <button
+          type="button"
           style={styles.notificationButton}
           aria-label="Notifications"
         >
@@ -59,9 +79,11 @@ function Home() {
             <section style={styles.welcomeCard}>
               <div>
                 <div style={styles.smallText}>WELCOME</div>
+
                 <h2 style={styles.welcomeTitle}>
                   Battle. Compete. Earn.
                 </h2>
+
                 <p style={styles.muted}>
                   Daily Battle Royale tournaments from 9:00 AM to 11:30 PM.
                 </p>
@@ -95,7 +117,10 @@ function Home() {
               {!loading && !error && tournaments.length > 0 && (
                 <div style={styles.list}>
                   {tournaments.map((tournament) => (
-                    <article key={tournament.id} style={styles.card}>
+                    <article
+                      key={tournament.id}
+                      style={styles.card}
+                    >
                       <div style={styles.cardHeader}>
                         <h3 style={styles.mode}>
                           {tournament.mode}
@@ -130,6 +155,16 @@ function Home() {
                         <span>Kill Reward</span>
                         <strong>৳{tournament.kill_reward}</strong>
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedTournament(tournament)
+                        }
+                        style={styles.viewButton}
+                      >
+                        View Tournament
+                      </button>
                     </article>
                   ))}
                 </div>
@@ -310,5 +345,17 @@ const styles = {
     borderTop: "1px solid #202a3d",
     color: "#aeb7c7",
     fontSize: "13px",
+  },
+
+  viewButton: {
+    width: "100%",
+    marginTop: "14px",
+    padding: "13px",
+    border: "none",
+    borderRadius: "12px",
+    background: "#7c5cff",
+    color: "#ffffff",
+    fontWeight: "800",
+    cursor: "pointer",
   },
 };
