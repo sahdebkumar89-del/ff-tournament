@@ -5,6 +5,7 @@ import BottomNav from "./components/common/BottomNav.jsx";
 import Tournaments from "./pages/user/Tournaments/Tournaments.jsx";
 import TournamentDetails from "./pages/user/Tournaments/TournamentDetails.jsx";
 import MyTournaments from "./pages/user/MyTournaments/MyTournaments.jsx";
+import Profile from "./pages/user/Profile/Profile.jsx";
 import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
 
@@ -184,11 +185,7 @@ function Home() {
           </div>
         )}
 
-        {activePage === "profile" && (
-          <div style={styles.statusCard}>
-            Profile page will be added later.
-          </div>
-        )}
+        {activePage === "profile" && <Profile />}
       </main>
 
       <BottomNav
