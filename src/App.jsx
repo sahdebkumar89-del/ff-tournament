@@ -38,6 +38,7 @@ export default function App() {
 
 function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, showAdmin, setShowAdmin }) {\n  useEffect(() => {\n    let active = true;\n    async function loadRole() {\n      setRoleLoading(true);\n      const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();\n      if (active) {\n        setRole(data?.role || "USER");\n        setRoleLoading(false);\n      }\n    }\n    loadRole();\n    return () => { active = false; };\n  }, [user.id, setRole, setRoleLoading]);\n\n  if (roleLoading || !role) return <div style={styles.loadingPage}>Loading FF Tournament...</div>;\n  if (showAdmin && role === "ADMIN") return <AdminTournaments onBack={() => setShowAdmin(false)} />;\n  return <Home isAdmin={role === "ADMIN"} onOpenAdmin={() => setShowAdmin(true)} />;\n}\n\nfunction Home({ isAdmin, onOpenAdmin }) {
   const { tournaments, loading, error } = useTournaments();
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [activePage, setActivePage] = useState("home");
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [balance, setBalance] = useState(0);
@@ -46,6 +47,45 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadUnreadNotifications() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: notificationRows } = await supabase
+        .from("notifications")
+        .select("id")
+        .eq("recipient_user_id", user.id)
+        .limit(100);
+
+      const ids = (notificationRows || []).map((item) => item.id);
+      if (!ids.length) {
+        if (active) setUnreadNotifications(0);
+        return;
+      }
+
+      const { data: readRows } = await supabase
+        .from("notification_reads")
+        .select("notification_id")
+        .eq("user_id", user.id)
+        .in("notification_id", ids);
+
+      if (active) {
+        const readIds = new Set((readRows || []).map((item) => item.notification_id));
+        setUnreadNotifications(ids.filter((id) => !readIds.has(id)).length);
+      }
+    }
+
+    loadUnreadNotifications();
+    const timer = window.setInterval(loadUnreadNotifications, 15000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -124,7 +164,7 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
               aria-label="Notifications"
             >
               <span style={styles.bell}>♢</span>
-              <span style={styles.notificationDot}>0</span>
+              <span style={styles.notificationDot}>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>
             </button>
           </div>
         </header>
