@@ -1,34 +1,38 @@
 import React from "react";
 
+const items = [
+  { id: "home", label: "Home", icon: "⌂" },
+  { id: "tournaments", label: "Tournaments", icon: "♛" },
+  { id: "my-tournaments", label: "My Tournaments", icon: "◈" },
+  { id: "wallet", label: "Wallet", icon: "৳" },
+  { id: "profile", label: "Profile", icon: "●" },
+];
+
 export default function BottomNav({ activePage, onChange }) {
-  const items = [
-    { id: "home", label: "Home", icon: "⌂" },
-    { id: "tournaments", label: "Tournaments", icon: "🏆" },
-    { id: "my-tournaments", label: "My Tournaments", icon: "🎮" },
-    { id: "wallet", label: "Wallet", icon: "৳" },
-    { id: "profile", label: "Profile", icon: "👤" },
-  ];
-
   return (
-    <nav style={styles.nav}>
-      {items.map((item) => {
-        const active = activePage === item.id;
+    <nav style={styles.nav} aria-label="Primary navigation">
+      <div style={styles.inner}>
+        {items.map((item) => {
+          const active = activePage === item.id;
 
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onChange(item.id)}
-            style={{
-              ...styles.button,
-              ...(active ? styles.activeButton : {}),
-            }}
-          >
-            <span style={styles.icon}>{item.icon}</span>
-            <span style={styles.label}>{item.label}</span>
-          </button>
-        );
-      })}
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onChange(item.id)}
+              aria-current={active ? "page" : undefined}
+              style={{ ...styles.button, ...(active ? styles.activeButton : {}) }}
+            >
+              <span style={{ ...styles.icon, ...(active ? styles.activeIcon : {}) }}>
+                {item.icon}
+              </span>
+              <span style={{ ...styles.label, ...(active ? styles.activeLabel : {}) }}>
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </nav>
   );
 }
@@ -40,38 +44,45 @@ const styles = {
     right: 0,
     bottom: 0,
     zIndex: 100,
-    display: "grid",
-    gridTemplateColumns: "repeat(5, 1fr)",
+    padding: "7px 10px calc(7px + env(safe-area-inset-bottom))",
+    background: "rgba(13, 12, 15, .97)",
+    borderTop: "1px solid #2b2729",
+    backdropFilter: "blur(14px)",
+  },
+  inner: {
+    width: "100%",
     maxWidth: "760px",
     margin: "0 auto",
-    padding: "8px 6px calc(8px + env(safe-area-inset-bottom))",
-    background: "#111827",
-    borderTop: "1px solid #283247",
+    display: "grid",
+    gridTemplateColumns: "repeat(5, 1fr)",
   },
-
   button: {
     border: "none",
     background: "transparent",
-    color: "#7f8ba3",
-    padding: "7px 2px",
+    color: "#77747b",
+    padding: "6px 2px",
     display: "grid",
     justifyItems: "center",
-    gap: "3px",
-    cursor: "pointer",
+    gap: "4px",
   },
-
-  activeButton: {
-    color: "#b8a0ff",
-  },
-
+  activeButton: { color: "#ff7b35" },
   icon: {
-    fontSize: "18px",
+    width: "24px",
+    height: "24px",
+    display: "grid",
+    placeItems: "center",
+    fontSize: "19px",
     lineHeight: 1,
+    borderRadius: "8px",
   },
-
+  activeIcon: {
+    background: "#351a18",
+    color: "#ff9b55",
+  },
   label: {
     fontSize: "9px",
-    fontWeight: "700",
+    fontWeight: "800",
     whiteSpace: "nowrap",
   },
+  activeLabel: { color: "#ff9b55" },
 };
