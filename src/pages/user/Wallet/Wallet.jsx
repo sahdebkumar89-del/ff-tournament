@@ -8,6 +8,9 @@ export default function Wallet() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [action, setAction] = useState(null);
+  const [form, setForm] = useState({ amount: "", method: "", reference: "" });
+  const [actionMessage, setActionMessage] = useState("");
 
   useEffect(() => {
     async function loadWallet() {
@@ -108,7 +111,7 @@ export default function Wallet() {
     loadWallet();
   }, []);
 
-  const totalEarnings = positionPrizes + killRewards;
+  const totalEarnings = positionPrizes + killRewards;\n\n  async function submitWalletRequest() {\n    setActionMessage("");\n    const amount = Number(form.amount);\n    if (!Number.isFinite(amount) || amount <= 0) return setActionMessage("Enter a valid amount.");\n    if (action === "WITHDRAWAL" && amount < 50) return setActionMessage("Minimum withdrawal is ৳50.");\n    if (!form.method.trim()) return setActionMessage("Payment method is required.");\n    if (action === "DEPOSIT" && !form.reference.trim()) return setActionMessage("Deposit reference is required.");\n    const rpc = action === "DEPOSIT" ? "request_deposit" : "request_withdrawal";\n    const { error } = await supabase.rpc(rpc, { p_amount: amount, p_payment_method: form.method.trim(), p_payment_reference: form.reference.trim() || null });\n    if (error) setActionMessage(error.message);\n    else { setActionMessage(`${action === "DEPOSIT" ? "Deposit" : "Withdrawal"} request submitted for Admin approval.`); setForm({amount:"",method:"",reference:""}); }\n  }
 
   return (
     <main style={styles.page}>
@@ -165,7 +168,7 @@ export default function Wallet() {
             </p>
           </section>
 
-          <section style={styles.actions}>
+          {action && (\n            <section style={styles.requestCard}>\n              <h2 style={styles.sectionTitle}>{action === "DEPOSIT" ? "Request Deposit" : "Request Withdrawal"}</h2>\n              <input type="number" min="1" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} placeholder="Amount (৳)" style={styles.formInput}/>\n              <input value={form.method} onChange={e=>setForm({...form,method:e.target.value})} placeholder="Payment method" style={styles.formInput}/>\n              <input value={form.reference} onChange={e=>setForm({...form,reference:e.target.value})} placeholder={action==="DEPOSIT"?"Transaction/reference ID":"Payment account/reference (optional)"} style={styles.formInput}/>\n              {actionMessage && <div style={styles.actionMessage}>{actionMessage}</div>}\n              <div style={styles.formButtons}><button onClick={submitWalletRequest} style={styles.submitButton}>Submit for Approval</button><button onClick={()=>{setAction(null);setActionMessage("")}} style={styles.cancelButton}>Cancel</button></div>\n            </section>\n          )}\n\n          <section style={styles.actions}>
             <button
               type="button"
               disabled
@@ -581,7 +584,7 @@ const styles = {
     lineHeight: 1.6,
   },
 
-  infoCard: {
+  requestCard:{padding:"16px",borderRadius:"18px",background:"#171416",border:"1px solid #4b2b25",marginBottom:"14px"},\n  formInput:{width:"100%",boxSizing:"border-box",marginTop:"9px",padding:"11px",borderRadius:"10px",border:"1px solid #3b2c2e",background:"#0f0e11",color:"#fff",outline:"none"},\n  formButtons:{display:"flex",gap:"8px",marginTop:"12px"},\n  submitButton:{flex:1,padding:"11px",border:0,borderRadius:"10px",background:"linear-gradient(135deg,#ff7a2f,#e94231)",color:"#fff",fontWeight:900},\n  cancelButton:{padding:"11px 14px",border:"1px solid #493034",borderRadius:"10px",background:"#171417",color:"#aaa",fontWeight:800},\n  actionMessage:{marginTop:"9px",padding:"9px",borderRadius:"9px",background:"#211a18",color:"#ffc064",fontSize:"10px"},\n\n  infoCard: {
     padding: "16px 18px",
     borderRadius: "16px",
     background: "#101725",
