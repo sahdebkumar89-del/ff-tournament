@@ -7,6 +7,7 @@ export default function MyTournaments() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("ALL");
   const [now, setNow] = useState(Date.now());
+  const [publishedResults, setPublishedResults] = useState({});
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -66,7 +67,15 @@ export default function MyTournaments() {
 
         if (tournamentsError) throw tournamentsError;
 
-        if (active) setTournaments(data ?? []);
+        if (active) {
+          setTournaments(data ?? []);
+          const ids = (data ?? []).map((x) => x.tournament_id);
+          const entries = await Promise.all(ids.map(async (id) => {
+            const { data: resultData } = await supabase.rpc("get_my_published_tournament_results", { p_tournament_id: id });
+            return [id, resultData || []];
+          }));
+          if (active) setPublishedResults(Object.fromEntries(entries));
+        }
       } catch (err) {
         if (active) {
           setError(err?.message || "Unable to load your tournaments.");
@@ -172,7 +181,7 @@ export default function MyTournaments() {
   );
 }
 
-function TournamentCard({ item, tournament, now }) {
+function TournamentCard({ item, tournament, now, results }) {
   const isCancelled = tournament.status === "CANCELLED" || item.status === "CANCELLED";
   const isCompleted = tournament.status === "COMPLETED";
   const isStarted = tournament.status === "STARTED";
@@ -233,9 +242,9 @@ function TournamentCard({ item, tournament, now }) {
         )}
       </div>
 
-      <div style={getFooterStyle(tournament.status)}>
+      {results.length > 0 && (\n        <div style={styles.resultBox}>\n          <div style={styles.resultTitle}>RESULT PUBLISHED</div>\n          {results.map((r) => (\n            <div key={r.result_id} style={styles.resultRow}>\n              <span>Position #{r.result_position} • {r.result_kills} kills</span>\n              <strong>৳{Number(r.total_payout).toFixed(0)}</strong>\n            </div>\n          ))}\n          <div style={styles.resultNote}>Wallet payout is credited only after Admin approval.</div>\n        </div>\n      )}\n\n      <div style={getFooterStyle(tournament.status)}
         <span>{isCancelled ? "Entry fee refund is handled through the wallet transaction flow." :
-          isCompleted ? "Match completed. Results will be shown when published." :
+          isCompleted ? "Match completed. Published results are shown above when available." :
           isStarted ? "Match is live. Room access is restricted to joined players." :
           "You are registered. Room details will be available according to the room-release schedule."}</span>
       </div>
@@ -371,7 +380,7 @@ const styles = {
   stat: { padding: "10px", borderRadius: "11px", background: "#19181c", border: "1px solid #27262a", display: "grid", gap: "4px" },
   metaList: { marginTop: "11px", borderTop: "1px solid #29272b" },
   metaRow: { display: "flex", justifyContent: "space-between", gap: "12px", padding: "9px 0", borderBottom: "1px solid #29272b", color: "#77747d", fontSize: "10px" },
-  footer: { marginTop: "12px", padding: "10px 11px", borderRadius: "10px", fontSize: "9px", lineHeight: 1.45 },
+  resultBox: { marginTop: "12px", padding: "12px", borderRadius: "12px", background: "#1b1715", border: "1px solid #5a3224" },\n  resultTitle: { color: "#ff9b5a", fontSize: "9px", fontWeight: "900", letterSpacing: "1px", marginBottom: "8px" },\n  resultRow: { display: "flex", justifyContent: "space-between", gap: "10px", padding: "7px 0", color: "#d6d1d3", fontSize: "10px", borderBottom: "1px solid #30272a" },\n  resultNote: { marginTop: "8px", color: "#8f8a8d", fontSize: "9px" },\n  footer: { marginTop: "12px", padding: "10px 11px", borderRadius: "10px", fontSize: "9px", lineHeight: 1.45 },
   stateCard: { padding: "38px 20px", borderRadius: "20px", background: "#121216", border: "1px solid #29272b", textAlign: "center" },
   errorCard: { padding: "30px 20px", borderRadius: "20px", background: "#2a171b", border: "1px solid #713039", textAlign: "center" },
   stateIcon: { width: "48px", height: "48px", margin: "0 auto 12px", borderRadius: "15px", display: "grid", placeItems: "center", background: "#2d1917", color: "#ff8142", fontSize: "23px" },
