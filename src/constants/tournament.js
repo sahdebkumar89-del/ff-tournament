@@ -38,7 +38,7 @@ export const TOURNAMENT_CONFIG = {
 
 export const TOURNAMENT_SCHEDULE = {
   startTime: "09:00",
-  endTime: "00:00",
+  endTime: "23:30",
   intervalMinutes: 30,
   rotation: ["SOLO", "DUO", "SQUAD"],
 };
