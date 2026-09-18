@@ -20,8 +20,8 @@ export default function Tournaments() {
       ? tournaments
       : tournaments.filter((tournament) => tournament.mode === filter);
 
-    return [...visible].sort((a, b) => tournamentDisplayOrder(a, now) - tournamentDisplayOrder(b, now));
-  }, [tournaments, filter, now]);
+    return [...visible].sort((a, b) => tournamentDisplayOrder(a, b));
+  }, [tournaments, filter]);
 
   if (selectedTournament) {
     return (
@@ -137,19 +137,26 @@ function tournamentStartTimestamp(tournament) {
   ).getTime();
 }
 
-function tournamentDisplayOrder(tournament, now) {
-  const start = tournamentStartTimestamp(tournament);
-  const isCompleted = tournament.status === "COMPLETED";
+function tournamentDisplayOrder(a, b) {
+  const aCompleted = a.status === "COMPLETED";
+  const bCompleted = b.status === "COMPLETED";
 
-  // Active/upcoming tournaments stay in time order.
-  // Completed matches accumulate at the bottom in completion order.
-  if (!isCompleted) return start;
+  // Non-completed tournaments stay in chronological order.
+  if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
 
-  const completionTime = tournament.completed_at
-    ? new Date(tournament.completed_at).getTime()
-    : start;
+  // Completed tournaments stay at the bottom in the order they actually completed.
+  if (aCompleted && bCompleted) {
+    const aCompletion = new Date(a.completed_at || 0).getTime();
+    const bCompletion = new Date(b.completed_at || 0).getTime();
 
-  return 1e20 + (Number.isFinite(completionTime) ? completionTime : start);
+    if (Number.isFinite(aCompletion) && Number.isFinite(bCompletion)) {
+      return aCompletion - bCompletion;
+    }
+
+    return Number(a.id) - Number(b.id);
+  }
+
+  return tournamentStartTimestamp(a) - tournamentStartTimestamp(b);
 }
 function formatTime(value) {
   return value ? value.slice(0, 5) : "—";
