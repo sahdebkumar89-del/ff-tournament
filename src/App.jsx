@@ -7,6 +7,7 @@ import TournamentDetails from "./pages/user/Tournaments/TournamentDetails.jsx";
 import MyTournaments from "./pages/user/MyTournaments/MyTournaments.jsx";
 import Profile from "./pages/user/Profile/Profile.jsx";
 import Wallet from "./pages/user/Wallet/Wallet.jsx";
+import Notifications from "./pages/user/Notifications/Notifications.jsx";
 import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
 
@@ -61,20 +62,23 @@ function Home() {
 
   return (
     <div style={styles.app}>
-      <header style={styles.header}>
-        <div>
-          <div style={styles.smallText}>FREE FIRE BR</div>
-          <h1 style={styles.title}>FF Tournament</h1>
-        </div>
+      {activePage === "home" && (
+        <header style={styles.header}>
+          <div>
+            <div style={styles.smallText}>FREE FIRE BR</div>
+            <h1 style={styles.title}>FF Tournament</h1>
+          </div>
 
-        <button
-          type="button"
-          style={styles.notificationButton}
-          aria-label="Notifications"
-        >
-          🔔
-        </button>
-      </header>
+          <button
+            type="button"
+            onClick={() => setActivePage("notifications")}
+            style={styles.notificationButton}
+            aria-label="Notifications"
+          >
+            🔔
+          </button>
+        </header>
+      )}
 
       <main style={styles.main}>
         {activePage === "home" && (
@@ -183,6 +187,8 @@ function Home() {
         {activePage === "wallet" && <Wallet />}
 
         {activePage === "profile" && <Profile />}
+
+        {activePage === "notifications" && <Notifications />}
       </main>
 
       <BottomNav
