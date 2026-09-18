@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Login from "./pages/user/Auth/Login.jsx";
 import Signup from "./pages/user/Auth/Signup.jsx";
 import BottomNav from "./components/common/BottomNav.jsx";
@@ -11,25 +11,22 @@ import Notifications from "./pages/user/Notifications/Notifications.jsx";
 import Room from "./pages/user/Room/Room.jsx";
 import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
+import { supabase } from "./lib/supabase/client.js";
 
 export default function App() {
   const { user, loading: authLoading } = useAuthContext();
   const [authPage, setAuthPage] = useState("login");
 
   if (authLoading) {
-    return (
-      <div style={styles.loadingPage}>
-        Loading FF Tournament...
-      </div>
-    );
+    return <div style={styles.loadingPage}>Loading FF Tournament...</div>;
   }
 
   if (!user) {
-    if (authPage === "signup") {
-      return <Signup onBackToLogin={() => setAuthPage("login")} />;
-    }
-
-    return <Login onCreateAccount={() => setAuthPage("signup")} />;
+    return authPage === "signup" ? (
+      <Signup onBackToLogin={() => setAuthPage("login")} />
+    ) : (
+      <Login onCreateAccount={() => setAuthPage("signup")} />
+    );
   }
 
   return <Home />;
@@ -39,11 +36,52 @@ function Home() {
   const { tournaments, loading, error } = useTournaments();
   const [activePage, setActivePage] = useState("home");
   const [selectedTournament, setSelectedTournament] = useState(null);
+  const [balance, setBalance] = useState(0);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadBalance() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("wallets")
+        .select("balance")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (active && data) setBalance(Number(data.balance) || 0);
+    }
+
+    loadBalance();
+    return () => { active = false; };
+  }, []);
 
   function handlePageChange(page) {
     setSelectedTournament(null);
     setActivePage(page);
   }
+
+  const nextByMode = useMemo(() => {
+    const result = { SOLO: null, DUO: null, SQUAD: null };
+
+    tournaments
+      .filter((t) => t.status === "REGISTRATION")
+      .forEach((t) => {
+        if (!result[t.mode]) result[t.mode] = t;
+      });
+
+    return result;
+  }, [tournaments]);
+
+  const liveTournament = tournaments.find((t) => t.status === "STARTED");
 
   if (selectedTournament) {
     return (
@@ -52,11 +90,7 @@ function Home() {
           tournament={selectedTournament}
           onBack={() => setSelectedTournament(null)}
         />
-
-        <BottomNav
-          activePage={activePage}
-          onChange={handlePageChange}
-        />
+        <BottomNav activePage={activePage} onChange={handlePageChange} />
       </div>
     );
   }
@@ -66,8 +100,8 @@ function Home() {
       {activePage === "home" && (
         <header style={styles.header}>
           <div>
-            <div style={styles.smallText}>FREE FIRE BR</div>
-            <h1 style={styles.title}>FF Tournament</h1>
+            <div style={styles.brandKicker}>FF TOURNAMENT</div>
+            <h1 style={styles.headerTitle}>Battle Royale</h1>
           </div>
 
           <button
@@ -76,7 +110,8 @@ function Home() {
             style={styles.notificationButton}
             aria-label="Notifications"
           >
-            🔔
+            <span style={styles.bell}>♢</span>
+            <span style={styles.notificationDot}>0</span>
           </button>
         </header>
       )}
@@ -84,97 +119,102 @@ function Home() {
       <main style={styles.main}>
         {activePage === "home" && (
           <>
-            <section style={styles.welcomeCard}>
+            <section style={styles.walletCard}>
               <div>
-                <div style={styles.smallText}>WELCOME</div>
-
-                <h2 style={styles.welcomeTitle}>
-                  Battle. Compete. Earn.
-                </h2>
-
-                <p style={styles.muted}>
-                  Daily Battle Royale tournaments from 9:00 AM to 11:30 PM.
-                </p>
+                <div style={styles.cardKicker}>WALLET BALANCE</div>
+                <div style={styles.balance}>৳{balance.toFixed(2)}</div>
               </div>
+              <button type="button" onClick={() => setActivePage("wallet")} style={styles.walletButton}>
+                Wallet
+              </button>
             </section>
 
-            <section>
+            <section style={styles.section}>
               <div style={styles.sectionHeader}>
-                <h2 style={styles.sectionTitle}>Tournaments</h2>
+                <div>
+                  <div style={styles.sectionKicker}>UP NEXT</div>
+                  <h2 style={styles.sectionTitle}>Next Match for Registration</h2>
+                </div>
                 <span style={styles.brBadge}>BR ONLY</span>
               </div>
 
-              {loading && (
-                <div style={styles.statusCard}>
-                  Loading tournaments...
+              {loading && <div style={styles.statusCard}>Loading matches...</div>}
+              {error && <div style={styles.statusCard}>Unable to load matches right now.</div>}
+
+              {!loading && !error && (
+                <div style={styles.modeGrid}>
+                  {["SOLO", "DUO", "SQUAD"].map((mode) => {
+                    const tournament = nextByMode[mode];
+
+                    return (
+                      <article key={mode} style={styles.matchCard}>
+                        <div style={styles.matchTop}>
+                          <span style={styles.modeBadge}>{mode}</span>
+                          <span style={styles.openBadge}>OPEN</span>
+                        </div>
+
+                        {tournament ? (
+                          <>
+                            <div style={styles.matchTime}>{formatTime(tournament.scheduled_start_time)}</div>
+                            <div style={styles.matchMeta}>
+                              Entry <strong>৳{Number(tournament.entry_fee).toFixed(0)}</strong>
+                            </div>
+                            <div style={styles.matchMeta}>
+                              Prize <strong>৳{Number(tournament.first_prize).toFixed(0)}</strong>
+                            </div>
+                            <div style={styles.countdown}>
+                              {registrationCountdown(tournament, now)}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTournament(tournament)}
+                              style={styles.joinButton}
+                            >
+                              View & Join
+                            </button>
+                          </>
+                        ) : (
+                          <div style={styles.noMatch}>No registration slot available.</div>
+                        )}
+                      </article>
+                    );
+                  })}
                 </div>
               )}
+            </section>
 
-              {error && (
-                <div style={styles.statusCard}>
-                  Unable to load tournaments.
+            <section style={styles.section}>
+              <div style={styles.sectionHeader}>
+                <div>
+                  <div style={styles.sectionKicker}>LIVE NOW</div>
+                  <h2 style={styles.sectionTitle}>Live Tournament</h2>
                 </div>
-              )}
+              </div>
 
-              {!loading && !error && tournaments.length === 0 && (
-                <div style={styles.statusCard}>
-                  No tournaments available right now.
-                </div>
-              )}
-
-              {!loading && !error && tournaments.length > 0 && (
-                <div style={styles.list}>
-                  {tournaments.map((tournament) => (
-                    <article
-                      key={tournament.id}
-                      style={styles.card}
-                    >
-                      <div style={styles.cardHeader}>
-                        <h3 style={styles.mode}>
-                          {tournament.mode}
-                        </h3>
-
-                        <span style={styles.openBadge}>
-                          {tournament.status}
-                        </span>
-                      </div>
-
-                      <div style={styles.row}>
-                        <span>Entry Fee</span>
-                        <strong>৳{tournament.entry_fee}</strong>
-                      </div>
-
-                      <div style={styles.row}>
-                        <span>1st Prize</span>
-                        <strong>৳{tournament.first_prize}</strong>
-                      </div>
-
-                      <div style={styles.row}>
-                        <span>2nd Prize</span>
-                        <strong>৳{tournament.second_prize}</strong>
-                      </div>
-
-                      <div style={styles.row}>
-                        <span>3rd Prize</span>
-                        <strong>৳{tournament.third_prize}</strong>
-                      </div>
-
-                      <div style={styles.row}>
-                        <span>Kill Reward</span>
-                        <strong>৳{tournament.kill_reward}</strong>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedTournament(tournament)
-                        }
-                        style={styles.viewButton}
-                      >
-                        View Tournament
-                      </button>
-                    </article>
-                  ))}
+              {liveTournament ? (
+                <article style={styles.liveCard}>
+                  <div>
+                    <span style={styles.liveBadge}>● LIVE</span>
+                    <h3 style={styles.liveTitle}>{liveTournament.mode} • Battle Royale</h3>
+                    <p style={styles.liveText}>
+                      Match is currently running. Room access is available to joined players.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActivePage("room")}
+                    style={styles.liveButton}
+                  >
+                    Open Room
+                  </button>
+                </article>
+              ) : (
+                <div style={styles.emptyLive}>
+                  <span style={styles.emptyLiveIcon}>◉</span>
+                  <div>
+                    <strong>No live tournament right now</strong>
+                    <p>The next live match will appear here automatically.</p>
+                  </div>
                 </div>
               )}
             </section>
@@ -182,180 +222,223 @@ function Home() {
         )}
 
         {activePage === "tournaments" && <Tournaments />}
-
         {activePage === "my-tournaments" && <MyTournaments />}
-
         {activePage === "room" && <Room />}
-
         {activePage === "wallet" && <Wallet />}
-
         {activePage === "profile" && <Profile />}
-
         {activePage === "notifications" && <Notifications />}
       </main>
 
-      <BottomNav
-        activePage={activePage}
-        onChange={handlePageChange}
-      />
+      <BottomNav activePage={activePage} onChange={handlePageChange} />
     </div>
   );
+}
+
+function formatTime(value) {
+  if (!value) return "—";
+  return value.slice(0, 5);
+}
+
+function registrationCountdown(tournament, now) {
+  if (!tournament?.tournament_date || !tournament?.scheduled_start_time) {
+    return "Registration open";
+  }
+
+  const start = new Date(
+    `${tournament.tournament_date}T${tournament.scheduled_start_time.slice(0, 8)}+06:00`
+  ).getTime();
+
+  const close = start - 30 * 60 * 1000;
+  const remaining = close - now;
+
+  if (remaining > 0) return "Registration open";
+  if (remaining <= 0 && now < start) {
+    return `Closes in ${formatCountdown(start - now)}`;
+  }
+  return "Registration closed";
+}
+
+function formatCountdown(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m ${seconds}s`;
 }
 
 const styles = {
   loadingPage: {
     minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#0b0f19",
-    color: "#f5f7fb",
+    display: "grid",
+    placeItems: "center",
+    background: "#0b0b0e",
+    color: "#f7f7f8",
   },
-
   app: {
     minHeight: "100vh",
-    paddingBottom: "82px",
-    background: "#0b0f19",
-    color: "#f5f7fb",
+    paddingBottom: "86px",
+    background: "#0b0b0e",
+    color: "#f7f7f8",
   },
-
   header: {
     maxWidth: "760px",
     margin: "0 auto",
-    padding: "22px 18px",
+    padding: "20px 18px 16px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
   },
-
-  smallText: {
-    fontSize: "11px",
+  brandKicker: {
+    color: "#ff7130",
+    fontSize: "10px",
+    fontWeight: "900",
     letterSpacing: "2px",
-    fontWeight: "800",
-    color: "#9ca3af",
   },
-
-  title: {
-    margin: "4px 0 0",
-    fontSize: "27px",
+  headerTitle: {
+    margin: "5px 0 0",
+    fontSize: "26px",
+    letterSpacing: "-.5px",
   },
-
   notificationButton: {
+    position: "relative",
     width: "44px",
     height: "44px",
     borderRadius: "14px",
-    border: "1px solid #283247",
-    background: "#151c2b",
-    color: "#ffffff",
-    fontSize: "19px",
+    border: "1px solid #35272a",
+    background: "#151216",
+    color: "#ff9b4a",
   },
-
+  bell: { fontSize: "25px", lineHeight: 1 },
+  notificationDot: {
+    position: "absolute",
+    top: "-4px",
+    right: "-4px",
+    minWidth: "18px",
+    height: "18px",
+    padding: "0 4px",
+    borderRadius: "9px",
+    background: "#ef3f31",
+    color: "#fff",
+    fontSize: "9px",
+    fontWeight: "900",
+    display: "grid",
+    placeItems: "center",
+  },
   main: {
     maxWidth: "760px",
     margin: "0 auto",
-    padding: "0 18px 40px",
+    padding: "0 18px 30px",
   },
-
-  welcomeCard: {
-    padding: "22px",
+  walletCard: {
+    padding: "18px",
     borderRadius: "20px",
-    background: "#151c2b",
-    border: "1px solid #283247",
-    marginBottom: "28px",
+    background: "linear-gradient(135deg, #241613, #141114)",
+    border: "1px solid #5a2a20",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    marginBottom: "24px",
   },
-
-  welcomeTitle: {
-    margin: "7px 0",
-    fontSize: "23px",
+  cardKicker: { color: "#a59b9b", fontSize: "10px", fontWeight: "800", letterSpacing: "1.4px" },
+  balance: { marginTop: "6px", fontSize: "27px", fontWeight: "900", color: "#ffc064" },
+  walletButton: {
+    border: "1px solid #71351f",
+    borderRadius: "11px",
+    background: "#261714",
+    color: "#ff9b4a",
+    padding: "10px 13px",
+    fontWeight: "800",
   },
-
-  muted: {
-    margin: 0,
-    color: "#aeb7c7",
-    lineHeight: 1.5,
-    fontSize: "14px",
-  },
-
+  section: { marginBottom: "25px" },
   sectionHeader: {
     display: "flex",
-    alignItems: "center",
+    alignItems: "end",
     justifyContent: "space-between",
-    marginBottom: "14px",
-  },
-
-  sectionTitle: {
-    margin: 0,
-    fontSize: "20px",
-  },
-
-  brBadge: {
-    padding: "6px 9px",
-    borderRadius: "8px",
-    background: "#1b2436",
-    color: "#b8a0ff",
-    fontSize: "10px",
-    fontWeight: "800",
-  },
-
-  list: {
-    display: "grid",
     gap: "12px",
+    marginBottom: "13px",
   },
-
-  statusCard: {
-    padding: "18px",
-    borderRadius: "18px",
-    background: "#131a28",
-    border: "1px solid #283247",
-    color: "#aeb7c7",
-    fontSize: "14px",
+  sectionKicker: { color: "#ff7130", fontSize: "9px", fontWeight: "900", letterSpacing: "1.8px" },
+  sectionTitle: { margin: "4px 0 0", fontSize: "19px" },
+  brBadge: {
+    padding: "6px 8px",
+    borderRadius: "8px",
+    background: "#241719",
+    color: "#ff8964",
+    fontSize: "9px",
+    fontWeight: "900",
   },
-
-  card: {
-    padding: "18px",
-    borderRadius: "18px",
-    background: "#131a28",
-    border: "1px solid #283247",
-  },
-
-  cardHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: "14px",
-  },
-
-  mode: {
-    margin: 0,
-    fontSize: "18px",
-    letterSpacing: "1px",
-  },
-
-  openBadge: {
-    fontSize: "10px",
-    fontWeight: "800",
-    color: "#86efac",
-  },
-
-  row: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "8px 0",
-    borderTop: "1px solid #202a3d",
-    color: "#aeb7c7",
-    fontSize: "13px",
-  },
-
-  viewButton: {
-    width: "100%",
-    marginTop: "14px",
+  modeGrid: { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "10px" },
+  matchCard: {
     padding: "13px",
+    borderRadius: "17px",
+    background: "#121216",
+    border: "1px solid #29272b",
+    minWidth: 0,
+  },
+  matchTop: { display: "flex", justifyContent: "space-between", gap: "5px" },
+  modeBadge: {
+    padding: "5px 7px",
+    borderRadius: "7px",
+    background: "#311919",
+    color: "#ff795f",
+    fontSize: "9px",
+    fontWeight: "900",
+  },
+  openBadge: { color: "#77e39b", fontSize: "8px", fontWeight: "900" },
+  matchTime: { marginTop: "13px", fontSize: "20px", fontWeight: "900" },
+  matchMeta: { marginTop: "7px", color: "#88868c", fontSize: "10px" },
+  countdown: { marginTop: "10px", color: "#ffad68", fontSize: "9px", fontWeight: "800", minHeight: "14px" },
+  joinButton: {
+    width: "100%",
+    marginTop: "11px",
+    padding: "10px 6px",
     border: "none",
-    borderRadius: "12px",
-    background: "#7c5cff",
-    color: "#ffffff",
+    borderRadius: "10px",
+    background: "linear-gradient(135deg, #ff7a2f, #e94231)",
+    color: "#fff",
+    fontSize: "10px",
+    fontWeight: "900",
+  },
+  noMatch: { marginTop: "15px", color: "#77757c", fontSize: "10px", lineHeight: 1.4 },
+  liveCard: {
+    padding: "17px",
+    borderRadius: "18px",
+    background: "linear-gradient(135deg, #241416, #151216)",
+    border: "1px solid #61302b",
+  },
+  liveBadge: { color: "#ff6b52", fontSize: "9px", fontWeight: "900", letterSpacing: "1px" },
+  liveTitle: { margin: "7px 0 0", fontSize: "18px" },
+  liveText: { margin: "7px 0 13px", color: "#96939a", fontSize: "12px", lineHeight: 1.5 },
+  liveButton: {
+    width: "100%",
+    padding: "11px",
+    border: "1px solid #753021",
+    borderRadius: "10px",
+    background: "#281714",
+    color: "#ff9e63",
     fontWeight: "800",
-    cursor: "pointer",
+  },
+  emptyLive: {
+    padding: "16px",
+    borderRadius: "16px",
+    border: "1px solid #29272b",
+    background: "#111115",
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    color: "#b7b4bb",
+  },
+  emptyLiveIcon: { color: "#ff7130", fontSize: "22px" },
+  statusCard: {
+    padding: "16px",
+    borderRadius: "15px",
+    background: "#121216",
+    border: "1px solid #29272b",
+    color: "#8f8c93",
+    fontSize: "12px",
   },
 };
+
