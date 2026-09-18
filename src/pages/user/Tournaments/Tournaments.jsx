@@ -1,10 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTournaments } from "../../../hooks/useTournaments.js";
 import TournamentDetails from "./TournamentDetails.jsx";
+
+const FILTERS = ["ALL", "SOLO", "DUO", "SQUAD"];
 
 export default function Tournaments() {
   const { tournaments, loading, error } = useTournaments();
   const [selectedTournament, setSelectedTournament] = useState(null);
+  const [filter, setFilter] = useState("ALL");
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const filtered = useMemo(
+    () =>
+      filter === "ALL"
+        ? tournaments
+        : tournaments.filter((tournament) => tournament.mode === filter),
+    [tournaments, filter]
+  );
 
   if (selectedTournament) {
     return (
@@ -19,85 +36,71 @@ export default function Tournaments() {
     <main style={styles.page}>
       <div style={styles.header}>
         <div>
-          <div style={styles.smallText}>FREE FIRE BR</div>
+          <div style={styles.kicker}>FREE FIRE • BATTLE ROYALE</div>
           <h1 style={styles.title}>Tournaments</h1>
         </div>
-
-        <span style={styles.badge}>BR ONLY</span>
+        <span style={styles.brBadge}>BR ONLY</span>
       </div>
 
-      {loading && (
-        <div style={styles.statusCard}>
-          Loading tournaments...
-        </div>
-      )}
+      <div style={styles.filters}>
+        {FILTERS.map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => setFilter(item)}
+            style={{
+              ...styles.filterButton,
+              ...(filter === item ? styles.filterActive : null),
+            }}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
 
-      {error && (
-        <div style={styles.statusCard}>
-          Unable to load tournaments right now.
-        </div>
-      )}
+      {loading && <div style={styles.statusCard}>Loading tournaments...</div>}
+      {error && <div style={styles.errorCard}>Unable to load tournaments right now.</div>}
 
-      {!loading && !error && tournaments.length === 0 && (
+      {!loading && !error && filtered.length === 0 && (
         <div style={styles.emptyCard}>
-          <div style={styles.emptyIcon}>🏆</div>
-
-          <h2 style={styles.emptyTitle}>
-            No tournaments available
-          </h2>
-
+          <div style={styles.emptyIcon}>◈</div>
+          <h2 style={styles.emptyTitle}>No tournaments available</h2>
           <p style={styles.emptyText}>
-            New Battle Royale tournaments will appear here when
-            they are available for registration.
+            No {filter === "ALL" ? "" : filter + " "}Battle Royale tournaments are available right now.
           </p>
         </div>
       )}
 
-      {!loading && !error && tournaments.length > 0 && (
+      {!loading && !error && filtered.length > 0 && (
         <div style={styles.list}>
-          {tournaments.map((tournament) => (
+          {filtered.map((tournament) => (
             <article key={tournament.id} style={styles.card}>
-              <div style={styles.cardHeader}>
+              <div style={styles.cardTop}>
                 <div>
-                  <div style={styles.modeLabel}>
-                    {tournament.mode}
-                  </div>
-
-                  <div style={styles.time}>
-                    {tournament.scheduled_start_time}
-                  </div>
+                  <span style={styles.modeBadge}>{tournament.mode}</span>
+                  <h2 style={styles.time}>{formatTime(tournament.scheduled_start_time)}</h2>
+                  <span style={styles.date}>{tournament.tournament_date}</span>
                 </div>
-
-                <span style={styles.status}>
-                  {tournament.status}
+                <span style={statusStyle(tournament.status)}>
+                  {tournament.status === "REGISTRATION" ? "OPEN" : tournament.status}
                 </span>
               </div>
 
-              <div style={styles.divider} />
-
-              <div style={styles.row}>
-                <span>Entry Fee</span>
-                <strong>৳{tournament.entry_fee}</strong>
+              <div style={styles.stats}>
+                <Stat label="ENTRY" value={`৳${Number(tournament.entry_fee).toFixed(0)}`} />
+                <Stat label="1ST PRIZE" value={`৳${Number(tournament.first_prize).toFixed(0)}`} />
+                <Stat label="KILL" value={`৳${Number(tournament.kill_reward).toFixed(0)}`} />
               </div>
 
-              <div style={styles.row}>
-                <span>1st Prize</span>
-                <strong>৳{tournament.first_prize}</strong>
-              </div>
-
-              <div style={styles.row}>
-                <span>2nd Prize</span>
-                <strong>৳{tournament.second_prize}</strong>
-              </div>
-
-              <div style={styles.row}>
-                <span>3rd Prize</span>
-                <strong>৳{tournament.third_prize}</strong>
-              </div>
-
-              <div style={styles.row}>
-                <span>Kill Reward</span>
-                <strong>৳{tournament.kill_reward}</strong>
+              <div style={styles.capacity}>
+                <span>
+                  {tournament.mode === "SOLO"
+                    ? `Up to ${tournament.max_players} players`
+                    : `${tournament.max_teams} teams • ${tournament.max_players} players`}
+                </span>
+                <span style={styles.countdown}>
+                  {registrationLabel(tournament, now)}
+                </span>
               </div>
 
               <button
@@ -105,7 +108,7 @@ export default function Tournaments() {
                 onClick={() => setSelectedTournament(tournament)}
                 style={styles.joinButton}
               >
-                View Tournament
+                {tournament.status === "REGISTRATION" ? "View & Join" : "View Tournament"}
               </button>
             </article>
           ))}
@@ -115,135 +118,182 @@ export default function Tournaments() {
   );
 }
 
-const styles = {
-  page: {
-    maxWidth: "760px",
-    margin: "0 auto",
-    padding: "22px 18px 40px",
-  },
+function Stat({ label, value }) {
+  return (
+    <div style={styles.stat}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
 
+function formatTime(value) {
+  return value ? value.slice(0, 5) : "—";
+}
+
+function registrationLabel(tournament, now) {
+  if (tournament.status !== "REGISTRATION") return tournament.status.replace("_", " ");
+
+  const start = new Date(
+    `${tournament.tournament_date}T${tournament.scheduled_start_time.slice(0, 8)}+06:00`
+  ).getTime();
+  const remaining = start - now;
+
+  if (remaining <= 0) return "Registration closed";
+  if (remaining > 30 * 60 * 1000) return "Registration open";
+
+  return `Closes in ${formatCountdown(remaining)}`;
+}
+
+function formatCountdown(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+}
+
+function statusStyle(status) {
+  if (status === "REGISTRATION") {
+    return { ...styles.status, background: "#162b20", color: "#7fe4a0" };
+  }
+  if (status === "STARTED") {
+    return { ...styles.status, background: "#382316", color: "#ffb267" };
+  }
+  if (status === "CANCELLED") {
+    return { ...styles.status, background: "#35191d", color: "#ff9f9f" };
+  }
+  return { ...styles.status, background: "#24252a", color: "#aaa9af" };
+}
+
+const styles = {
+  page: { maxWidth: "760px", margin: "0 auto", padding: "22px 18px 40px" },
   header: {
     display: "flex",
-    alignItems: "center",
+    alignItems: "end",
     justifyContent: "space-between",
-    marginBottom: "22px",
+    gap: "12px",
+    marginBottom: "18px",
   },
-
-  smallText: {
-    fontSize: "10px",
-    letterSpacing: "2px",
-    fontWeight: "800",
-    color: "#9ca3af",
+  kicker: { fontSize: "9px", letterSpacing: "1.8px", fontWeight: "900", color: "#ff7130" },
+  title: { margin: "5px 0 0", fontSize: "27px", letterSpacing: "-.5px" },
+  brBadge: {
+    padding: "7px 9px",
+    borderRadius: "8px",
+    background: "#241719",
+    color: "#ff8964",
+    fontSize: "9px",
+    fontWeight: "900",
   },
-
-  title: {
-    margin: "5px 0 0",
-    fontSize: "26px",
-  },
-
-  badge: {
-    padding: "7px 10px",
-    borderRadius: "9px",
-    background: "#1b2436",
-    color: "#b8a0ff",
-    fontSize: "10px",
-    fontWeight: "800",
-  },
-
-  statusCard: {
-    padding: "18px",
-    borderRadius: "18px",
-    background: "#131a28",
-    border: "1px solid #283247",
-    color: "#aeb7c7",
-    fontSize: "14px",
-  },
-
-  emptyCard: {
-    padding: "32px 20px",
-    borderRadius: "20px",
-    background: "#131a28",
-    border: "1px solid #283247",
-    textAlign: "center",
-  },
-
-  emptyIcon: {
-    fontSize: "34px",
-    marginBottom: "10px",
-  },
-
-  emptyTitle: {
-    margin: "0 0 8px",
-    fontSize: "19px",
-  },
-
-  emptyText: {
-    margin: 0,
-    color: "#9ca3af",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  list: {
+  filters: {
     display: "grid",
-    gap: "14px",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: "7px",
+    padding: "5px",
+    borderRadius: "13px",
+    background: "#121216",
+    border: "1px solid #29272b",
+    marginBottom: "16px",
   },
-
-  card: {
-    padding: "18px",
-    borderRadius: "20px",
-    background: "#131a28",
-    border: "1px solid #283247",
-  },
-
-  cardHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  modeLabel: {
-    fontSize: "18px",
-    fontWeight: "800",
-    letterSpacing: "1px",
-  },
-
-  time: {
-    marginTop: "5px",
-    color: "#9ca3af",
-    fontSize: "12px",
-  },
-
-  status: {
-    color: "#86efac",
+  filterButton: {
+    border: "none",
+    borderRadius: "9px",
+    background: "transparent",
+    color: "#85828a",
+    padding: "9px 4px",
     fontSize: "10px",
-    fontWeight: "800",
+    fontWeight: "900",
   },
-
-  divider: {
-    height: "1px",
-    background: "#202a3d",
-    margin: "15px 0 4px",
+  filterActive: { background: "#351b18", color: "#ff9b5a" },
+  list: { display: "grid", gap: "12px" },
+  card: {
+    padding: "16px",
+    borderRadius: "19px",
+    background: "#121216",
+    border: "1px solid #29272b",
+    boxShadow: "0 8px 24px rgba(0,0,0,.18)",
   },
-
-  row: {
+  cardTop: {
     display: "flex",
-    alignItems: "center",
     justifyContent: "space-between",
-    padding: "8px 0",
-    color: "#aeb7c7",
-    fontSize: "13px",
+    alignItems: "start",
+    gap: "10px",
   },
-
+  modeBadge: {
+    display: "inline-block",
+    padding: "5px 7px",
+    borderRadius: "7px",
+    background: "#311919",
+    color: "#ff795f",
+    fontSize: "9px",
+    fontWeight: "900",
+  },
+  time: { margin: "9px 0 1px", fontSize: "23px", fontWeight: "900" },
+  date: { color: "#77757c", fontSize: "10px" },
+  status: {
+    padding: "6px 8px",
+    borderRadius: "8px",
+    fontSize: "8px",
+    fontWeight: "900",
+    whiteSpace: "nowrap",
+  },
+  stats: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: "8px",
+    marginTop: "15px",
+  },
+  stat: {
+    padding: "10px",
+    borderRadius: "11px",
+    background: "#19181c",
+    border: "1px solid #27262a",
+  },
+  stat: { padding: "10px", borderRadius: "11px", background: "#19181c", border: "1px solid #27262a", display: "grid", gap: "4px" },
+  stat: { padding: "10px", borderRadius: "11px", background: "#19181c", border: "1px solid #27262a", display: "grid", gap: "4px" },
+  capacity: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "10px",
+    marginTop: "11px",
+    color: "#77757c",
+    fontSize: "9px",
+  },
+  countdown: { color: "#ffad68", fontWeight: "800", textAlign: "right" },
   joinButton: {
     width: "100%",
-    marginTop: "14px",
-    padding: "13px",
-    border: "none",
-    borderRadius: "12px",
-    background: "#7c5cff",
-    color: "#ffffff",
-    fontWeight: "800",
-    cursor: "pointer",
+    marginTop: "13px",
+    padding: "12px",
+    border: "1px solid #ff6a2a",
+    borderRadius: "11px",
+    background: "linear-gradient(135deg, #ff7a2f, #e84231)",
+    color: "#fff",
+    fontWeight: "900",
   },
+  statusCard: {
+    padding: "16px",
+    borderRadius: "15px",
+    background: "#121216",
+    border: "1px solid #29272b",
+    color: "#8f8c93",
+    fontSize: "12px",
+  },
+  errorCard: {
+    padding: "16px",
+    borderRadius: "15px",
+    background: "#2b1518",
+    border: "1px solid #713038",
+    color: "#ffaaa8",
+    fontSize: "12px",
+  },
+  emptyCard: {
+    padding: "35px 20px",
+    borderRadius: "19px",
+    background: "#121216",
+    border: "1px solid #29272b",
+    textAlign: "center",
+  },
+  emptyIcon: { color: "#ff7130", fontSize: "31px", marginBottom: "9px" },
+  emptyTitle: { margin: "0 0 7px", fontSize: "19px" },
+  emptyText: { margin: 0, color: "#87848b", fontSize: "12px", lineHeight: 1.5 },
 };
+
