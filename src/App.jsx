@@ -6,6 +6,7 @@ import Tournaments from "./pages/user/Tournaments/Tournaments.jsx";
 import TournamentDetails from "./pages/user/Tournaments/TournamentDetails.jsx";
 import MyTournaments from "./pages/user/MyTournaments/MyTournaments.jsx";
 import Profile from "./pages/user/Profile/Profile.jsx";
+import Wallet from "./pages/user/Wallet/Wallet.jsx";
 import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
 
@@ -179,11 +180,7 @@ function Home() {
 
         {activePage === "my-tournaments" && <MyTournaments />}
 
-        {activePage === "wallet" && (
-          <div style={styles.statusCard}>
-            Wallet page will be added later.
-          </div>
-        )}
+        {activePage === "wallet" && <Wallet />}
 
         {activePage === "profile" && <Profile />}
       </main>
