@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { signIn } from "../../../services/auth/authService.js";
 
-export default function Login() {
+export default function Login({ onCreateAccount }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,14 +60,22 @@ export default function Login() {
 
           {error && <div style={styles.error}>{error}</div>}
 
-          <button type="submit" disabled={loading} style={styles.button}>
+          <button
+            type="submit"
+            disabled={loading}
+            style={styles.button}
+          >
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
-        <p style={styles.footer}>
-          New player? Registration will be added next.
-        </p>
+        <button
+          type="button"
+          onClick={onCreateAccount}
+          style={styles.createButton}
+        >
+          Create a new account
+        </button>
       </div>
     </div>
   );
@@ -154,10 +162,15 @@ const styles = {
     cursor: "pointer",
   },
 
-  footer: {
-    margin: "20px 0 0",
-    textAlign: "center",
-    color: "#7f8ba3",
-    fontSize: "12px",
+  createButton: {
+    width: "100%",
+    marginTop: "18px",
+    padding: "11px",
+    border: "none",
+    background: "transparent",
+    color: "#b8a0ff",
+    fontSize: "13px",
+    fontWeight: "700",
+    cursor: "pointer",
   },
 };
