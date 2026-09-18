@@ -33,11 +33,72 @@ export default function App() {
     );
   }
 
-  return <AuthenticatedApp user={user} role={role} setRole={setRole} roleLoading={roleLoading} setRoleLoading={setRoleLoading} showAdmin={showAdmin} setShowAdmin={setShowAdmin} />;
+  return (
+    <AuthenticatedApp
+      user={user}
+      role={role}
+      setRole={setRole}
+      roleLoading={roleLoading}
+      setRoleLoading={setRoleLoading}
+      showAdmin={showAdmin}
+      setShowAdmin={setShowAdmin}
+    />
+  );
 }
 
-function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, showAdmin, setShowAdmin }) {\n  useEffect(() => {\n    let active = true;\n    async function loadRole() {\n      setRoleLoading(true);\n      const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();\n      if (active) {\n        setRole(data?.role || "USER");\n        setRoleLoading(false);\n      }\n    }\n    loadRole();\n    return () => { active = false; };\n  }, [user.id, setRole, setRoleLoading]);\n\n  if (roleLoading || !role) return <div style={styles.loadingPage}>Loading FF Tournament...</div>;\n  if (showAdmin && role === "ADMIN") return <AdminTournaments onBack={() => setShowAdmin(false)} />;\n  return <Home isAdmin={role === "ADMIN"} onOpenAdmin={() => setShowAdmin(true)} />;\n}\n\nfunction Home({ isAdmin, onOpenAdmin }) {
+function AuthenticatedApp({
+  user,
+  role,
+  setRole,
+  roleLoading,
+  setRoleLoading,
+  showAdmin,
+  setShowAdmin,
+}) {
+  useEffect(() => {
+    let active = true;
+
+    async function loadRole() {
+      setRoleLoading(true);
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (active) {
+        setRole(data?.role || "USER");
+        setRoleLoading(false);
+      }
+    }
+
+    loadRole();
+
+    return () => {
+      active = false;
+    };
+  }, [user.id, setRole, setRoleLoading]);
+
+  if (roleLoading || !role) {
+    return <div style={styles.loadingPage}>Loading FF Tournament...</div>;
+  }
+
+  if (showAdmin && role === "ADMIN") {
+    return <AdminTournaments onBack={() => setShowAdmin(false)} />;
+  }
+
+  return (
+    <Home
+      isAdmin={role === "ADMIN"}
+      onOpenAdmin={() => setShowAdmin(true)}
+    />
+  );
+}
+
+function Home({ isAdmin, onOpenAdmin }) {
   const { tournaments, loading, error } = useTournaments();
+
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [activePage, setActivePage] = useState("home");
   const [selectedTournament, setSelectedTournament] = useState(null);
@@ -45,7 +106,10 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
     return () => window.clearInterval(timer);
   }, []);
 
@@ -53,7 +117,10 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
     let active = true;
 
     async function loadUnreadNotifications() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) return;
 
       const { data: notificationRows } = await supabase
@@ -63,8 +130,11 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
         .limit(100);
 
       const ids = (notificationRows || []).map((item) => item.id);
+
       if (!ids.length) {
-        if (active) setUnreadNotifications(0);
+        if (active) {
+          setUnreadNotifications(0);
+        }
         return;
       }
 
@@ -75,13 +145,23 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
         .in("notification_id", ids);
 
       if (active) {
-        const readIds = new Set((readRows || []).map((item) => item.notification_id));
-        setUnreadNotifications(ids.filter((id) => !readIds.has(id)).length);
+        const readIds = new Set(
+          (readRows || []).map((item) => item.notification_id)
+        );
+
+        setUnreadNotifications(
+          ids.filter((id) => !readIds.has(id)).length
+        );
       }
     }
 
     loadUnreadNotifications();
-    const timer = window.setInterval(loadUnreadNotifications, 15000);
+
+    const timer = window.setInterval(
+      loadUnreadNotifications,
+      15000
+    );
+
     return () => {
       active = false;
       window.clearInterval(timer);
@@ -92,7 +172,10 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
     let active = true;
 
     async function loadBalance() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) return;
 
       const { data } = await supabase
@@ -101,11 +184,16 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (active && data) setBalance(Number(data.balance) || 0);
+      if (active && data) {
+        setBalance(Number(data.balance) || 0);
+      }
     }
 
     loadBalance();
-    return () => { active = false; };
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   function handlePageChange(page) {
@@ -114,11 +202,21 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
   }
 
   const nextByMode = useMemo(() => {
-    const result = { SOLO: null, DUO: null, SQUAD: null };
+    const result = {
+      SOLO: null,
+      DUO: null,
+      SQUAD: null,
+    };
 
     tournaments
-      .filter((tournament) => isRegistrationOpen(tournament, now))
-      .sort((a, b) => tournamentStartTimestamp(a) - tournamentStartTimestamp(b))
+      .filter((tournament) =>
+        isRegistrationOpen(tournament, now)
+      )
+      .sort(
+        (a, b) =>
+          tournamentStartTimestamp(a) -
+          tournamentStartTimestamp(b)
+      )
       .forEach((tournament) => {
         if (!result[tournament.mode]) {
           result[tournament.mode] = tournament;
@@ -128,7 +226,9 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
     return result;
   }, [tournaments, now]);
 
-  const liveTournament = tournaments.find((t) => t.status === "STARTED");
+  const liveTournament = tournaments.find(
+    (tournament) => tournament.status === "STARTED"
+  );
 
   if (selectedTournament) {
     return (
@@ -137,7 +237,11 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
           tournament={selectedTournament}
           onBack={() => setSelectedTournament(null)}
         />
-        <BottomNav activePage={activePage} onChange={handlePageChange} />
+
+        <BottomNav
+          activePage={activePage}
+          onChange={handlePageChange}
+        />
       </div>
     );
   }
@@ -147,24 +251,47 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
       {activePage === "home" && (
         <header style={styles.header}>
           <div>
-            <div style={styles.brandKicker}>FF TOURNAMENT</div>
-            <h1 style={styles.headerTitle}>Battle Royale</h1>
+            <div style={styles.brandKicker}>
+              FF TOURNAMENT
+            </div>
+
+            <h1 style={styles.headerTitle}>
+              Battle Royale
+            </h1>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
             {isAdmin && (
-              <button type="button" onClick={onOpenAdmin} style={styles.adminButton}>
+              <button
+                type="button"
+                onClick={onOpenAdmin}
+                style={styles.adminButton}
+              >
                 Admin
               </button>
             )}
+
             <button
               type="button"
-              onClick={() => setActivePage("notifications")}
+              onClick={() =>
+                setActivePage("notifications")
+              }
               style={styles.notificationButton}
               aria-label="Notifications"
             >
               <span style={styles.bell}>♢</span>
-              <span style={styles.notificationDot}>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>
+
+              <span style={styles.notificationDot}>
+                {unreadNotifications > 99
+                  ? "99+"
+                  : unreadNotifications}
+              </span>
             </button>
           </div>
         </header>
@@ -175,10 +302,20 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
           <>
             <section style={styles.walletCard}>
               <div>
-                <div style={styles.cardKicker}>WALLET BALANCE</div>
-                <div style={styles.balance}>৳{balance.toFixed(2)}</div>
+                <div style={styles.cardKicker}>
+                  WALLET BALANCE
+                </div>
+
+                <div style={styles.balance}>
+                  ৳{balance.toFixed(2)}
+                </div>
               </div>
-              <button type="button" onClick={() => setActivePage("wallet")} style={styles.walletButton}>
+
+              <button
+                type="button"
+                onClick={() => setActivePage("wallet")}
+                style={styles.walletButton}
+              >
                 Wallet
               </button>
             </section>
@@ -186,14 +323,31 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
             <section style={styles.section}>
               <div style={styles.sectionHeader}>
                 <div>
-                  <div style={styles.sectionKicker}>UP NEXT</div>
-                  <h2 style={styles.sectionTitle}>Next Match for Registration</h2>
+                  <div style={styles.sectionKicker}>
+                    UP NEXT
+                  </div>
+
+                  <h2 style={styles.sectionTitle}>
+                    Next Match for Registration
+                  </h2>
                 </div>
-                <span style={styles.brBadge}>BR ONLY</span>
+
+                <span style={styles.brBadge}>
+                  BR ONLY
+                </span>
               </div>
 
-              {loading && <div style={styles.statusCard}>Loading matches...</div>}
-              {error && <div style={styles.statusCard}>Unable to load matches right now.</div>}
+              {loading && (
+                <div style={styles.statusCard}>
+                  Loading matches...
+                </div>
+              )}
+
+              {error && (
+                <div style={styles.statusCard}>
+                  Unable to load matches right now.
+                </div>
+              )}
 
               {!loading && !error && (
                 <div style={styles.modeGrid}>
@@ -201,34 +355,83 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
                     const tournament = nextByMode[mode];
 
                     return (
-                      <article key={mode} style={styles.matchCard}>
+                      <article
+                        key={mode}
+                        style={styles.matchCard}
+                      >
                         <div style={styles.matchTop}>
-                          <span style={styles.modeBadge}>{mode}</span>
-                          {tournament && <span style={styles.openBadge}>OPEN</span>}
+                          <span style={styles.modeBadge}>
+                            {mode}
+                          </span>
+
+                          {tournament && (
+                            <span
+                              style={styles.openBadge}
+                            >
+                              OPEN
+                            </span>
+                          )}
                         </div>
 
                         {tournament ? (
                           <>
-                            <div style={styles.matchTime}>{formatTime(tournament.scheduled_start_time)}</div>
-                            <div style={styles.matchMeta}>
-                              Entry <strong>৳{Number(tournament.entry_fee).toFixed(0)}</strong>
+                            <div
+                              style={styles.matchTime}
+                            >
+                              {formatTime(
+                                tournament.scheduled_start_time
+                              )}
                             </div>
-                            <div style={styles.matchMeta}>
-                              Prize <strong>৳{Number(tournament.first_prize).toFixed(0)}</strong>
+
+                            <div
+                              style={styles.matchMeta}
+                            >
+                              Entry{" "}
+                              <strong>
+                                ৳
+                                {Number(
+                                  tournament.entry_fee
+                                ).toFixed(0)}
+                              </strong>
                             </div>
-                            <div style={styles.countdown}>
-                              {registrationCountdown(tournament, now)}
+
+                            <div
+                              style={styles.matchMeta}
+                            >
+                              Prize{" "}
+                              <strong>
+                                ৳
+                                {Number(
+                                  tournament.first_prize
+                                ).toFixed(0)}
+                              </strong>
                             </div>
+
+                            <div
+                              style={styles.countdown}
+                            >
+                              {registrationCountdown(
+                                tournament,
+                                now
+                              )}
+                            </div>
+
                             <button
                               type="button"
-                              onClick={() => setSelectedTournament(tournament)}
+                              onClick={() =>
+                                setSelectedTournament(
+                                  tournament
+                                )
+                              }
                               style={styles.joinButton}
                             >
                               View & Join
                             </button>
                           </>
                         ) : (
-                          <div style={styles.noMatch}>No registration slot available.</div>
+                          <div style={styles.noMatch}>
+                            No registration slot available.
+                          </div>
                         )}
                       </article>
                     );
@@ -240,20 +443,33 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
             <section style={styles.section}>
               <div style={styles.sectionHeader}>
                 <div>
-                  <div style={styles.sectionKicker}>LIVE NOW</div>
-                  <h2 style={styles.sectionTitle}>Live Tournament</h2>
+                  <div style={styles.sectionKicker}>
+                    LIVE NOW
+                  </div>
+
+                  <h2 style={styles.sectionTitle}>
+                    Live Tournament
+                  </h2>
                 </div>
               </div>
 
               {liveTournament ? (
                 <article style={styles.liveCard}>
                   <div>
-                    <span style={styles.liveBadge}>● LIVE</span>
-                    <h3 style={styles.liveTitle}>{liveTournament.mode} • Battle Royale</h3>
+                    <span style={styles.liveBadge}>
+                      ● LIVE
+                    </span>
+
+                    <h3 style={styles.liveTitle}>
+                      {liveTournament.mode} • Battle Royale
+                    </h3>
+
                     <p style={styles.liveText}>
-                      Match is currently running. Room access is available to joined players.
+                      Match is currently running. Room
+                      access is available to joined players.
                     </p>
                   </div>
+
                   <button
                     type="button"
                     onClick={() => setActivePage("room")}
@@ -264,10 +480,19 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
                 </article>
               ) : (
                 <div style={styles.emptyLive}>
-                  <span style={styles.emptyLiveIcon}>◉</span>
+                  <span style={styles.emptyLiveIcon}>
+                    ◉
+                  </span>
+
                   <div>
-                    <strong>No live tournament right now</strong>
-                    <p>The next live match will appear here automatically.</p>
+                    <strong>
+                      No live tournament right now
+                    </strong>
+
+                    <p>
+                      The next live match will appear here
+                      automatically.
+                    </p>
                   </div>
                 </div>
               )}
@@ -275,15 +500,29 @@ function AuthenticatedApp({ user, role, setRole, roleLoading, setRoleLoading, sh
           </>
         )}
 
-        {activePage === "tournaments" && <Tournaments />}
-        {activePage === "my-tournaments" && <MyTournaments />}
+        {activePage === "tournaments" && (
+          <Tournaments />
+        )}
+
+        {activePage === "my-tournaments" && (
+          <MyTournaments />
+        )}
+
         {activePage === "room" && <Room />}
+
         {activePage === "wallet" && <Wallet />}
+
         {activePage === "profile" && <Profile />}
-        {activePage === "notifications" && <Notifications />}
+
+        {activePage === "notifications" && (
+          <Notifications />
+        )}
       </main>
 
-      <BottomNav activePage={activePage} onChange={handlePageChange} />
+      <BottomNav
+        activePage={activePage}
+        onChange={handlePageChange}
+      />
     </div>
   );
 }
@@ -294,49 +533,88 @@ function formatTime(value) {
 }
 
 function tournamentStartTimestamp(tournament) {
-  if (!tournament?.tournament_date || !tournament?.scheduled_start_time) {
+  if (
+    !tournament?.tournament_date ||
+    !tournament?.scheduled_start_time
+  ) {
     return Number.POSITIVE_INFINITY;
   }
 
   return new Date(
-    `${tournament.tournament_date}T${tournament.scheduled_start_time.slice(0, 8)}+06:00`
+    `${tournament.tournament_date}T${tournament.scheduled_start_time.slice(
+      0,
+      8
+    )}+06:00`
   ).getTime();
 }
 
 function isRegistrationOpen(tournament, now) {
-  if (!tournament || tournament.status !== "REGISTRATION") return false;
+  if (
+    !tournament ||
+    tournament.status !== "REGISTRATION"
+  ) {
+    return false;
+  }
 
   const start = tournamentStartTimestamp(tournament);
-  if (!Number.isFinite(start) || now >= start) return false;
+
+  if (!Number.isFinite(start) || now >= start) {
+    return false;
+  }
 
   const registrationOpen = tournament.registration_opens_at
-    ? new Date(tournament.registration_opens_at).getTime()
+    ? new Date(
+        tournament.registration_opens_at
+      ).getTime()
     : Number.NEGATIVE_INFINITY;
 
-  const registrationClose = start - 30 * 60 * 1000;
+  const registrationClose =
+    start - 30 * 60 * 1000;
 
-  return now >= registrationOpen && now < registrationClose;
+  return (
+    now >= registrationOpen &&
+    now < registrationClose
+  );
 }
 
 function registrationCountdown(tournament, now) {
   const start = tournamentStartTimestamp(tournament);
 
-  if (!Number.isFinite(start)) return "Registration open";
+  if (!Number.isFinite(start)) {
+    return "Registration open";
+  }
 
   const remaining = start - now;
 
-  if (remaining > 30 * 60 * 1000) return "Registration open";
-  if (remaining > 0) return `Closes in ${formatCountdown(remaining)}`;
+  if (remaining > 30 * 60 * 1000) {
+    return "Registration open";
+  }
+
+  if (remaining > 0) {
+    return `Closes in ${formatCountdown(remaining)}`;
+  }
+
   return "Registration closed";
 }
 
 function formatCountdown(ms) {
-  const total = Math.max(0, Math.floor(ms / 1000));
+  const total = Math.max(
+    0,
+    Math.floor(ms / 1000)
+  );
+
   const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
+
+  const minutes = Math.floor(
+    (total % 3600) / 60
+  );
+
   const seconds = total % 60;
 
-  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
   return `${minutes}m ${seconds}s`;
 }
 
@@ -348,12 +626,14 @@ const styles = {
     background: "#0b0b0e",
     color: "#f7f7f8",
   },
+
   app: {
     minHeight: "100vh",
     paddingBottom: "86px",
     background: "#0b0b0e",
     color: "#f7f7f8",
   },
+
   header: {
     maxWidth: "760px",
     margin: "0 auto",
@@ -362,17 +642,20 @@ const styles = {
     alignItems: "center",
     justifyContent: "space-between",
   },
+
   brandKicker: {
     color: "#ff7130",
     fontSize: "10px",
     fontWeight: "900",
     letterSpacing: "2px",
   },
+
   headerTitle: {
     margin: "5px 0 0",
     fontSize: "26px",
     letterSpacing: "-.5px",
   },
+
   adminButton: {
     border: "1px solid #71351f",
     borderRadius: "10px",
@@ -382,6 +665,7 @@ const styles = {
     fontSize: "10px",
     fontWeight: "900",
   },
+
   notificationButton: {
     position: "relative",
     width: "44px",
@@ -391,7 +675,12 @@ const styles = {
     background: "#151216",
     color: "#ff9b4a",
   },
-  bell: { fontSize: "25px", lineHeight: 1 },
+
+  bell: {
+    fontSize: "25px",
+    lineHeight: 1,
+  },
+
   notificationDot: {
     position: "absolute",
     top: "-4px",
@@ -407,15 +696,18 @@ const styles = {
     display: "grid",
     placeItems: "center",
   },
+
   main: {
     maxWidth: "760px",
     margin: "0 auto",
     padding: "0 18px 30px",
   },
+
   walletCard: {
     padding: "18px",
     borderRadius: "20px",
-    background: "linear-gradient(135deg, #241613, #141114)",
+    background:
+      "linear-gradient(135deg, #241613, #141114)",
     border: "1px solid #5a2a20",
     display: "flex",
     alignItems: "center",
@@ -423,8 +715,21 @@ const styles = {
     gap: "12px",
     marginBottom: "24px",
   },
-  cardKicker: { color: "#a59b9b", fontSize: "10px", fontWeight: "800", letterSpacing: "1.4px" },
-  balance: { marginTop: "6px", fontSize: "27px", fontWeight: "900", color: "#ffc064" },
+
+  cardKicker: {
+    color: "#a59b9b",
+    fontSize: "10px",
+    fontWeight: "800",
+    letterSpacing: "1.4px",
+  },
+
+  balance: {
+    marginTop: "6px",
+    fontSize: "27px",
+    fontWeight: "900",
+    color: "#ffc064",
+  },
+
   walletButton: {
     border: "1px solid #71351f",
     borderRadius: "11px",
@@ -433,7 +738,11 @@ const styles = {
     padding: "10px 13px",
     fontWeight: "800",
   },
-  section: { marginBottom: "25px" },
+
+  section: {
+    marginBottom: "25px",
+  },
+
   sectionHeader: {
     display: "flex",
     alignItems: "end",
@@ -441,8 +750,19 @@ const styles = {
     gap: "12px",
     marginBottom: "13px",
   },
-  sectionKicker: { color: "#ff7130", fontSize: "9px", fontWeight: "900", letterSpacing: "1.8px" },
-  sectionTitle: { margin: "4px 0 0", fontSize: "19px" },
+
+  sectionKicker: {
+    color: "#ff7130",
+    fontSize: "9px",
+    fontWeight: "900",
+    letterSpacing: "1.8px",
+  },
+
+  sectionTitle: {
+    margin: "4px 0 0",
+    fontSize: "19px",
+  },
+
   brBadge: {
     padding: "6px 8px",
     borderRadius: "8px",
@@ -451,7 +771,14 @@ const styles = {
     fontSize: "9px",
     fontWeight: "900",
   },
-  modeGrid: { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "10px" },
+
+  modeGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(3, minmax(0, 1fr))",
+    gap: "10px",
+  },
+
   matchCard: {
     padding: "13px",
     borderRadius: "17px",
@@ -459,7 +786,13 @@ const styles = {
     border: "1px solid #29272b",
     minWidth: 0,
   },
-  matchTop: { display: "flex", justifyContent: "space-between", gap: "5px" },
+
+  matchTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "5px",
+  },
+
   modeBadge: {
     padding: "5px 7px",
     borderRadius: "7px",
@@ -468,31 +801,80 @@ const styles = {
     fontSize: "9px",
     fontWeight: "900",
   },
-  openBadge: { color: "#77e39b", fontSize: "8px", fontWeight: "900" },
-  matchTime: { marginTop: "13px", fontSize: "20px", fontWeight: "900" },
-  matchMeta: { marginTop: "7px", color: "#88868c", fontSize: "10px" },
-  countdown: { marginTop: "10px", color: "#ffad68", fontSize: "9px", fontWeight: "800", minHeight: "14px" },
+
+  openBadge: {
+    color: "#77e39b",
+    fontSize: "8px",
+    fontWeight: "900",
+  },
+
+  matchTime: {
+    marginTop: "13px",
+    fontSize: "20px",
+    fontWeight: "900",
+  },
+
+  matchMeta: {
+    marginTop: "7px",
+    color: "#88868c",
+    fontSize: "10px",
+  },
+
+  countdown: {
+    marginTop: "10px",
+    color: "#ffad68",
+    fontSize: "9px",
+    fontWeight: "800",
+    minHeight: "14px",
+  },
+
   joinButton: {
     width: "100%",
     marginTop: "11px",
     padding: "10px 6px",
     border: "none",
     borderRadius: "10px",
-    background: "linear-gradient(135deg, #ff7a2f, #e94231)",
+    background:
+      "linear-gradient(135deg, #ff7a2f, #e94231)",
     color: "#fff",
     fontSize: "10px",
     fontWeight: "900",
   },
-  noMatch: { marginTop: "15px", color: "#77757c", fontSize: "10px", lineHeight: 1.4 },
+
+  noMatch: {
+    marginTop: "15px",
+    color: "#77757c",
+    fontSize: "10px",
+    lineHeight: 1.4,
+  },
+
   liveCard: {
     padding: "17px",
     borderRadius: "18px",
-    background: "linear-gradient(135deg, #241416, #151216)",
+    background:
+      "linear-gradient(135deg, #241416, #151216)",
     border: "1px solid #61302b",
   },
-  liveBadge: { color: "#ff6b52", fontSize: "9px", fontWeight: "900", letterSpacing: "1px" },
-  liveTitle: { margin: "7px 0 0", fontSize: "18px" },
-  liveText: { margin: "7px 0 13px", color: "#96939a", fontSize: "12px", lineHeight: 1.5 },
+
+  liveBadge: {
+    color: "#ff6b52",
+    fontSize: "9px",
+    fontWeight: "900",
+    letterSpacing: "1px",
+  },
+
+  liveTitle: {
+    margin: "7px 0 0",
+    fontSize: "18px",
+  },
+
+  liveText: {
+    margin: "7px 0 13px",
+    color: "#96939a",
+    fontSize: "12px",
+    lineHeight: 1.5,
+  },
+
   liveButton: {
     width: "100%",
     padding: "11px",
@@ -502,6 +884,7 @@ const styles = {
     color: "#ff9e63",
     fontWeight: "800",
   },
+
   emptyLive: {
     padding: "16px",
     borderRadius: "16px",
@@ -512,7 +895,12 @@ const styles = {
     gap: "12px",
     color: "#b7b4bb",
   },
-  emptyLiveIcon: { color: "#ff7130", fontSize: "22px" },
+
+  emptyLiveIcon: {
+    color: "#ff7130",
+    fontSize: "22px",
+  },
+
   statusCard: {
     padding: "16px",
     borderRadius: "15px",
@@ -522,4 +910,3 @@ const styles = {
     fontSize: "12px",
   },
 };
-
