@@ -27,6 +27,24 @@ export async function requestTournamentJoin(tournamentId, freeFireUids) {
   return data;
 }
 
+export async function getPendingTournamentJoinRequest(tournamentId) {
+  const { data, error } = await supabase
+    .from("tournament_join_requests")
+    .select("id, free_fire_uids, expires_at")
+    .eq("tournament_id", tournamentId)
+    .eq("status", "PENDING")
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? null;
+}
+
 export async function confirmTournamentJoin(requestId) {
   const { data, error } = await supabase.rpc("confirm_tournament_join", {
     p_request_id: requestId,
