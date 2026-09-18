@@ -80,9 +80,7 @@ export default function TournamentDetails({ tournament, onBack }) {
       );
 
       setRequestId(data);
-      setMessage(
-        "Join request created. Review the details below and confirm to join."
-      );
+      setMessage("");
     } catch (err) {
       setError(err?.message || "Unable to create the join request.");
     } finally {
