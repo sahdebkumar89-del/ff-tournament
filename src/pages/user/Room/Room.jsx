@@ -1,6 +1,74 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { supabase } from "../../../lib/supabase/client.js";
 
 export default function Room() {
+  const [matches, setMatches] = useState([]);
+  const [rooms, setRooms] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [now, setNow] = useState(Date.now());
+
+  async function loadMatches() {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("tournament_participants")
+      .select("tournament_id, tournaments(*)")
+      .eq("status", "JOINED");
+
+    if (error) {
+      setMessage(error.message);
+      setMatches([]);
+    } else {
+      const joined = (data || [])
+        .map((row) => row.tournaments)
+        .filter(Boolean)
+        .filter((tournament) => !["COMPLETED", "CANCELLED"].includes(tournament.status))
+        .sort((a, b) => tournamentStart(a) - tournamentStart(b));
+
+      setMatches(joined);
+    }
+
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    loadMatches();
+    const refresh = window.setInterval(loadMatches, 30000);
+    const clock = window.setInterval(() => setNow(Date.now()), 1000);
+
+    return () => {
+      window.clearInterval(refresh);
+      window.clearInterval(clock);
+    };
+  }, []);
+
+  const activeMatches = useMemo(() => matches, [matches]);
+
+  async function loadRoom(tournamentId) {
+    setMessage("");
+
+    const { data, error } = await supabase.rpc("get_tournament_room", {
+      p_tournament_id: tournamentId,
+    });
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setRooms((current) => ({
+      ...current,
+      [tournamentId]: data?.[0] || null,
+    }));
+  }
+
+  useEffect(() => {
+    activeMatches.forEach((tournament) => {
+      loadRoom(tournament.id);
+    });
+  }, [activeMatches]);
+
   return (
     <main style={styles.page}>
       <div style={styles.header}>
@@ -8,72 +76,123 @@ export default function Room() {
           <div style={styles.smallText}>MATCH ACCESS</div>
           <h1 style={styles.title}>Room & Password</h1>
         </div>
-
         <span style={styles.badge}>🔒</span>
       </div>
 
-      <section style={styles.statusCard}>
-        <div style={styles.lockIcon}>🔒</div>
-
-        <h2 style={styles.statusTitle}>
-          Room details are locked
-        </h2>
-
-        <p style={styles.statusText}>
-          Room ID and Password will be available only to players
-          who have successfully joined the tournament.
-        </p>
-      </section>
-
-      <section style={styles.card}>
-        <h2 style={styles.sectionTitle}>Room Release</h2>
-
-        <div style={styles.row}>
-          <span>Release Time</span>
-          <strong>10 minutes before match</strong>
-        </div>
-
-        <div style={styles.row}>
-          <span>Access</span>
-          <strong>Joined Players Only</strong>
-        </div>
-
-        <div style={styles.row}>
-          <span>Notification</span>
-          <strong>Automatic</strong>
-        </div>
-      </section>
-
-      <section style={styles.card}>
-        <h2 style={styles.sectionTitle}>Room Information</h2>
-
-        <div style={styles.roomBox}>
-          <span style={styles.roomLabel}>ROOM ID</span>
-          <strong style={styles.hiddenValue}>••••••••</strong>
-        </div>
-
-        <div style={styles.roomBox}>
-          <span style={styles.roomLabel}>PASSWORD</span>
-          <strong style={styles.hiddenValue}>••••••••</strong>
-        </div>
-
-        <p style={styles.note}>
-          Your room credentials will appear here automatically when
-          the Admin releases them.
-        </p>
-      </section>
+      {message && <div style={styles.message}>{message}</div>}
 
       <section style={styles.infoCard}>
-        <div style={styles.infoTitle}>Security</div>
-
+        <div style={styles.infoTitle}>Secure Room Delivery</div>
         <p style={styles.infoText}>
-          Room credentials are protected and are not visible to users
-          who have not joined the tournament. Access activity will be
-          securely recorded.
+          Room ID and password are returned only for tournaments you have
+          joined after the room has been released.
         </p>
+      </section>
+
+      {loading ? (
+        <div style={styles.empty}>Loading your joined matches...</div>
+      ) : activeMatches.length === 0 ? (
+        <div style={styles.empty}>
+          <strong>No active joined tournament</strong>
+          <p style={styles.emptyText}>
+            Room details will appear here when you join a tournament.
+          </p>
+        </div>
+      ) : (
+        <div style={styles.list}>
+          {activeMatches.map((tournament) => {
+            const room = rooms[tournament.id];
+            const start = tournamentStart(tournament);
+            const releaseAt = start - 10 * 60 * 1000;
+            const released = Boolean(room?.released_at);
+            const releaseText = released
+              ? "Room released"
+              : now >= releaseAt
+                ? "Release is being processed"
+                : `Releases in ${formatCountdown(releaseAt - now)}`;
+
+            return (
+              <article key={tournament.id} style={styles.card}>
+                <div style={styles.cardTop}>
+                  <div>
+                    <span style={styles.mode}>{tournament.mode} • BR</span>
+                    <h2 style={styles.cardTitle}>
+                      Tournament #{tournament.id}
+                    </h2>
+                  </div>
+                  <span style={released ? styles.releasedBadge : styles.lockedBadge}>
+                    {released ? "RELEASED" : "LOCKED"}
+                  </span>
+                </div>
+
+                <div style={styles.meta}>
+                  <span>{tournament.tournament_date}</span>
+                  <span>{tournament.scheduled_start_time.slice(0, 5)}</span>
+                  <span>{releaseText}</span>
+                </div>
+
+                {released ? (
+                  <div style={styles.credentials}>
+                    <div style={styles.credentialBox}>
+                      <span style={styles.label}>ROOM ID</span>
+                      <strong style={styles.value}>{room.room_id}</strong>
+                    </div>
+                    <div style={styles.credentialBox}>
+                      <span style={styles.label}>PASSWORD</span>
+                      <strong style={styles.value}>{room.room_password}</strong>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={styles.lockedCard}>
+                    <div style={styles.lockIcon}>🔒</div>
+                    <div>
+                      <strong>Room details are locked</strong>
+                      <p>
+                        Only joined players can access the credentials after
+                        the Admin/system releases them.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      <section style={styles.card}>
+        <h2 style={styles.sectionTitle}>Room Release Rules</h2>
+        <div style={styles.row}>
+          <span>Automatic release</span>
+          <strong>10 minutes before match</strong>
+        </div>
+        <div style={styles.row}>
+          <span>Access</span>
+          <strong>Joined players only</strong>
+        </div>
+        <div style={styles.row}>
+          <span>Admin override</span>
+          <strong>Release Now</strong>
+        </div>
       </section>
     </main>
   );
+}
+
+function tournamentStart(tournament) {
+  return new Date(
+    `${tournament.tournament_date}T${tournament.scheduled_start_time.slice(0, 8)}+06:00`
+  ).getTime();
+}
+
+function formatCountdown(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m ${seconds}s`;
 }
 
 const styles = {
@@ -82,143 +201,188 @@ const styles = {
     margin: "0 auto",
     padding: "22px 18px 40px",
   },
-
   header: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: "22px",
+    marginBottom: "18px",
   },
-
   smallText: {
     fontSize: "10px",
     letterSpacing: "2px",
-    fontWeight: "800",
-    color: "#9ca3af",
+    fontWeight: "900",
+    color: "#ff7130",
   },
-
   title: {
     margin: "5px 0 0",
     fontSize: "26px",
   },
-
   badge: {
     width: "38px",
     height: "38px",
     borderRadius: "12px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#1b2436",
-    fontSize: "17px",
+    display: "grid",
+    placeItems: "center",
+    background: "#1b1415",
+    border: "1px solid #4d2822",
   },
-
-  statusCard: {
-    padding: "26px 20px",
-    borderRadius: "20px",
-    background: "#151c2b",
-    border: "1px solid #283247",
-    textAlign: "center",
+  message: {
+    padding: "12px",
+    marginBottom: "12px",
+    borderRadius: "12px",
+    background: "#241517",
+    border: "1px solid #5a2a20",
+    color: "#ffb36a",
+    fontSize: "11px",
+  },
+  infoCard: {
+    padding: "16px 18px",
+    borderRadius: "16px",
+    background: "#121216",
+    border: "1px solid #2b292d",
     marginBottom: "14px",
   },
-
-  lockIcon: {
-    width: "54px",
-    height: "54px",
-    margin: "0 auto 12px",
-    borderRadius: "16px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#1f2940",
-    fontSize: "24px",
-  },
-
-  statusTitle: {
-    margin: "0 0 8px",
-    fontSize: "19px",
-  },
-
-  statusText: {
-    maxWidth: "440px",
-    margin: "0 auto",
-    color: "#9ca3af",
+  infoTitle: {
+    color: "#ff8a4d",
     fontSize: "13px",
+    fontWeight: "900",
+  },
+  infoText: {
+    margin: "7px 0 0",
+    color: "#9a969d",
+    fontSize: "11px",
     lineHeight: 1.6,
   },
-
+  list: {
+    display: "grid",
+    gap: "12px",
+  },
   card: {
-    padding: "18px",
-    borderRadius: "20px",
-    background: "#131a28",
-    border: "1px solid #283247",
+    padding: "17px",
+    borderRadius: "19px",
+    background: "#121216",
+    border: "1px solid #2b292d",
     marginBottom: "14px",
   },
-
-  sectionTitle: {
-    margin: "0 0 12px",
-    fontSize: "18px",
+  cardTop: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "12px",
   },
-
+  mode: {
+    color: "#ff765a",
+    fontSize: "9px",
+    fontWeight: "900",
+    letterSpacing: "1px",
+  },
+  cardTitle: {
+    margin: "5px 0 0",
+    fontSize: "17px",
+  },
+  lockedBadge: {
+    padding: "6px 9px",
+    borderRadius: "8px",
+    background: "#241d1f",
+    color: "#b7a8aa",
+    fontSize: "9px",
+    fontWeight: "900",
+  },
+  releasedBadge: {
+    padding: "6px 9px",
+    borderRadius: "8px",
+    background: "#19291f",
+    color: "#77e39b",
+    fontSize: "9px",
+    fontWeight: "900",
+  },
+  meta: {
+    display: "flex",
+    gap: "12px",
+    flexWrap: "wrap",
+    marginTop: "11px",
+    color: "#918d94",
+    fontSize: "10px",
+  },
+  credentials: {
+    display: "grid",
+    gap: "9px",
+    marginTop: "14px",
+  },
+  credentialBox: {
+    padding: "14px",
+    borderRadius: "13px",
+    background: "#0e0e12",
+    border: "1px solid #3a2b2c",
+  },
+  label: {
+    display: "block",
+    color: "#8f8b92",
+    fontSize: "9px",
+    fontWeight: "900",
+    letterSpacing: "1px",
+    marginBottom: "6px",
+  },
+  value: {
+    color: "#fff",
+    fontSize: "18px",
+    wordBreak: "break-all",
+  },
+  lockedCard: {
+    display: "flex",
+    gap: "11px",
+    alignItems: "center",
+    marginTop: "14px",
+    padding: "13px",
+    borderRadius: "13px",
+    background: "#171417",
+    border: "1px solid #30282b",
+    color: "#d8d2d5",
+  },
+  lockIcon: {
+    width: "38px",
+    height: "38px",
+    flex: "0 0 auto",
+    borderRadius: "11px",
+    display: "grid",
+    placeItems: "center",
+    background: "#241d1f",
+  },
+  lockedCard: {
+    display: "flex",
+    gap: "11px",
+    alignItems: "center",
+    marginTop: "14px",
+    padding: "13px",
+    borderRadius: "13px",
+    background: "#171417",
+    border: "1px solid #30282b",
+    color: "#d8d2d5",
+  },
   row: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     gap: "16px",
     padding: "11px 0",
-    borderTop: "1px solid #202a3d",
-    color: "#aeb7c7",
-    fontSize: "13px",
+    borderTop: "1px solid #262328",
+    color: "#9d989f",
+    fontSize: "12px",
   },
-
-  roomBox: {
-    padding: "15px",
-    marginTop: "10px",
-    borderRadius: "14px",
-    background: "#0f1522",
-    border: "1px solid #263149",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "12px",
+  sectionTitle: {
+    margin: "0 0 12px",
+    fontSize: "17px",
   },
-
-  roomLabel: {
-    color: "#8f98aa",
-    fontSize: "10px",
-    fontWeight: "800",
-    letterSpacing: "1px",
-  },
-
-  hiddenValue: {
-    color: "#707b90",
-    letterSpacing: "3px",
-  },
-
-  note: {
-    margin: "14px 4px 0",
-    color: "#7f8ba3",
-    fontSize: "11px",
-    lineHeight: 1.5,
-  },
-
-  infoCard: {
-    padding: "16px 18px",
+  empty: {
+    padding: "20px",
     borderRadius: "16px",
-    background: "#101725",
-    border: "1px solid #263149",
+    background: "#121216",
+    border: "1px solid #2b292d",
+    color: "#c8c3c8",
   },
-
-  infoTitle: {
-    fontSize: "13px",
-    fontWeight: "800",
-    color: "#d9deea",
-  },
-
-  infoText: {
+  emptyText: {
     margin: "7px 0 0",
-    color: "#8f98aa",
+    color: "#8f8b92",
     fontSize: "11px",
-    lineHeight: 1.6,
   },
 };
