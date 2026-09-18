@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   requestTournamentJoin,
+  getPendingTournamentJoinRequest,
   confirmTournamentJoin,
 } from "../../../services/tournaments/tournamentService.js";
 
@@ -22,6 +23,38 @@ export default function TournamentDetails({ tournament, onBack }) {
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPendingRequest() {
+      if (!tournament?.id) return;
+
+      try {
+        const pending = await getPendingTournamentJoinRequest(tournament.id);
+        if (!active || !pending) return;
+
+        const pendingUids = Array.isArray(pending.free_fire_uids)
+          ? pending.free_fire_uids.map((uid) => String(uid))
+          : [];
+
+        setUids(pendingUids);
+        setRequestId(pending.id);
+        setMessage("");
+        setError("");
+      } catch (err) {
+        if (active) {
+          setError(err?.message || "Unable to load your pending join request.");
+        }
+      }
+    }
+
+    loadPendingRequest();
+
+    return () => {
+      active = false;
+    };
+  }, [tournament?.id]);
 
   if (!tournament) {
     return (
