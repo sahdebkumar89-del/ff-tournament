@@ -137,7 +137,8 @@ function registrationLabel(tournament, now) {
   const start = new Date(
     `${tournament.tournament_date}T${tournament.scheduled_start_time.slice(0, 8)}+06:00`
   ).getTime();
-  const remaining = start - now;
+  const registrationClose = start - 30 * 60 * 1000;
+  const remaining = registrationClose - now;
 
   if (remaining <= 0) return "Registration closed";
   if (remaining > 30 * 60 * 1000) return "Registration open";
