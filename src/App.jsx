@@ -8,6 +8,7 @@ import MyTournaments from "./pages/user/MyTournaments/MyTournaments.jsx";
 import Profile from "./pages/user/Profile/Profile.jsx";
 import Wallet from "./pages/user/Wallet/Wallet.jsx";
 import Notifications from "./pages/user/Notifications/Notifications.jsx";
+import Room from "./pages/user/Room/Room.jsx";
 import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
 
@@ -183,6 +184,8 @@ function Home() {
         {activePage === "tournaments" && <Tournaments />}
 
         {activePage === "my-tournaments" && <MyTournaments />}
+
+        {activePage === "room" && <Room />}
 
         {activePage === "wallet" && <Wallet />}
 
