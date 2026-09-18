@@ -1,7 +1,27 @@
 import React from "react";
+import Login from "./pages/user/Auth/Login.jsx";
+import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
 
 export default function App() {
+  const { user, loading: authLoading } = useAuthContext();
+
+  if (authLoading) {
+    return (
+      <div style={styles.loadingPage}>
+        Loading FF Tournament...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login />;
+  }
+
+  return <Home />;
+}
+
+function Home() {
   const { tournaments, loading, error } = useTournaments();
 
   return (
@@ -12,7 +32,10 @@ export default function App() {
           <h1 style={styles.title}>FF Tournament</h1>
         </div>
 
-        <button style={styles.notificationButton} aria-label="Notifications">
+        <button
+          style={styles.notificationButton}
+          aria-label="Notifications"
+        >
           🔔
         </button>
       </header>
@@ -21,7 +44,9 @@ export default function App() {
         <section style={styles.welcomeCard}>
           <div>
             <div style={styles.smallText}>WELCOME</div>
-            <h2 style={styles.welcomeTitle}>Battle. Compete. Earn.</h2>
+            <h2 style={styles.welcomeTitle}>
+              Battle. Compete. Earn.
+            </h2>
             <p style={styles.muted}>
               Daily Battle Royale tournaments from 9:00 AM to 11:30 PM.
             </p>
@@ -57,7 +82,10 @@ export default function App() {
               {tournaments.map((tournament) => (
                 <article key={tournament.id} style={styles.card}>
                   <div style={styles.cardHeader}>
-                    <h3 style={styles.mode}>{tournament.mode}</h3>
+                    <h3 style={styles.mode}>
+                      {tournament.mode}
+                    </h3>
+
                     <span style={styles.openBadge}>
                       {tournament.status}
                     </span>
@@ -98,6 +126,17 @@ export default function App() {
 }
 
 const styles = {
+  loadingPage: {
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#0b0f19",
+    color: "#f5f7fb",
+    fontFamily:
+      "Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+  },
+
   app: {
     minHeight: "100vh",
     background: "#0b0f19",
