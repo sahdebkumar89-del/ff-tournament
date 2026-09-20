@@ -365,9 +365,7 @@ function Home({ isAdmin, onOpenAdmin }) {
                           </span>
 
                           {tournament && (
-                            <span
-                              style={styles.openBadge}
-                            >
+                            <span style={styles.openBadge}>
                               OPEN
                             </span>
                           )}
@@ -375,17 +373,13 @@ function Home({ isAdmin, onOpenAdmin }) {
 
                         {tournament ? (
                           <>
-                            <div
-                              style={styles.matchTime}
-                            >
+                            <div style={styles.matchTime}>
                               {formatTime(
                                 tournament.scheduled_start_time
                               )}
                             </div>
 
-                            <div
-                              style={styles.matchMeta}
-                            >
+                            <div style={styles.matchMeta}>
                               Entry{" "}
                               <strong>
                                 ৳
@@ -395,9 +389,7 @@ function Home({ isAdmin, onOpenAdmin }) {
                               </strong>
                             </div>
 
-                            <div
-                              style={styles.matchMeta}
-                            >
+                            <div style={styles.matchMeta}>
                               Prize{" "}
                               <strong>
                                 ৳
@@ -407,9 +399,7 @@ function Home({ isAdmin, onOpenAdmin }) {
                               </strong>
                             </div>
 
-                            <div
-                              style={styles.countdown}
-                            >
+                            <div style={styles.countdown}>
                               {registrationCountdown(
                                 tournament,
                                 now
