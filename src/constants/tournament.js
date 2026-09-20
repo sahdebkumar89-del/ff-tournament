@@ -36,6 +36,8 @@ export const TOURNAMENT_CONFIG = {
   },
 };
 
+// Daily BR slots run from 09:00 through the 23:30 final start slot.
+// The 23:30 slot finishes at 00:00 the following calendar day.
 export const TOURNAMENT_SCHEDULE = {
   startTime: "09:00",
   endTime: "23:30",
