@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AdminWallet from "../Wallet/AdminWallet.jsx";
+import AdminResults from "../Results/AdminResults.jsx";
+import AdminNotifications from "../Notifications/AdminNotifications.jsx";
 import { supabase } from "../../../lib/supabase/client.js";
 
 export default function AdminTournaments({ onBack }) {
@@ -28,6 +30,9 @@ export default function AdminTournaments({ onBack }) {
   const [showWallet, setShowWallet] =
     useState(false);
 
+  const [showResults, setShowResults] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+
   async function loadTournaments() {
     setLoading(true);
     setMessage("");
@@ -55,6 +60,61 @@ export default function AdminTournaments({ onBack }) {
   useEffect(() => {
     loadTournaments();
   }, []);
+
+  async function toggleTournament(tournament) {
+    const nextEnabled = tournament.is_enabled === false;
+    const action = nextEnabled ? "enable" : "disable";
+    if (!window.confirm(`Are you sure you want to ${action} this tournament?`)) return;
+
+    setBusyId(tournament.id);
+    setMessage("");
+
+    const { error } = await supabase.rpc("admin_set_tournament_enabled", {
+      p_tournament_id: tournament.id,
+      p_enabled: nextEnabled,
+    });
+
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setMessage(nextEnabled ? "Tournament enabled." : "Tournament disabled.");
+      await loadTournaments();
+    }
+
+    setBusyId(null);
+  }
+
+  async function cancelTournament(tournament) {
+    const reason = window.prompt(
+      "Cancellation reason is required:",
+      ""
+    );
+
+    if (!reason?.trim()) return;
+
+    const confirmed = window.confirm(
+      `Cancel Tournament #${tournament.id} and automatically refund valid participants?`
+    );
+
+    if (!confirmed) return;
+
+    setBusyId(tournament.id);
+    setMessage("");
+
+    const { error } = await supabase.rpc("admin_cancel_tournament", {
+      p_tournament_id: tournament.id,
+      p_reason: reason.trim(),
+    });
+
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setMessage("Tournament cancelled and eligible refunds processed.");
+      await loadTournaments();
+    }
+
+    setBusyId(null);
+  }
 
   async function startTournament(tournament) {
     const confirmed = window.confirm(
@@ -223,6 +283,22 @@ export default function AdminTournaments({ onBack }) {
     );
   }
 
+  if (showResults) {
+    return (
+      <AdminResults
+        onBack={() => setShowResults(false)}
+      />
+    );
+  }
+
+  if (showNotifications) {
+    return (
+      <AdminNotifications
+        onBack={() => setShowNotifications(false)}
+      />
+    );
+  }
+
   return (
     <div style={styles.page}>
       <div style={styles.header}>
@@ -237,6 +313,22 @@ export default function AdminTournaments({ onBack }) {
         </div>
 
         <div style={styles.headerActions}>
+          <button
+            type="button"
+            onClick={() => setShowNotifications(true)}
+            style={styles.walletButton}
+          >
+            Notifications
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowResults(true)}
+            style={styles.walletButton}
+          >
+            Results
+          </button>
+
           <button
             type="button"
             onClick={() => setShowWallet(true)}
@@ -314,17 +406,24 @@ export default function AdminTournaments({ onBack }) {
                 </span>
               </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  openRoomManager(
-                    tournament.id
-                  )
-                }
-                style={styles.roomButton}
-              >
-                Manage Room
-              </button>
+              <div style={styles.adminCardActions}>
+                <button
+                  type="button"
+                  disabled={busyId === tournament.id}
+                  onClick={() => toggleTournament(tournament)}
+                  style={styles.roomButton}
+                >
+                  {tournament.is_enabled === false ? "Enable Tournament" : "Disable Tournament"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => openRoomManager(tournament.id)}
+                  style={styles.roomButton}
+                >
+                  Manage Room
+                </button>
+              </div>
 
               {canManualStart(tournament) && (
                 <button
@@ -342,6 +441,17 @@ export default function AdminTournaments({ onBack }) {
                   {busyId === tournament.id
                     ? "Starting..."
                     : "Start Tournament"}
+                </button>
+              )}
+
+              {["REGISTRATION", "FULL"].includes(tournament.status) && (
+                <button
+                  type="button"
+                  disabled={busyId === tournament.id}
+                  onClick={() => cancelTournament(tournament)}
+                  style={styles.cancelButton}
+                >
+                  Cancel Tournament
                 </button>
               )}
 
@@ -628,6 +738,13 @@ const styles = {
     fontSize: "10px",
   },
 
+  adminCardActions: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "8px",
+    marginTop: "13px",
+  },
+
   roomButton: {
     width: "100%",
     marginTop: "13px",
@@ -636,6 +753,17 @@ const styles = {
     borderRadius: "10px",
     background: "#241615",
     color: "#ff9b63",
+    fontWeight: "900",
+  },
+
+  cancelButton: {
+    width: "100%",
+    marginTop: "9px",
+    padding: "11px",
+    border: "1px solid #71302b",
+    borderRadius: "10px",
+    background: "#261516",
+    color: "#ff9f91",
     fontWeight: "900",
   },
 
