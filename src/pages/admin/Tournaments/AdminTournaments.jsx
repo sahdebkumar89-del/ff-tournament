@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
-import AdminNotifications from "../Notifications/AdminNotifications.jsx";
-import AdminResults from "../Results/AdminResults.jsx";
-import { supabase } from "../../../lib/supabase/client.js";
 import AdminWallet from "../Wallet/AdminWallet.jsx";
+import { supabase } from "../../../lib/supabase/client.js";
 
 export default function AdminTournaments({ onBack }) {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [message, setMessage] = useState("");
+
   const [roomTournamentId, setRoomTournamentId] = useState(null);
   const [roomLoading, setRoomLoading] = useState(false);
   const [roomSaving, setRoomSaving] = useState(false);
@@ -16,8 +15,7 @@ export default function AdminTournaments({ onBack }) {
   const [room, setRoom] = useState(null);
   const [roomId, setRoomId] = useState("");
   const [roomPassword, setRoomPassword] = useState("");
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showResults, setShowResults] = useState(false);
+
   const [showWallet, setShowWallet] = useState(false);
 
   async function loadTournaments() {
@@ -53,9 +51,12 @@ export default function AdminTournaments({ onBack }) {
     setBusyId(tournament.id);
     setMessage("");
 
-    const { error } = await supabase.rpc("admin_start_tournament", {
-      p_tournament_id: tournament.id,
-    });
+    const { error } = await supabase.rpc(
+      "admin_start_tournament",
+      {
+        p_tournament_id: tournament.id,
+      }
+    );
 
     if (error) {
       setMessage(error.message);
@@ -144,6 +145,7 @@ export default function AdminTournaments({ onBack }) {
       setMessage(
         "Room credentials released to joined players."
       );
+
       await openRoomManager(roomTournamentId);
     }
 
@@ -151,6 +153,13 @@ export default function AdminTournaments({ onBack }) {
   }
 
   function scheduledStart(tournament) {
+    if (
+      !tournament?.tournament_date ||
+      !tournament?.scheduled_start_time
+    ) {
+      return Number.POSITIVE_INFINITY;
+    }
+
     return new Date(
       `${tournament.tournament_date}T${tournament.scheduled_start_time.slice(
         0,
@@ -182,21 +191,23 @@ export default function AdminTournaments({ onBack }) {
           </h1>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowWallet(true)}
-          style={styles.walletButton}
-        >
-          Wallet
-        </button>
+        <div style={styles.headerActions}>
+          <button
+            type="button"
+            onClick={() => setShowWallet(true)}
+            style={styles.walletButton}
+          >
+            Wallet
+          </button>
 
-        <button
-          type="button"
-          onClick={onBack}
-          style={styles.backButton}
-        >
-          User App
-        </button>
+          <button
+            type="button"
+            onClick={onBack}
+            style={styles.backButton}
+          >
+            User App
+          </button>
+        </div>
       </div>
 
       {showWallet ? (
@@ -252,15 +263,16 @@ export default function AdminTournaments({ onBack }) {
                     </span>
 
                     <span>
-                      {tournament.scheduled_start_time.slice(
-                        0,
-                        5
-                      )}
+                      {tournament.scheduled_start_time
+                        ? tournament.scheduled_start_time.slice(
+                            0,
+                            5
+                          )
+                        : "—"}
                     </span>
 
                     <span>
-                      Capacity{" "}
-                      {tournament.max_players}
+                      Capacity {tournament.max_players}
                     </span>
                   </div>
 
@@ -303,9 +315,7 @@ export default function AdminTournaments({ onBack }) {
                       >
                         <div>
                           <div
-                            style={
-                              styles.roomKicker
-                            }
+                            style={styles.roomKicker}
                           >
                             ROOM DELIVERY
                           </div>
@@ -324,9 +334,7 @@ export default function AdminTournaments({ onBack }) {
                               null
                             )
                           }
-                          style={
-                            styles.closeButton
-                          }
+                          style={styles.closeButton}
                         >
                           Close
                         </button>
@@ -334,9 +342,7 @@ export default function AdminTournaments({ onBack }) {
 
                       {roomLoading ? (
                         <div
-                          style={
-                            styles.roomLoading
-                          }
+                          style={styles.roomLoading}
                         >
                           Loading room...
                         </div>
@@ -351,8 +357,7 @@ export default function AdminTournaments({ onBack }) {
                               value={roomId}
                               onChange={(event) =>
                                 setRoomId(
-                                  event.target
-                                    .value
+                                  event.target.value
                                 )
                               }
                               placeholder="Enter Room ID"
@@ -369,8 +374,7 @@ export default function AdminTournaments({ onBack }) {
                               value={roomPassword}
                               onChange={(event) =>
                                 setRoomPassword(
-                                  event.target
-                                    .value
+                                  event.target.value
                                 )
                               }
                               placeholder="Enter Room Password"
@@ -488,6 +492,13 @@ const styles = {
     marginBottom: "20px",
   },
 
+  headerActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flexShrink: 0,
+  },
+
   kicker: {
     color: "#ff7130",
     fontSize: "10px",
@@ -507,7 +518,6 @@ const styles = {
     background: "#291716",
     color: "#ffae6d",
     fontWeight: "900",
-    marginRight: "8px",
   },
 
   backButton: {
