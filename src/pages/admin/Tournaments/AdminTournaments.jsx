@@ -33,6 +33,13 @@ export default function AdminTournaments({ onBack }) {
   const [showResults, setShowResults] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    mode: "SOLO",
+    tournamentDate: "",
+    startTime: "09:00",
+  });
+
   async function loadTournaments() {
     setLoading(true);
     setMessage("");
@@ -60,6 +67,32 @@ export default function AdminTournaments({ onBack }) {
   useEffect(() => {
     loadTournaments();
   }, []);
+
+  async function createTournament() {
+    if (!createForm.tournamentDate || !createForm.startTime) {
+      setMessage("Tournament date and start time are required.");
+      return;
+    }
+
+    setBusyId("create");
+    setMessage("");
+
+    const { error } = await supabase.rpc("admin_create_tournament", {
+      p_mode: createForm.mode,
+      p_tournament_date: createForm.tournamentDate,
+      p_scheduled_start_time: createForm.startTime,
+    });
+
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setMessage("Tournament created with the approved mode preset.");
+      setShowCreate(false);
+      await loadTournaments();
+    }
+
+    setBusyId(null);
+  }
 
   async function toggleTournament(tournament) {
     const nextEnabled = tournament.is_enabled === false;
@@ -315,6 +348,14 @@ export default function AdminTournaments({ onBack }) {
         <div style={styles.headerActions}>
           <button
             type="button"
+            onClick={() => setShowCreate((value) => !value)}
+            style={styles.walletButton}
+          >
+            {showCreate ? "Close Create" : "Create"}
+          </button>
+
+          <button
+            type="button"
             onClick={() => setShowNotifications(true)}
             style={styles.walletButton}
           >
@@ -351,6 +392,75 @@ export default function AdminTournaments({ onBack }) {
         <div style={styles.message}>
           {message}
         </div>
+      )}
+
+      {showCreate && (
+        <section style={styles.createPanel}>
+          <div style={styles.roomKicker}>CREATE TOURNAMENT</div>
+          <h2 style={styles.createTitle}>New BR Tournament</h2>
+
+          <label style={styles.label}>
+            Mode
+            <select
+              value={createForm.mode}
+              onChange={(event) =>
+                setCreateForm((value) => ({
+                  ...value,
+                  mode: event.target.value,
+                }))
+              }
+              style={styles.input}
+            >
+              <option value="SOLO">SOLO</option>
+              <option value="DUO">DUO</option>
+              <option value="SQUAD">SQUAD</option>
+            </select>
+          </label>
+
+          <label style={styles.label}>
+            Tournament date
+            <input
+              type="date"
+              value={createForm.tournamentDate}
+              onChange={(event) =>
+                setCreateForm((value) => ({
+                  ...value,
+                  tournamentDate: event.target.value,
+                }))
+              }
+              style={styles.input}
+            />
+          </label>
+
+          <label style={styles.label}>
+            Start time
+            <input
+              type="time"
+              step="1800"
+              value={createForm.startTime}
+              onChange={(event) =>
+                setCreateForm((value) => ({
+                  ...value,
+                  startTime: event.target.value,
+                }))
+              }
+              style={styles.input}
+            />
+          </label>
+
+          <div style={styles.createNote}>
+            Approved entry fees, prizes, kill reward and capacity are used automatically from the selected mode preset.
+          </div>
+
+          <button
+            type="button"
+            disabled={busyId === "create"}
+            onClick={createTournament}
+            style={styles.startButton}
+          >
+            {busyId === "create" ? "Creating..." : "Create Tournament"}
+          </button>
+        </section>
       )}
 
       {loading ? (
@@ -736,6 +846,26 @@ const styles = {
     marginTop: "11px",
     color: "#918d94",
     fontSize: "10px",
+  },
+
+  createPanel: {
+    marginBottom: "16px",
+    padding: "15px",
+    borderRadius: "17px",
+    background: "#121216",
+    border: "1px solid #4d2924",
+  },
+
+  createTitle: {
+    margin: "5px 0 8px",
+    fontSize: "17px",
+  },
+
+  createNote: {
+    marginTop: "10px",
+    color: "#858087",
+    fontSize: "9px",
+    lineHeight: 1.5,
   },
 
   adminCardActions: {
