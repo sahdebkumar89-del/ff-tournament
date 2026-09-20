@@ -16,20 +16,29 @@ import { supabase } from "./lib/supabase/client.js";
 
 export default function App() {
   const { user, loading: authLoading } = useAuthContext();
+
   const [authPage, setAuthPage] = useState("login");
   const [role, setRole] = useState(null);
   const [roleLoading, setRoleLoading] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
 
   if (authLoading) {
-    return <div style={styles.loadingPage}>Loading FF Tournament...</div>;
+    return (
+      <div style={styles.loadingPage}>
+        Loading FF Tournament...
+      </div>
+    );
   }
 
   if (!user) {
     return authPage === "signup" ? (
-      <Signup onBackToLogin={() => setAuthPage("login")} />
+      <Signup
+        onBackToLogin={() => setAuthPage("login")}
+      />
     ) : (
-      <Login onCreateAccount={() => setAuthPage("signup")} />
+      <Login
+        onCreateAccount={() => setAuthPage("signup")}
+      />
     );
   }
 
@@ -61,16 +70,21 @@ function AuthenticatedApp({
     async function loadRole() {
       setRoleLoading(true);
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (active) {
+      if (!active) return;
+
+      if (error) {
+        setRole("USER");
+      } else {
         setRole(data?.role || "USER");
-        setRoleLoading(false);
       }
+
+      setRoleLoading(false);
     }
 
     loadRole();
@@ -81,11 +95,19 @@ function AuthenticatedApp({
   }, [user.id, setRole, setRoleLoading]);
 
   if (roleLoading || !role) {
-    return <div style={styles.loadingPage}>Loading FF Tournament...</div>;
+    return (
+      <div style={styles.loadingPage}>
+        Loading FF Tournament...
+      </div>
+    );
   }
 
   if (showAdmin && role === "ADMIN") {
-    return <AdminTournaments onBack={() => setShowAdmin(false)} />;
+    return (
+      <AdminTournaments
+        onBack={() => setShowAdmin(false)}
+      />
+    );
   }
 
   return (
@@ -97,12 +119,23 @@ function AuthenticatedApp({
 }
 
 function Home({ isAdmin, onOpenAdmin }) {
-  const { tournaments, loading, error } = useTournaments();
+  const {
+    tournaments,
+    loading,
+    error,
+  } = useTournaments();
 
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [activePage, setActivePage] = useState("home");
-  const [selectedTournament, setSelectedTournament] = useState(null);
+  const [unreadNotifications, setUnreadNotifications] =
+    useState(0);
+
+  const [activePage, setActivePage] =
+    useState("home");
+
+  const [selectedTournament, setSelectedTournament] =
+    useState(null);
+
   const [balance, setBalance] = useState(0);
+
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -110,7 +143,9 @@ function Home({ isAdmin, onOpenAdmin }) {
       setNow(Date.now());
     }, 1000);
 
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -123,13 +158,17 @@ function Home({ isAdmin, onOpenAdmin }) {
 
       if (!user) return;
 
-      const { data: notificationRows } = await supabase
+      const {
+        data: notificationRows,
+      } = await supabase
         .from("notifications")
         .select("id")
         .eq("recipient_user_id", user.id)
         .limit(100);
 
-      const ids = (notificationRows || []).map((item) => item.id);
+      const ids = (notificationRows || []).map(
+        (item) => item.id
+      );
 
       if (!ids.length) {
         if (active) {
@@ -144,15 +183,17 @@ function Home({ isAdmin, onOpenAdmin }) {
         .eq("user_id", user.id)
         .in("notification_id", ids);
 
-      if (active) {
-        const readIds = new Set(
-          (readRows || []).map((item) => item.notification_id)
-        );
+      if (!active) return;
 
-        setUnreadNotifications(
-          ids.filter((id) => !readIds.has(id)).length
-        );
-      }
+      const readIds = new Set(
+        (readRows || []).map(
+          (item) => item.notification_id
+        )
+      );
+
+      setUnreadNotifications(
+        ids.filter((id) => !readIds.has(id)).length
+      );
     }
 
     loadUnreadNotifications();
@@ -208,7 +249,7 @@ function Home({ isAdmin, onOpenAdmin }) {
       SQUAD: null,
     };
 
-    tournaments
+    (tournaments || [])
       .filter((tournament) =>
         isRegistrationOpen(tournament, now)
       )
@@ -226,7 +267,7 @@ function Home({ isAdmin, onOpenAdmin }) {
     return result;
   }, [tournaments, now]);
 
-  const liveTournament = tournaments.find(
+  const liveTournament = (tournaments || []).find(
     (tournament) => tournament.status === "STARTED"
   );
 
@@ -365,7 +406,9 @@ function Home({ isAdmin, onOpenAdmin }) {
                           </span>
 
                           {tournament && (
-                            <span style={styles.openBadge}>
+                            <span
+                              style={styles.openBadge}
+                            >
                               OPEN
                             </span>
                           )}
@@ -373,13 +416,17 @@ function Home({ isAdmin, onOpenAdmin }) {
 
                         {tournament ? (
                           <>
-                            <div style={styles.matchTime}>
+                            <div
+                              style={styles.matchTime}
+                            >
                               {formatTime(
                                 tournament.scheduled_start_time
                               )}
                             </div>
 
-                            <div style={styles.matchMeta}>
+                            <div
+                              style={styles.matchMeta}
+                            >
                               Entry{" "}
                               <strong>
                                 ৳
@@ -389,7 +436,9 @@ function Home({ isAdmin, onOpenAdmin }) {
                               </strong>
                             </div>
 
-                            <div style={styles.matchMeta}>
+                            <div
+                              style={styles.matchMeta}
+                            >
                               Prize{" "}
                               <strong>
                                 ৳
@@ -399,7 +448,9 @@ function Home({ isAdmin, onOpenAdmin }) {
                               </strong>
                             </div>
 
-                            <div style={styles.countdown}>
+                            <div
+                              style={styles.countdown}
+                            >
                               {registrationCountdown(
                                 tournament,
                                 now
@@ -552,11 +603,12 @@ function isRegistrationOpen(tournament, now) {
     return false;
   }
 
-  const registrationOpen = tournament.registration_opens_at
-    ? new Date(
-        tournament.registration_opens_at
-      ).getTime()
-    : Number.NEGATIVE_INFINITY;
+  const registrationOpen =
+    tournament.registration_opens_at
+      ? new Date(
+          tournament.registration_opens_at
+        ).getTime()
+      : Number.NEGATIVE_INFINITY;
 
   const registrationClose =
     start - 30 * 60 * 1000;
