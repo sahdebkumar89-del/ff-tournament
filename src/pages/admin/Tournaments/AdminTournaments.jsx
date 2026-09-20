@@ -8,24 +8,39 @@ export default function AdminTournaments({ onBack }) {
   const [busyId, setBusyId] = useState(null);
   const [message, setMessage] = useState("");
 
-  const [roomTournamentId, setRoomTournamentId] = useState(null);
-  const [roomLoading, setRoomLoading] = useState(false);
-  const [roomSaving, setRoomSaving] = useState(false);
-  const [roomReleasing, setRoomReleasing] = useState(false);
+  const [roomTournamentId, setRoomTournamentId] =
+    useState(null);
+
+  const [roomLoading, setRoomLoading] =
+    useState(false);
+
+  const [roomSaving, setRoomSaving] =
+    useState(false);
+
+  const [roomReleasing, setRoomReleasing] =
+    useState(false);
+
   const [room, setRoom] = useState(null);
   const [roomId, setRoomId] = useState("");
-  const [roomPassword, setRoomPassword] = useState("");
+  const [roomPassword, setRoomPassword] =
+    useState("");
 
-  const [showWallet, setShowWallet] = useState(false);
+  const [showWallet, setShowWallet] =
+    useState(false);
 
   async function loadTournaments() {
     setLoading(true);
+    setMessage("");
 
     const { data, error } = await supabase
       .from("tournaments")
       .select("*")
-      .order("tournament_date", { ascending: true })
-      .order("scheduled_start_time", { ascending: true });
+      .order("tournament_date", {
+        ascending: true,
+      })
+      .order("scheduled_start_time", {
+        ascending: true,
+      });
 
     if (error) {
       setMessage(error.message);
@@ -61,7 +76,10 @@ export default function AdminTournaments({ onBack }) {
     if (error) {
       setMessage(error.message);
     } else {
-      setMessage("Tournament started successfully.");
+      setMessage(
+        "Tournament started successfully."
+      );
+
       await loadTournaments();
     }
 
@@ -74,6 +92,7 @@ export default function AdminTournaments({ onBack }) {
     setRoom(null);
     setRoomId("");
     setRoomPassword("");
+    setMessage("");
 
     const { data, error } = await supabase.rpc(
       "admin_get_tournament_room",
@@ -85,11 +104,15 @@ export default function AdminTournaments({ onBack }) {
     if (error) {
       setMessage(error.message);
     } else {
-      const row = Array.isArray(data) ? data[0] : data;
+      const row = Array.isArray(data)
+        ? data[0]
+        : data;
 
       setRoom(row || null);
       setRoomId(row?.room_id || "");
-      setRoomPassword(row?.room_password || "");
+      setRoomPassword(
+        row?.room_password || ""
+      );
     }
 
     setRoomLoading(false);
@@ -98,6 +121,13 @@ export default function AdminTournaments({ onBack }) {
   async function saveRoom() {
     if (!roomTournamentId) return;
 
+    if (!roomId.trim() || !roomPassword.trim()) {
+      setMessage(
+        "Room ID and password are required."
+      );
+      return;
+    }
+
     setRoomSaving(true);
     setMessage("");
 
@@ -105,8 +135,8 @@ export default function AdminTournaments({ onBack }) {
       "admin_upsert_tournament_room",
       {
         p_tournament_id: roomTournamentId,
-        p_room_id: roomId,
-        p_room_password: roomPassword,
+        p_room_id: roomId.trim(),
+        p_room_password: roomPassword.trim(),
       }
     );
 
@@ -114,7 +144,10 @@ export default function AdminTournaments({ onBack }) {
       setMessage(error.message);
     } else {
       setMessage("Room credentials saved.");
-      await openRoomManager(roomTournamentId);
+
+      await openRoomManager(
+        roomTournamentId
+      );
     }
 
     setRoomSaving(false);
@@ -146,7 +179,9 @@ export default function AdminTournaments({ onBack }) {
         "Room credentials released to joined players."
       );
 
-      await openRoomManager(roomTournamentId);
+      await openRoomManager(
+        roomTournamentId
+      );
     }
 
     setRoomReleasing(false);
@@ -180,11 +215,21 @@ export default function AdminTournaments({ onBack }) {
     return Date.now() >= scheduledStart(tournament);
   }
 
+  if (showWallet) {
+    return (
+      <AdminWallet
+        onBack={() => setShowWallet(false)}
+      />
+    );
+  }
+
   return (
     <div style={styles.page}>
       <div style={styles.header}>
         <div>
-          <div style={styles.kicker}>ADMIN PANEL</div>
+          <div style={styles.kicker}>
+            ADMIN PANEL
+          </div>
 
           <h1 style={styles.title}>
             Tournament Control
@@ -210,233 +255,237 @@ export default function AdminTournaments({ onBack }) {
         </div>
       </div>
 
-      {showWallet ? (
-        <AdminWallet
-          onBack={() => setShowWallet(false)}
-        />
+      {message && (
+        <div style={styles.message}>
+          {message}
+        </div>
+      )}
+
+      {loading ? (
+        <div style={styles.empty}>
+          Loading tournaments...
+        </div>
+      ) : tournaments.length === 0 ? (
+        <div style={styles.empty}>
+          No tournaments available.
+        </div>
       ) : (
-        <>
-          {message && (
-            <div style={styles.message}>
-              {message}
-            </div>
-          )}
+        <div style={styles.list}>
+          {tournaments.map((tournament) => (
+            <article
+              key={tournament.id}
+              style={styles.card}
+            >
+              <div style={styles.cardTop}>
+                <div>
+                  <span style={styles.mode}>
+                    {tournament.mode}
+                  </span>
 
-          {loading ? (
-            <div style={styles.empty}>
-              Loading tournaments...
-            </div>
-          ) : tournaments.length === 0 ? (
-            <div style={styles.empty}>
-              No tournaments available.
-            </div>
-          ) : (
-            <div style={styles.list}>
-              {tournaments.map((tournament) => (
-                <article
-                  key={tournament.id}
-                  style={styles.card}
-                >
-                  <div style={styles.cardTop}>
-                    <div>
-                      <span style={styles.mode}>
-                        {tournament.mode}
-                      </span>
+                  <h2 style={styles.cardTitle}>
+                    Tournament #{tournament.id}
+                  </h2>
+                </div>
 
-                      <h2 style={styles.cardTitle}>
-                        Tournament #{tournament.id}
-                      </h2>
-                    </div>
-
-                    <span
-                      style={statusStyle(
-                        tournament.status
-                      )}
-                    >
-                      {tournament.status}
-                    </span>
-                  </div>
-
-                  <div style={styles.meta}>
-                    <span>
-                      {tournament.tournament_date}
-                    </span>
-
-                    <span>
-                      {tournament.scheduled_start_time
-                        ? tournament.scheduled_start_time.slice(
-                            0,
-                            5
-                          )
-                        : "—"}
-                    </span>
-
-                    <span>
-                      Capacity {tournament.max_players}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openRoomManager(tournament.id)
-                    }
-                    style={styles.roomButton}
-                  >
-                    Manage Room
-                  </button>
-
-                  {canManualStart(tournament) && (
-                    <button
-                      type="button"
-                      disabled={
-                        busyId === tournament.id
-                      }
-                      onClick={() =>
-                        startTournament(tournament)
-                      }
-                      style={styles.startButton}
-                    >
-                      {busyId === tournament.id
-                        ? "Starting..."
-                        : "Start Tournament"}
-                    </button>
+                <span
+                  style={statusStyle(
+                    tournament.status
                   )}
+                >
+                  {tournament.status}
+                </span>
+              </div>
 
-                  {roomTournamentId ===
-                    tournament.id && (
-                    <section
-                      style={styles.roomPanel}
-                    >
+              <div style={styles.meta}>
+                <span>
+                  {tournament.tournament_date}
+                </span>
+
+                <span>
+                  {tournament.scheduled_start_time?.slice(
+                    0,
+                    5
+                  )}
+                </span>
+
+                <span>
+                  Capacity{" "}
+                  {tournament.max_players}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  openRoomManager(
+                    tournament.id
+                  )
+                }
+                style={styles.roomButton}
+              >
+                Manage Room
+              </button>
+
+              {canManualStart(tournament) && (
+                <button
+                  type="button"
+                  disabled={
+                    busyId === tournament.id
+                  }
+                  onClick={() =>
+                    startTournament(
+                      tournament
+                    )
+                  }
+                  style={styles.startButton}
+                >
+                  {busyId === tournament.id
+                    ? "Starting..."
+                    : "Start Tournament"}
+                </button>
+              )}
+
+              {roomTournamentId ===
+                tournament.id && (
+                <section
+                  style={styles.roomPanel}
+                >
+                  <div
+                    style={
+                      styles.roomPanelHeader
+                    }
+                  >
+                    <div>
                       <div
                         style={
-                          styles.roomPanelHeader
+                          styles.roomKicker
                         }
                       >
-                        <div>
-                          <div
-                            style={styles.roomKicker}
-                          >
-                            ROOM DELIVERY
-                          </div>
+                        ROOM DELIVERY
+                      </div>
 
-                          <h3
-                            style={styles.roomTitle}
-                          >
-                            Room Credentials
-                          </h3>
-                        </div>
+                      <h3
+                        style={
+                          styles.roomTitle
+                        }
+                      >
+                        Room Credentials
+                      </h3>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRoomTournamentId(
+                          null
+                        );
+                        setRoom(null);
+                      }}
+                      style={styles.closeButton}
+                    >
+                      Close
+                    </button>
+                  </div>
+
+                  {roomLoading ? (
+                    <div
+                      style={
+                        styles.roomLoading
+                      }
+                    >
+                      Loading room...
+                    </div>
+                  ) : (
+                    <>
+                      <label
+                        style={styles.label}
+                      >
+                        Room ID
+
+                        <input
+                          value={roomId}
+                          onChange={(event) =>
+                            setRoomId(
+                              event.target.value
+                            )
+                          }
+                          placeholder="Enter Room ID"
+                          style={styles.input}
+                        />
+                      </label>
+
+                      <label
+                        style={styles.label}
+                      >
+                        Password
+
+                        <input
+                          value={roomPassword}
+                          onChange={(event) =>
+                            setRoomPassword(
+                              event.target.value
+                            )
+                          }
+                          placeholder="Enter Room Password"
+                          style={styles.input}
+                        />
+                      </label>
+
+                      <div
+                        style={
+                          styles.roomActions
+                        }
+                      >
+                        <button
+                          type="button"
+                          disabled={roomSaving}
+                          onClick={saveRoom}
+                          style={
+                            styles.saveButton
+                          }
+                        >
+                          {roomSaving
+                            ? "Saving..."
+                            : "Save Room"}
+                        </button>
 
                         <button
                           type="button"
-                          onClick={() =>
-                            setRoomTournamentId(
-                              null
-                            )
+                          disabled={
+                            !room ||
+                            roomReleasing
                           }
-                          style={styles.closeButton}
+                          onClick={
+                            releaseRoom
+                          }
+                          style={
+                            styles.releaseButton
+                          }
                         >
-                          Close
+                          {roomReleasing
+                            ? "Releasing..."
+                            : "Release Now"}
                         </button>
                       </div>
 
-                      {roomLoading ? (
-                        <div
-                          style={styles.roomLoading}
-                        >
-                          Loading room...
-                        </div>
-                      ) : (
-                        <>
-                          <label
-                            style={styles.label}
-                          >
-                            Room ID
-
-                            <input
-                              value={roomId}
-                              onChange={(event) =>
-                                setRoomId(
-                                  event.target.value
-                                )
-                              }
-                              placeholder="Enter Room ID"
-                              style={styles.input}
-                            />
-                          </label>
-
-                          <label
-                            style={styles.label}
-                          >
-                            Password
-
-                            <input
-                              value={roomPassword}
-                              onChange={(event) =>
-                                setRoomPassword(
-                                  event.target.value
-                                )
-                              }
-                              placeholder="Enter Room Password"
-                              style={styles.input}
-                            />
-                          </label>
-
-                          <div
-                            style={
-                              styles.roomActions
-                            }
-                          >
-                            <button
-                              type="button"
-                              disabled={roomSaving}
-                              onClick={saveRoom}
-                              style={
-                                styles.saveButton
-                              }
-                            >
-                              {roomSaving
-                                ? "Saving..."
-                                : "Save Room"}
-                            </button>
-
-                            <button
-                              type="button"
-                              disabled={
-                                !room ||
-                                roomReleasing
-                              }
-                              onClick={releaseRoom}
-                              style={
-                                styles.releaseButton
-                              }
-                            >
-                              {roomReleasing
-                                ? "Releasing..."
-                                : "Release Now"}
-                            </button>
-                          </div>
-
-                          <div
-                            style={
-                              styles.releaseInfo
-                            }
-                          >
-                            {room?.released_at
-                              ? `Released at ${formatReleasedAt(
-                                  room.released_at
-                                )}`
-                              : "Automatic release: 10 minutes before match when the tournament is full/started."}
-                          </div>
-                        </>
-                      )}
-                    </section>
+                      <div
+                        style={
+                          styles.releaseInfo
+                        }
+                      >
+                        {room?.released_at
+                          ? `Released at ${formatReleasedAt(
+                              room.released_at
+                            )}`
+                          : "Automatic release: 10 minutes before match when the tournament is full/started."}
+                      </div>
+                    </>
                   )}
-                </article>
-              ))}
-            </div>
-          )}
-        </>
+                </section>
+              )}
+            </article>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -468,7 +517,8 @@ function statusStyle(status) {
     padding: "6px 9px",
     borderRadius: "8px",
     background: "#1c191c",
-    color: colors[status] || "#c7c3c8",
+    color:
+      colors[status] || "#c7c3c8",
     fontSize: "9px",
     fontWeight: "900",
   };
@@ -496,7 +546,6 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    flexShrink: 0,
   },
 
   kicker: {
