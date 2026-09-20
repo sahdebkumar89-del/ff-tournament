@@ -1,15 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl =
-  import.meta.env.VITE_SUPABASE_URL ||
-  "https://ehcvxzaoodwpuoqwbrot.supabase.co";
-
-const supabaseKey =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+// Production is intentionally pinned to the approved Supabase project.
+// Vercel environment variables are not allowed to silently redirect the app
+// to a different Supabase project.
+const SUPABASE_URL = "https://ehcvxzaoodwpuoqwbrot.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_BYmzvT3Ki7p7BvhJaXKbUA_-Ui7oSXN";
 
 export const supabase = createClient(
-  supabaseUrl,
-  supabaseKey
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
 );
