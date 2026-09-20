@@ -172,6 +172,7 @@ export default function MyTournaments() {
                 item={item}
                 tournament={tournament}
                 now={now}
+                results={publishedResults[item.tournament_id] || []}
               />
             );
           })}
@@ -181,7 +182,7 @@ export default function MyTournaments() {
   );
 }
 
-function TournamentCard({ item, tournament, now, results }) {
+function TournamentCard({ item, tournament, now, results = [] }) {
   const isCancelled = tournament.status === "CANCELLED" || item.status === "CANCELLED";
   const isCompleted = tournament.status === "COMPLETED";
   const isStarted = tournament.status === "STARTED";
@@ -242,11 +243,29 @@ function TournamentCard({ item, tournament, now, results }) {
         )}
       </div>
 
-      {results.length > 0 && (\n        <div style={styles.resultBox}>\n          <div style={styles.resultTitle}>RESULT PUBLISHED</div>\n          {results.map((r) => (\n            <div key={r.result_id} style={styles.resultRow}>\n              <span>Position #{r.result_position} • {r.result_kills} kills</span>\n              <strong>৳{Number(r.total_payout).toFixed(0)}</strong>\n            </div>\n          ))}\n          <div style={styles.resultNote}>Wallet payout is credited only after Admin approval.</div>\n        </div>\n      )}\n\n      <div style={getFooterStyle(tournament.status)}
-        <span>{isCancelled ? "Entry fee refund is handled through the wallet transaction flow." :
-          isCompleted ? "Match completed. Published results are shown above when available." :
-          isStarted ? "Match is live. Room access is restricted to joined players." :
-          "You are registered. Room details will be available according to the room-release schedule."}</span>
+      {results.length > 0 && (
+        <div style={styles.resultBox}>
+          <div style={styles.resultTitle}>RESULT PUBLISHED</div>
+          {results.map((r) => (
+            <div key={r.result_id} style={styles.resultRow}>
+              <span>Position #{r.result_position} • {r.result_kills} kills</span>
+              <strong>৳{Number(r.total_payout).toFixed(0)}</strong>
+            </div>
+          ))}
+          <div style={styles.resultNote}>Wallet payout is credited only after Admin approval.</div>
+        </div>
+      )}
+
+      <div style={getFooterStyle(tournament.status)}>
+        <span>
+          {isCancelled
+            ? "Entry fee refund is handled through the wallet transaction flow."
+            : isCompleted
+              ? "Match completed. Published results are shown above when available."
+              : isStarted
+                ? "Match is live. Room access is restricted to joined players."
+                : "You are registered. Room details will be available according to the room-release schedule."}
+        </span>
       </div>
     </article>
   );
