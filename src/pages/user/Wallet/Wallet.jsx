@@ -44,6 +44,7 @@ export default function Wallet() {
       const { data: paymentRows, error: paymentError } = await supabase
         .from("payment_transactions")
         .select("id,transaction_type,amount,payment_method,payment_reference,status,admin_note,approved_at,created_at")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (paymentError) throw paymentError;
       setPayments(paymentRows || []);
