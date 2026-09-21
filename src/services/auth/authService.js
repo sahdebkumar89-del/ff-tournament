@@ -20,6 +20,32 @@ export async function signUp(email, password, freeFireUid) {
   return data;
 }
 
+export async function signInAdmin(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+
+  const userId = data?.user?.id;
+  if (!userId) throw new Error("Unable to confirm your account.");
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (profileError) {
+    await supabase.auth.signOut();
+    throw new Error("Unable to verify your Admin access. Please try again.");
+  }
+
+  if (profile?.role !== "ADMIN") {
+    await supabase.auth.signOut();
+    throw new Error("This account does not have Admin access.");
+  }
+
+  return data;
+}
+
 export async function signIn(email, password, freeFireUid) {
   const uid = normalizeUid(freeFireUid);
   if (!/^[0-9]{5,20}$/.test(uid)) {
