@@ -32,8 +32,11 @@ export function useTournaments() {
 
     loadTournaments();
 
+    const refreshTimer = window.setInterval(loadTournaments, 60 * 1000);
+
     return () => {
       active = false;
+      window.clearInterval(refreshTimer);
     };
   }, []);
 
