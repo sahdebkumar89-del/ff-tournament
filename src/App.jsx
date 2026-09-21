@@ -18,6 +18,7 @@ import { supabase } from "./lib/supabase/client.js";
 export default function App() {
   const { user, loading: authLoading } = useAuthContext();
   const isAdminLoginPath = window.location.pathname === "/admin-login";
+  const isAdminPath = window.location.pathname === "/admin";
 
   const [authPage, setAuthPage] = useState("login");
   const [role, setRole] = useState(null);
@@ -48,7 +49,7 @@ export default function App() {
     );
   }
 
-  if (isAdminLoginPath) {
+  if (isAdminLoginPath || isAdminPath) {
     return (
       <AuthenticatedApp
         user={user}
