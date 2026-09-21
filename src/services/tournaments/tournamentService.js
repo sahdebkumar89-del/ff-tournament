@@ -32,8 +32,47 @@ export async function getTournaments() {
 
   if (error) throw error;
 
-  const tournaments = data ?? [];
-  if (tournaments.length === 0) return tournaments;
+  const rawTournaments = data ?? [];
+  if (rawTournaments.length === 0) return rawTournaments;
+
+  // The player-facing list is a rolling 30-slot board.
+  // A next-day slot replaces today's completed slot only after its
+  // registration_open_at time has actually arrived. This prevents
+  // tomorrow's ready slots from being shown in addition to today's slots.
+  const now = new Date();
+  const bySlot = new Map();
+
+  for (const tournament of rawTournaments) {
+    const slotId = Number(tournament.slot_id);
+    const existing = bySlot.get(slotId);
+
+    if (!existing) {
+      bySlot.set(slotId, tournament);
+      continue;
+    }
+
+    const currentDate = String(existing.tournament_date);
+    const candidateDate = String(tournament.tournament_date);
+    const candidateIsReady =
+      candidateDate === tomorrow &&
+      tournament.registration_opens_at &&
+      new Date(tournament.registration_opens_at) <= now;
+
+    if (candidateIsReady) {
+      bySlot.set(slotId, tournament);
+    } else if (
+      candidateDate === currentDate &&
+      tournament.status !== "COMPLETED" &&
+      tournament.status !== "CANCELLED"
+    ) {
+      bySlot.set(slotId, tournament);
+    }
+  }
+
+  const tournaments = Array.from(bySlot.values()).sort((a, b) => {
+    const dateCompare = String(a.tournament_date).localeCompare(String(b.tournament_date));
+    return dateCompare || Number(a.slot_id) - Number(b.slot_id);
+  });
 
   const ids = tournaments.map((tournament) => tournament.id);
   const { data: counts, error: countError } = await supabase.rpc(
