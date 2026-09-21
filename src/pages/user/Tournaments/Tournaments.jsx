@@ -20,8 +20,36 @@ export default function Tournaments() {
       ? tournaments
       : tournaments.filter((tournament) => tournament.mode === filter);
 
-    return [...byMode].sort((a, b) => tournamentDisplayOrder(a, b));
-  }, [tournaments, filter, now]);
+    return [...byMode].sort((a, b) => {
+      const aFinished = a.status === "COMPLETED" || a.status === "CANCELLED";
+      const bFinished = b.status === "COMPLETED" || b.status === "CANCELLED";
+      if (aFinished !== bFinished) return aFinished ? 1 : -1;
+
+      const dateCompare = String(a.tournament_date).localeCompare(String(b.tournament_date));
+      if (dateCompare !== 0) return dateCompare;
+
+      return Number(a.slot_id) - Number(b.slot_id);
+    });
+  }, [tournaments, filter]);
+
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Dhaka",
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+
+  const upcoming = filtered.filter((tournament) =>
+    tournament.tournament_date === today &&
+    tournament.status !== "COMPLETED" &&
+    tournament.status !== "CANCELLED"
+  );
+
+  const lowerSection = filtered.filter((tournament) =>
+    !(
+      tournament.tournament_date === today &&
+      tournament.status !== "COMPLETED" &&
+      tournament.status !== "CANCELLED"
+    )
+  );
 
   if (selectedTournament) {
     return (
@@ -31,6 +59,44 @@ export default function Tournaments() {
       />
     );
   }
+
+  const renderCard = (tournament) => (
+    <article key={tournament.id} style={styles.card}>
+      <div style={styles.cardTop}>
+        <div>
+          <span style={styles.modeBadge}>{tournament.mode}</span>
+          <h2 style={styles.time}>{formatTime(tournament.scheduled_start_time)}</h2>
+          <span style={styles.date}>{tournament.tournament_date}</span>
+        </div>
+        <span style={statusStyle(tournament.status)}>
+          {tournament.status === "REGISTRATION" ? "OPEN" : tournament.status}
+        </span>
+      </div>
+
+      <div style={styles.stats}>
+        <Stat label="ENTRY" value={`৳${Number(tournament.entry_fee).toFixed(0)}`} />
+        <Stat label="1ST PRIZE" value={`৳${Number(tournament.first_prize).toFixed(0)}`} />
+        <Stat label="KILL" value={`৳${Number(tournament.kill_reward).toFixed(0)}`} />
+      </div>
+
+      <div style={styles.capacity}>
+        <span>
+          {tournament.mode === "SOLO"
+            ? `Up to ${tournament.max_players} players`
+            : `${tournament.max_teams} teams • ${tournament.max_players} players`}
+        </span>
+        <span style={styles.countdown}>{registrationLabel(tournament, now)}</span>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setSelectedTournament(tournament)}
+        style={styles.joinButton}
+      >
+        {tournament.status === "REGISTRATION" ? "View & Join" : "View Tournament"}
+      </button>
+    </article>
+  );
 
   return (
     <main style={styles.page}>
@@ -62,52 +128,28 @@ export default function Tournaments() {
         <div style={styles.emptyCard}>
           <div style={styles.emptyIcon}>◈</div>
           <h2 style={styles.emptyTitle}>No upcoming tournaments</h2>
-          <p style={styles.emptyText}>
-            New daily Battle Royale slots are generated automatically.
-          </p>
+          <p style={styles.emptyText}>New daily Battle Royale slots are generated automatically.</p>
         </div>
       )}
 
       {!loading && !error && filtered.length > 0 && (
-        <div style={styles.list}>
-          {filtered.map((tournament) => (
-            <article key={tournament.id} style={styles.card}>
-              <div style={styles.cardTop}>
-                <div>
-                  <span style={styles.modeBadge}>{tournament.mode}</span>
-                  <h2 style={styles.time}>{formatTime(tournament.scheduled_start_time)}</h2>
-                  <span style={styles.date}>{tournament.tournament_date}</span>
-                </div>
-                <span style={statusStyle(tournament.status)}>
-                  {tournament.status === "REGISTRATION" ? "OPEN" : tournament.status}
-                </span>
-              </div>
+        <>
+          {upcoming.length > 0 && (
+            <>
+              <h2 style={styles.sectionTitle}>Upcoming Tournaments</h2>
+              <div style={styles.list}>{upcoming.map(renderCard)}</div>
+            </>
+          )}
 
-              <div style={styles.stats}>
-                <Stat label="ENTRY" value={`৳${Number(tournament.entry_fee).toFixed(0)}`} />
-                <Stat label="1ST PRIZE" value={`৳${Number(tournament.first_prize).toFixed(0)}`} />
-                <Stat label="KILL" value={`৳${Number(tournament.kill_reward).toFixed(0)}`} />
-              </div>
-
-              <div style={styles.capacity}>
-                <span>
-                  {tournament.mode === "SOLO"
-                    ? `Up to ${tournament.max_players} players`
-                    : `${tournament.max_teams} teams • ${tournament.max_players} players`}
-                </span>
-                <span style={styles.countdown}>{registrationLabel(tournament, now)}</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setSelectedTournament(tournament)}
-                style={styles.joinButton}
-              >
-                {tournament.status === "REGISTRATION" ? "View & Join" : "View Tournament"}
-              </button>
-            </article>
-          ))}
-        </div>
+          {lowerSection.length > 0 && (
+            <>
+              <h2 style={{ ...styles.sectionTitle, marginTop: "26px" }}>
+                Completed & Next Registration
+              </h2>
+              <div style={styles.list}>{lowerSection.map(renderCard)}</div>
+            </>
+          )}
+        </>
       )}
     </main>
   );
@@ -122,17 +164,6 @@ function tournamentStartTimestamp(tournament) {
   return new Date(`${tournament.tournament_date}T${String(tournament.scheduled_start_time).slice(0, 8)}+06:00`).getTime();
 }
 
-function tournamentDisplayOrder(a, b) {
-  const aFinished = a.status === "COMPLETED" || a.status === "CANCELLED";
-  const bFinished = b.status === "COMPLETED" || b.status === "CANCELLED";
-
-  if (aFinished !== bFinished) {
-    return aFinished ? 1 : -1;
-  }
-
-  return Number(a.slot_id) - Number(b.slot_id);
-}
-
 function formatTime(value) {
   if (!value) return "—";
   const [hourText, minuteText] = String(value).slice(0, 5).split(":");
@@ -145,16 +176,12 @@ function formatTime(value) {
 
 function registrationLabel(tournament, now) {
   if (tournament.status !== "REGISTRATION") return tournament.status.replace("_", " ");
-
   const registrationOpen = tournament.registration_opens_at
     ? new Date(tournament.registration_opens_at).getTime()
     : Number.NEGATIVE_INFINITY;
-
   if (now < registrationOpen) return "Registration not open yet";
-
   const start = tournamentStartTimestamp(tournament);
   const remaining = start - 30 * 60 * 1000 - now;
-
   if (remaining <= 0) return "Registration closed";
   if (remaining > 30 * 60 * 1000) return "Registration open";
   return `Closes in ${formatCountdown(remaining)}`;
@@ -162,9 +189,7 @@ function registrationLabel(tournament, now) {
 
 function formatCountdown(ms) {
   const total = Math.max(0, Math.floor(ms / 1000));
-  const minutes = Math.floor(total / 60);
-  const seconds = total % 60;
-  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+  return `${Math.floor(total / 60)}m ${String(total % 60).padStart(2, "0")}s`;
 }
 
 function statusStyle(status) {
@@ -182,6 +207,7 @@ const styles = {
   filters: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "7px", padding: "5px", borderRadius: "13px", background: "#121216", border: "1px solid #29272b", marginBottom: "16px" },
   filterButton: { border: "none", borderRadius: "9px", background: "transparent", color: "#85828a", padding: "9px 4px", fontSize: "10px", fontWeight: "900" },
   filterActive: { background: "#351b18", color: "#ff9b5a" },
+  sectionTitle: { margin: "0 0 11px", fontSize: "14px", fontWeight: "900", color: "#eee" },
   list: { display: "grid", gap: "12px" },
   card: { padding: "16px", borderRadius: "19px", background: "#121216", border: "1px solid #29272b", boxShadow: "0 8px 24px rgba(0,0,0,.18)" },
   cardTop: { display: "flex", justifyContent: "space-between", alignItems: "start", gap: "10px" },
