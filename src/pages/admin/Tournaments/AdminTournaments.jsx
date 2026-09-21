@@ -833,7 +833,7 @@ const styles = {
     fontSize: "16px",
   },
 
-  kicker:
+  kicker: {
     color: "#ff7130",
     fontSize: "10px",
     fontWeight: "900",
@@ -1117,7 +1117,7 @@ const styles = {
     fontWeight: "900",
   },
 
-  roomActions:
+  roomActions: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: "8px",
