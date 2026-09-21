@@ -82,6 +82,37 @@ export default function AdminTournaments({ onBack }) {
       setTournaments([]);
     } else {
       const rows = [...(data || [])];
+
+      if (rows.length > 0) {
+        const { data: counts, error: countError } = await supabase.rpc(
+          "get_tournament_capacity_counts",
+          { p_tournament_ids: rows.map((tournament) => tournament.id) }
+        );
+
+        if (countError) {
+          setMessage(countError.message);
+          setTournaments([]);
+          setLoading(false);
+          return;
+        }
+
+        const countMap = new Map(
+          (counts || []).map((row) => [
+            Number(row.tournament_id),
+            {
+              playerCount: Number(row.player_count || 0),
+              teamCount: Number(row.team_count || 0),
+            },
+          ])
+        );
+
+        rows.forEach((tournament) => {
+          const count = countMap.get(Number(tournament.id));
+          tournament.playerCount = count?.playerCount ?? 0;
+          tournament.teamCount = count?.teamCount ?? 0;
+        });
+      }
+
       rows.sort((a, b) => {
         const done = new Set(["COMPLETED", "CANCELLED"]);
         const ad = done.has(a.status) ? 1 : 0;
@@ -547,9 +578,16 @@ export default function AdminTournaments({ onBack }) {
                   )}
                 </span>
 
-                <span>
-                  Capacity{" "}
-                  {tournament.max_players}
+                <span style={styles.capacityMeta}>
+                  Enrolled{" "}
+                  {tournament.mode === "SOLO"
+                    ? tournament.playerCount
+                    : tournament.teamCount}{" "}
+                  /{" "}
+                  {tournament.mode === "SOLO"
+                    ? tournament.max_players
+                    : tournament.max_teams}
+                  {tournament.mode !== "SOLO" ? " teams" : " players"}
                 </span>
               </div>
 
@@ -1053,6 +1091,11 @@ const styles = {
     marginTop: "11px",
     color: "#918d94",
     fontSize: "10px",
+  },
+
+  capacityMeta: {
+    color: "#ffc064",
+    fontWeight: "900",
   },
 
   createPanel: {
