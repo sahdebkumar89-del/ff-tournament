@@ -31,7 +31,8 @@ export default function AdminTournaments({ onBack }) {
     useState(false);
 
   const [showResults, setShowResults] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);\n  const [dayView, setDayView] = useState("today");
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [dayView, setDayView] = useState("today");
   const [editTarget, setEditTarget] = useState(null);
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
@@ -63,7 +64,15 @@ export default function AdminTournaments({ onBack }) {
       setMessage(error.message);
       setTournaments([]);
     } else {
-      const rows = [...(data || [])];\n      rows.sort((a, b) => {\n        const done = new Set(["COMPLETED", "CANCELLED"]);\n        const ad = done.has(a.status) ? 1 : 0;\n        const bd = done.has(b.status) ? 1 : 0;\n        if (ad !== bd) return ad - bd;\n        return `${a.tournament_date}T${a.scheduled_start_time}`.localeCompare(`${b.tournament_date}T${b.scheduled_start_time}`);\n      });\n      setTournaments(rows);
+      const rows = [...(data || [])];
+      rows.sort((a, b) => {
+        const done = new Set(["COMPLETED", "CANCELLED"]);
+        const ad = done.has(a.status) ? 1 : 0;
+        const bd = done.has(b.status) ? 1 : 0;
+        if (ad !== bd) return ad - bd;
+        return `${a.tournament_date}T${a.scheduled_start_time}`.localeCompare(`${b.tournament_date}T${b.scheduled_start_time}`);
+      });
+      setTournaments(rows);
     }
 
     setLoading(false);
@@ -73,7 +82,21 @@ export default function AdminTournaments({ onBack }) {
     loadTournaments();
   }, []);
 
-  async function saveSchedule() {\n    if (!editTarget || !editDate || !editTime) return;\n    setBusyId(editTarget.id);\n    setMessage("");\n    const { error } = await supabase.rpc("admin_update_tournament_schedule", {\n      p_tournament_id: editTarget.id,\n      p_tournament_date: editDate,\n      p_scheduled_start_time: editTime,\n    });\n    if (error) setMessage(error.message);\n    else { setMessage("Tomorrow schedule updated."); setEditTarget(null); await loadTournaments(); }\n    setBusyId(null);\n  }\n\n  async function createTournament() {
+  async function saveSchedule() {
+    if (!editTarget || !editDate || !editTime) return;
+    setBusyId(editTarget.id);
+    setMessage("");
+    const { error } = await supabase.rpc("admin_update_tournament_schedule", {
+      p_tournament_id: editTarget.id,
+      p_tournament_date: editDate,
+      p_scheduled_start_time: editTime,
+    });
+    if (error) setMessage(error.message);
+    else { setMessage("Tomorrow schedule updated."); setEditTarget(null); await loadTournaments(); }
+    setBusyId(null);
+  }
+
+  async function createTournament() {
     if (!createForm.tournamentDate || !createForm.startTime) {
       setMessage("Tournament date and start time are required.");
       return;
