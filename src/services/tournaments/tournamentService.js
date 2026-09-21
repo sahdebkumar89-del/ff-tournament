@@ -32,10 +32,32 @@ export async function getTournaments() {
 
   if (error) throw error;
 
-  // Keep both records when a completed slot has its next-day
-  // registration ready. The UI is responsible for placing the
-  // next-day registration in the lower section, never in Upcoming.
-  return data ?? [];
+  const tournaments = data ?? [];
+  if (tournaments.length === 0) return tournaments;
+
+  const ids = tournaments.map((tournament) => tournament.id);
+  const { data: counts, error: countError } = await supabase.rpc(
+    "get_tournament_capacity_counts",
+    { p_tournament_ids: ids }
+  );
+
+  if (countError) throw countError;
+
+  const countMap = new Map(
+    (counts ?? []).map((row) => [
+      Number(row.tournament_id),
+      {
+        playerCount: Number(row.player_count ?? 0),
+        teamCount: Number(row.team_count ?? 0),
+      },
+    ])
+  );
+
+  return tournaments.map((tournament) => ({
+    ...tournament,
+    playerCount: countMap.get(Number(tournament.id))?.playerCount ?? 0,
+    teamCount: countMap.get(Number(tournament.id))?.teamCount ?? 0,
+  }));
 }
 
 export async function requestTournamentJoin(tournamentId, freeFireUids) {
