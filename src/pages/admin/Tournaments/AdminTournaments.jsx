@@ -904,6 +904,50 @@ const styles = {
     fontSize: "13px",
   },
 
+  daySwitcher: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+    margin: "14px 0 10px",
+  },
+
+  dayButton: {
+    padding: "13px 12px",
+    borderRadius: "12px",
+    border: "1px solid #302b31",
+    background: "#151318",
+    color: "#9e979f",
+    fontWeight: "900",
+    textAlign: "left",
+  },
+
+  dayButtonActive: {
+    padding: "13px 12px",
+    borderRadius: "12px",
+    border: "1px solid #ff7130",
+    background: "#241814",
+    color: "#fff",
+    fontWeight: "900",
+    textAlign: "left",
+    boxShadow: "0 0 0 1px rgba(255,113,48,.15)",
+  },
+
+  dayCount: {
+    float: "right",
+    color: "#ff9a5c",
+    fontWeight: "900",
+  },
+
+  dayHeading: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "10px",
+    margin: "10px 0 12px",
+    color: "#fff",
+    fontSize: "13px",
+  },
+
   summaryGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
