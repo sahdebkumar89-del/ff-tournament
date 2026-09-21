@@ -13,7 +13,7 @@ export default function AdminLogin() {
       setLoading(true);
       setError("");
       await signInAdmin(email.trim(), password);
-      window.location.href = "/";
+      window.location.href = "/admin";
     } catch (err) {
       setError(err.message || "Unable to sign in as Admin.");
     } finally {
