@@ -34,6 +34,8 @@ export default function AdminTournaments({ onBack }) {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const [showCreate, setShowCreate] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelReason, setCancelReason] = useState("");
   const [createForm, setCreateForm] = useState({
     mode: "SOLO",
     tournamentDate: "",
@@ -96,9 +98,6 @@ export default function AdminTournaments({ onBack }) {
 
   async function toggleTournament(tournament) {
     const nextEnabled = tournament.is_enabled === false;
-    const action = nextEnabled ? "enable" : "disable";
-    if (!window.confirm(`Are you sure you want to ${action} this tournament?`)) return;
-
     setBusyId(tournament.id);
     setMessage("");
 
@@ -117,32 +116,30 @@ export default function AdminTournaments({ onBack }) {
     setBusyId(null);
   }
 
-  async function cancelTournament(tournament) {
-    const reason = window.prompt(
-      "Cancellation reason is required:",
-      ""
-    );
+  function openCancelDialog(tournament) {
+    setCancelTarget(tournament);
+    setCancelReason("");
+    setMessage("");
+  }
 
-    if (!reason?.trim()) return;
+  async function cancelTournament() {
+    if (!cancelTarget || !cancelReason.trim()) return;
 
-    const confirmed = window.confirm(
-      `Cancel Tournament #${tournament.id} and automatically refund valid participants?`
-    );
-
-    if (!confirmed) return;
-
+    const tournament = cancelTarget;
     setBusyId(tournament.id);
     setMessage("");
 
     const { error } = await supabase.rpc("admin_cancel_tournament", {
       p_tournament_id: tournament.id,
-      p_reason: reason.trim(),
+      p_reason: cancelReason.trim(),
     });
 
     if (error) {
       setMessage(error.message);
     } else {
       setMessage("Tournament cancelled and eligible refunds processed.");
+      setCancelTarget(null);
+      setCancelReason("");
       await loadTournaments();
     }
 
@@ -336,56 +333,29 @@ export default function AdminTournaments({ onBack }) {
     <div style={styles.page}>
       <div style={styles.header}>
         <div>
-          <div style={styles.kicker}>
-            ADMIN PANEL
-          </div>
-
-          <h1 style={styles.title}>
-            Tournament Control
-          </h1>
+          <div style={styles.kicker}>ADMIN PANEL</div>
+          <h1 style={styles.title}>Control Center</h1>
+          <div style={styles.subtitle}>সবকিছু কয়েক ক্লিকেই manage করুন</div>
         </div>
+        <button type="button" onClick={onBack} style={styles.backButton}>
+          User App
+        </button>
+      </div>
 
-        <div style={styles.headerActions}>
-          <button
-            type="button"
-            onClick={() => setShowCreate((value) => !value)}
-            style={styles.walletButton}
-          >
-            {showCreate ? "Close Create" : "Create"}
-          </button>
+      <div style={styles.adminNav}>
+        <button type="button" onClick={() => setShowCreate((value) => !value)} style={styles.navPrimary}>
+          {showCreate ? "Close" : "+ Create"}
+        </button>
+        <button type="button" onClick={() => setShowResults(true)} style={styles.navButton}>Results</button>
+        <button type="button" onClick={() => setShowWallet(true)} style={styles.navButton}>Wallet</button>
+        <button type="button" onClick={() => setShowNotifications(true)} style={styles.navButton}>Notify</button>
+      </div>
 
-          <button
-            type="button"
-            onClick={() => setShowNotifications(true)}
-            style={styles.walletButton}
-          >
-            Notifications
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowResults(true)}
-            style={styles.walletButton}
-          >
-            Results
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowWallet(true)}
-            style={styles.walletButton}
-          >
-            Wallet
-          </button>
-
-          <button
-            type="button"
-            onClick={onBack}
-            style={styles.backButton}
-          >
-            User App
-          </button>
-        </div>
+      <div style={styles.summaryGrid}>
+        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Today</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.tournament_date === new Date().toISOString().slice(0,10)).length}</strong></div>
+        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Open</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.status === "REGISTRATION" && t.is_enabled !== false).length}</strong></div>
+        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Live</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.status === "STARTED").length}</strong></div>
+        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Off</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.is_enabled === false).length}</strong></div>
       </div>
 
       {message && (
@@ -523,7 +493,7 @@ export default function AdminTournaments({ onBack }) {
                   onClick={() => toggleTournament(tournament)}
                   style={styles.roomButton}
                 >
-                  {tournament.is_enabled === false ? "Enable Tournament" : "Disable Tournament"}
+                  {tournament.is_enabled === false ? "Turn ON" : "Turn OFF"}
                 </button>
 
                 <button
@@ -558,7 +528,7 @@ export default function AdminTournaments({ onBack }) {
                 <button
                   type="button"
                   disabled={busyId === tournament.id}
-                  onClick={() => cancelTournament(tournament)}
+                  onClick={() => openCancelDialog(tournament)}
                   style={styles.cancelButton}
                 >
                   Cancel Tournament
@@ -707,6 +677,41 @@ export default function AdminTournaments({ onBack }) {
           ))}
         </div>
       )}
+      {cancelTarget && (
+        <div style={styles.modalBackdrop}>
+          <section style={styles.modal}>
+            <div style={styles.modalKicker}>CANCEL TOURNAMENT</div>
+            <h2 style={styles.modalTitle}>Tournament #{cancelTarget.id} বাতিল করবেন?</h2>
+            <p style={styles.modalText}>
+              Cancel করলে valid participants-এর entry fee automatically refund হবে এবং users-কে reason সহ notification যাবে।
+            </p>
+            <label style={styles.label}>
+              Cancellation reason <span style={styles.required}>Required</span>
+              <textarea
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+                placeholder="কেন tournament cancel করছেন?"
+                style={styles.textarea}
+                autoFocus
+              />
+            </label>
+            <div style={styles.modalActions}>
+              <button type="button" onClick={() => setCancelTarget(null)} style={styles.modalKeep}>
+                No, Keep
+              </button>
+              <button
+                type="button"
+                disabled={!cancelReason.trim() || busyId === cancelTarget.id}
+                onClick={cancelTournament}
+                style={styles.modalCancel}
+              >
+                {busyId === cancelTarget.id ? "Cancelling..." : "Confirm Cancel"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -768,7 +773,67 @@ const styles = {
     gap: "8px",
   },
 
-  kicker: {
+  subtitle: {
+    marginTop: "5px",
+    color: "#858087",
+    fontSize: "10px",
+  },
+
+  adminNav: {
+    display: "grid",
+    gridTemplateColumns: "1.25fr 1fr 1fr 1fr",
+    gap: "7px",
+    marginBottom: "12px",
+  },
+
+  navButton: {
+    padding: "10px 8px",
+    border: "1px solid #30282c",
+    borderRadius: "10px",
+    background: "#151318",
+    color: "#bdb5bd",
+    fontSize: "10px",
+    fontWeight: "900",
+  },
+
+  navPrimary: {
+    padding: "10px 8px",
+    border: "none",
+    borderRadius: "10px",
+    background: "linear-gradient(135deg, #ff7a2f, #e94231)",
+    color: "#fff",
+    fontSize: "10px",
+    fontWeight: "900",
+  },
+
+  summaryGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+    gap: "7px",
+    marginBottom: "15px",
+  },
+
+  summaryCard: {
+    padding: "10px 9px",
+    borderRadius: "12px",
+    background: "#121216",
+    border: "1px solid #29272b",
+  },
+
+  summaryCardLabel: {
+    color: "#77737b",
+    fontSize: "8px",
+    display: "block",
+  },
+
+  summaryCardValue: {
+    display: "block",
+    marginTop: "4px",
+    color: "#ffc064",
+    fontSize: "16px",
+  },
+
+  kicker:
     color: "#ff7130",
     fontSize: "10px",
     fontWeight: "900",
@@ -967,7 +1032,92 @@ const styles = {
     outline: "none",
   },
 
-  roomActions: {
+  textarea: {
+    width: "100%",
+    minHeight: "78px",
+    boxSizing: "border-box",
+    resize: "vertical",
+    border: "1px solid #3b2c2e",
+    borderRadius: "10px",
+    background: "#0f0e11",
+    color: "#fff",
+    padding: "11px",
+    outline: "none",
+    fontFamily: "inherit",
+  },
+
+  required: {
+    color: "#ff7d70",
+    fontSize: "9px",
+    marginLeft: "5px",
+  },
+
+  modalBackdrop: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 50,
+    background: "rgba(0,0,0,.72)",
+    display: "grid",
+    placeItems: "center",
+    padding: "18px",
+  },
+
+  modal: {
+    width: "100%",
+    maxWidth: "430px",
+    boxSizing: "border-box",
+    padding: "18px",
+    borderRadius: "18px",
+    background: "#171417",
+    border: "1px solid #5a302a",
+    boxShadow: "0 18px 60px rgba(0,0,0,.45)",
+  },
+
+  modalKicker: {
+    color: "#ff7130",
+    fontSize: "9px",
+    fontWeight: "900",
+    letterSpacing: "1.5px",
+  },
+
+  modalTitle: {
+    margin: "6px 0 0",
+    fontSize: "18px",
+  },
+
+  modalText: {
+    margin: "8px 0 2px",
+    color: "#9a929a",
+    fontSize: "11px",
+    lineHeight: 1.55,
+  },
+
+  modalActions: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "8px",
+    marginTop: "14px",
+  },
+
+  modalKeep: {
+    padding: "11px",
+    border: "1px solid #3b3032",
+    borderRadius: "10px",
+    background: "#141217",
+    color: "#c6c0c6",
+    fontWeight: "900",
+  },
+
+  modalCancel: {
+    padding: "11px",
+    border: "none",
+    borderRadius: "10px",
+    background: "#8e2d2d",
+    color: "#fff",
+    fontWeight: "900",
+  },
+
+  roomActions:
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: "8px",
