@@ -16,16 +16,9 @@ export default function Tournaments() {
   }, []);
 
   const filtered = useMemo(() => {
-    const visible = tournaments.filter((tournament) => {
-      const start = tournamentStartTimestamp(tournament);
-      const isCurrent = tournament.status === "STARTED";
-      const isUpcoming = Number.isFinite(start) && start >= now - 30 * 60 * 1000;
-      return isCurrent || isUpcoming;
-    });
-
     const byMode = filter === "ALL"
-      ? visible
-      : visible.filter((tournament) => tournament.mode === filter);
+      ? tournaments
+      : tournaments.filter((tournament) => tournament.mode === filter);
 
     return [...byMode].sort((a, b) => tournamentDisplayOrder(a, b));
   }, [tournaments, filter, now]);
@@ -130,7 +123,14 @@ function tournamentStartTimestamp(tournament) {
 }
 
 function tournamentDisplayOrder(a, b) {
-  return tournamentStartTimestamp(a) - tournamentStartTimestamp(b);
+  const aFinished = a.status === "COMPLETED" || a.status === "CANCELLED";
+  const bFinished = b.status === "COMPLETED" || b.status === "CANCELLED";
+
+  if (aFinished !== bFinished) {
+    return aFinished ? 1 : -1;
+  }
+
+  return Number(a.slot_id) - Number(b.slot_id);
 }
 
 function formatTime(value) {
