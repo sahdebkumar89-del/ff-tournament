@@ -68,9 +68,6 @@ export default function Tournaments() {
           <h2 style={styles.time}>{formatTime(tournament.scheduled_start_time)}</h2>
           <span style={styles.date}>{tournament.tournament_date}</span>
         </div>
-        <span style={statusStyle(tournament.status)}>
-          {tournament.status === "REGISTRATION" ? "OPEN" : tournament.status}
-        </span>
       </div>
 
       <div style={styles.stats}>
@@ -82,10 +79,20 @@ export default function Tournaments() {
       <div style={styles.capacity}>
         <span>
           {tournament.mode === "SOLO"
-            ? `Up to ${tournament.max_players} players`
-            : `${tournament.max_teams} teams • ${tournament.max_players} players`}
+            ? `${tournament.playerCount ?? 0}/${tournament.max_players} Players • ${Math.max(0, Number(tournament.max_players) - Number(tournament.playerCount ?? 0))} needed`
+            : `${tournament.teamCount ?? 0}/${tournament.max_teams} Teams • ${Math.max(0, Number(tournament.max_teams) - Number(tournament.teamCount ?? 0))} needed`}
         </span>
         <span style={styles.countdown}>{registrationLabel(tournament, now)}</span>
+      </div>
+
+      <div style={styles.statusRow}>
+        <span style={statusStyle(tournament.status)}>
+          {tournament.status === "REGISTRATION"
+            ? "OPEN"
+            : tournament.status === "STARTED"
+              ? "LIVE"
+              : tournament.status}
+        </span>
       </div>
 
       <button
@@ -214,7 +221,8 @@ const styles = {
   modeBadge: { display: "inline-block", padding: "5px 7px", borderRadius: "7px", background: "#311919", color: "#ff795f", fontSize: "9px", fontWeight: "900" },
   time: { margin: "9px 0 1px", fontSize: "23px", fontWeight: "900" },
   date: { color: "#77757c", fontSize: "10px" },
-  status: { padding: "6px 8px", borderRadius: "8px", fontSize: "8px", fontWeight: "900", whiteSpace: "nowrap" },
+  status: { padding: "5px 8px", borderRadius: "8px", fontSize: "8px", fontWeight: "900", whiteSpace: "nowrap" },
+  statusRow: { display: "flex", justifyContent: "flex-start", marginTop: "8px" },
   stats: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginTop: "15px" },
   stat: { padding: "10px", borderRadius: "11px", background: "#19181c", border: "1px solid #27262a", display: "grid", gap: "4px" },
   capacity: { display: "flex", justifyContent: "space-between", gap: "10px", marginTop: "11px", color: "#77757c", fontSize: "9px" },
