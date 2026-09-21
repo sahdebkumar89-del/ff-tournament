@@ -23,11 +23,23 @@ const TOURNAMENT_SELECT = [
   "is_enabled",
 ].join(",");
 
+function getDhakaDate() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Dhaka",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
 export async function getTournaments() {
+  const dhakaDate = getDhakaDate();
+
   const { data, error } = await supabase
     .from("tournaments")
     .select(TOURNAMENT_SELECT)
     .eq("is_enabled", true)
+    .gte("tournament_date", dhakaDate)
     .lte("registration_opens_at", new Date().toISOString())
     .order("tournament_date", { ascending: true })
     .order("scheduled_start_time", { ascending: true });
