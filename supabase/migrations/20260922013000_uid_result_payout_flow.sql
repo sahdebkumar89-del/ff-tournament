@@ -25,7 +25,7 @@ for v_uid in select jsonb_array_elements_text(v_uids) loop
  select id into v_user from public.profiles where free_fire_uid=v_uid limit 1;
  insert into public.tournament_result_players(result_id,participant_id,player_uid,user_id,position_prize,kills,kill_reward,total_payout,reward_recipient_user_id)
  values(v_result_id,p_participant_id,v_uid,v_user,case when v_uid=v_p.captain_free_fire_uid then v_position_prize else 0 end,v_kills,v_kills*v_t.kill_reward,
- case when v_uid=v.p_captain_free_fire_uid then v_position_prize+(v_kills*v_t.kill_reward) else v_kills*v_t.kill_reward end,coalesce(v_user,v_captain));
+ case when v_uid=v_p.captain_free_fire_uid then v_position_prize+(v_kills*v_t.kill_reward) else v_kills*v_t.kill_reward end,coalesce(v_user,v_captain));
 end loop;
 update public.tournament_results set kills=v_total_kills,kill_reward=v_kill_reward,total_payout=v_position_prize+v_kill_reward where id=v_result_id;
 return v_result_id;
