@@ -63,7 +63,7 @@ export default function AdminTournaments({ onBack }) {
       setMessage(error.message);
       setTournaments([]);
     } else {
-      setTournaments(data || []);
+      const rows = [...(data || [])];\n      rows.sort((a, b) => {\n        const done = new Set(["COMPLETED", "CANCELLED"]);\n        const ad = done.has(a.status) ? 1 : 0;\n        const bd = done.has(b.status) ? 1 : 0;\n        if (ad !== bd) return ad - bd;\n        return `${a.tournament_date}T${a.scheduled_start_time}`.localeCompare(`${b.tournament_date}T${b.scheduled_start_time}`);\n      });\n      setTournaments(rows);
     }
 
     setLoading(false);
