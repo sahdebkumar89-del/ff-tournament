@@ -80,7 +80,7 @@ export default function Tournaments() {
         <span>
           {tournament.mode === "SOLO"
             ? `${tournament.playerCount ?? 0}/${tournament.max_players} Players • ${Math.max(0, Number(tournament.max_players) - Number(tournament.playerCount ?? 0))} needed`
-            : `${tournament.teamCount ?? 0}/${tournament.max_teams} Teams • ${Math.max(0, Number(tournament.max_teams) - Number(tournament.teamCount ?? 0))} needed`}
+            : `${tournament.playerCount ?? 0}/${tournament.max_players} Players • ${Math.max(0, Number(tournament.max_players) - Number(tournament.playerCount ?? 0))} needed • ${tournament.teamCount ?? 0}/${tournament.max_teams} Teams`}
         </span>
         <span style={styles.countdown}>{registrationLabel(tournament, now)}</span>
       </div>
