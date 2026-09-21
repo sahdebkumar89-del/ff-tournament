@@ -20,7 +20,6 @@ function getDhakaDate(offsetDays = 0) {
 export async function getTournaments() {
   const today = getDhakaDate(0);
   const tomorrow = getDhakaDate(1);
-  const now = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("tournaments")
@@ -28,52 +27,15 @@ export async function getTournaments() {
     .eq("is_enabled", true)
     .gte("tournament_date", today)
     .lte("tournament_date", tomorrow)
-    .order("slot_id", { ascending: true })
-    .order("tournament_date", { ascending: true });
+    .order("tournament_date", { ascending: true })
+    .order("slot_id", { ascending: true });
 
   if (error) throw error;
 
-  const bySlot = new Map();
-
-  for (const tournament of data ?? []) {
-    const existing = bySlot.get(tournament.slot_id);
-
-    if (!existing) {
-      bySlot.set(tournament.slot_id, tournament);
-      continue;
-    }
-
-    const tournamentOpen =
-      tournament.registration_opens_at &&
-      tournament.registration_opens_at <= now;
-
-    const existingFinished =
-      existing.status === "COMPLETED" || existing.status === "CANCELLED";
-
-    const tournamentActive =
-      tournament.status !== "COMPLETED" &&
-      tournament.status !== "CANCELLED";
-
-    // Once the next-day replacement is open, it completely replaces
-    // the finished previous-day row for this slot.
-    if (
-      tournament.tournament_date > existing.tournament_date &&
-      tournamentOpen &&
-      tournamentActive
-    ) {
-      bySlot.set(tournament.slot_id, tournament);
-    } else if (existingFinished && tournamentOpen && tournamentActive) {
-      bySlot.set(tournament.slot_id, tournament);
-    }
-  }
-
-  return [...bySlot.values()].sort((a, b) => {
-    const aFinished = a.status === "COMPLETED" || a.status === "CANCELLED";
-    const bFinished = b.status === "COMPLETED" || b.status === "CANCELLED";
-
-    if (aFinished !== bFinished) return aFinished ? 1 : -1;
-    return Number(a.slot_id) - Number(b.slot_id);
-  });
+  // Keep both records when a completed slot has its next-day
+  // registration ready. The UI is responsible for placing the
+  // next-day registration in the lower section, never in Upcoming.
+  return data ?? [];
 }
 
 export async function requestTournamentJoin(tournamentId, freeFireUids) {
