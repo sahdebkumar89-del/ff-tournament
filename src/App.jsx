@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Login from "./pages/user/Auth/Login.jsx";
+import AdminLogin from "./pages/admin/Auth/AdminLogin.jsx";
 import Signup from "./pages/user/Auth/Signup.jsx";
 import BottomNav from "./components/common/BottomNav.jsx";
 import Tournaments from "./pages/user/Tournaments/Tournaments.jsx";
@@ -16,6 +17,7 @@ import { supabase } from "./lib/supabase/client.js";
 
 export default function App() {
   const { user, loading: authLoading } = useAuthContext();
+  const isAdminLoginPath = window.location.pathname === "/admin-login";
 
   const [authPage, setAuthPage] = useState("login");
   const [role, setRole] = useState(null);
@@ -31,6 +33,10 @@ export default function App() {
   }
 
   if (!user) {
+    if (isAdminLoginPath) {
+      return <AdminLogin />;
+    }
+
     return authPage === "signup" ? (
       <Signup
         onBackToLogin={() => setAuthPage("login")}
@@ -38,6 +44,20 @@ export default function App() {
     ) : (
       <Login
         onCreateAccount={() => setAuthPage("signup")}
+      />
+    );
+  }
+
+  if (isAdminLoginPath) {
+    return (
+      <AuthenticatedApp
+        user={user}
+        role={role}
+        setRole={setRole}
+        roleLoading={roleLoading}
+        setRoleLoading={setRoleLoading}
+        showAdmin={true}
+        setShowAdmin={setShowAdmin}
       />
     );
   }
