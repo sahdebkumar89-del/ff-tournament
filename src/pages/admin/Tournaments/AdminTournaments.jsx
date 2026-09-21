@@ -32,6 +32,9 @@ export default function AdminTournaments({ onBack }) {
 
   const [showResults, setShowResults] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);\n  const [dayView, setDayView] = useState("today");
+  const [editTarget, setEditTarget] = useState(null);
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
 
   const [showCreate, setShowCreate] = useState(false);
   const [cancelTarget, setCancelTarget] = useState(null);
@@ -70,7 +73,7 @@ export default function AdminTournaments({ onBack }) {
     loadTournaments();
   }, []);
 
-  async function createTournament() {
+  async function saveSchedule() {\n    if (!editTarget || !editDate || !editTime) return;\n    setBusyId(editTarget.id);\n    setMessage("");\n    const { error } = await supabase.rpc("admin_update_tournament_schedule", {\n      p_tournament_id: editTarget.id,\n      p_tournament_date: editDate,\n      p_scheduled_start_time: editTime,\n    });\n    if (error) setMessage(error.message);\n    else { setMessage("Tomorrow schedule updated."); setEditTarget(null); await loadTournaments(); }\n    setBusyId(null);\n  }\n\n  async function createTournament() {
     if (!createForm.tournamentDate || !createForm.startTime) {
       setMessage("Tournament date and start time are required.");
       return;
@@ -496,13 +499,19 @@ export default function AdminTournaments({ onBack }) {
                   {tournament.is_enabled === false ? "Turn ON" : "Turn OFF"}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => openRoomManager(tournament.id)}
-                  style={styles.roomButton}
-                >
-                  Manage Room
-                </button>
+                {dayView === "today" ? (
+                  <button type="button" onClick={() => openRoomManager(tournament.id)} style={styles.roomButton}>
+                    Room
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => {
+                    setEditTarget(tournament);
+                    setEditDate(tournament.tournament_date);
+                    setEditTime(tournament.scheduled_start_time?.slice(0, 5) || "");
+                  }} style={styles.roomButton}>
+                    Edit Time
+                  </button>
+                )}
               </div>
 
               {canManualStart(tournament) && (
@@ -677,6 +686,21 @@ export default function AdminTournaments({ onBack }) {
           ))}
         </div>
       )}
+      {editTarget && (
+        <div style={styles.modalBackdrop}>
+          <section style={styles.modal}>
+            <div style={styles.modalKicker}>TOMORROW SCHEDULE</div>
+            <h2 style={styles.modalTitle}>Change Schedule</h2>
+            <label style={styles.label}>Date<input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} style={styles.input} /></label>
+            <label style={styles.label}>Start time<input type="time" step="1800" value={editTime} onChange={(e) => setEditTime(e.target.value)} style={styles.input} /></label>
+            <div style={styles.modalActions}>
+              <button type="button" onClick={() => setEditTarget(null)} style={styles.modalKeep}>Keep</button>
+              <button type="button" disabled={busyId === editTarget.id} onClick={saveSchedule} style={styles.modalCancel}>{busyId === editTarget.id ? "Saving..." : "Save"}</button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {cancelTarget && (
         <div style={styles.modalBackdrop}>
           <section style={styles.modal}>
