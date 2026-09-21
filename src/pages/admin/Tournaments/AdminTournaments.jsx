@@ -31,7 +31,7 @@ export default function AdminTournaments({ onBack }) {
     useState(false);
 
   const [showResults, setShowResults] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);\n  const [dayView, setDayView] = useState("today");
 
   const [showCreate, setShowCreate] = useState(false);
   const [cancelTarget, setCancelTarget] = useState(null);
@@ -443,7 +443,7 @@ export default function AdminTournaments({ onBack }) {
         </div>
       ) : (
         <div style={styles.list}>
-          {tournaments.map((tournament) => (
+          {tournaments.filter((tournament) => tournament.tournament_date === dhakaDate(dayView === "today" ? 0 : 1)).map((tournament) => (
             <article
               key={tournament.id}
               style={styles.card}
