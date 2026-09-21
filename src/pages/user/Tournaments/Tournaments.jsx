@@ -92,16 +92,6 @@ export default function Tournaments() {
         <span style={styles.countdown}>{registrationLabel(tournament, now)}</span>
       </div>
 
-      <div style={styles.statusRow}>
-        <span style={statusStyle(tournament.status)}>
-          {tournament.status === "REGISTRATION"
-            ? "OPEN"
-            : tournament.status === "STARTED"
-              ? "LIVE"
-              : tournament.status}
-        </span>
-      </div>
-
       <button
         type="button"
         onClick={() => setSelectedTournament(tournament)}
