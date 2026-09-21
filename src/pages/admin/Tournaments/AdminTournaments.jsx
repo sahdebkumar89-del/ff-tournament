@@ -4,6 +4,18 @@ import AdminResults from "../Results/AdminResults.jsx";
 import AdminNotifications from "../Notifications/AdminNotifications.jsx";
 import { supabase } from "../../../lib/supabase/client.js";
 
+function dhakaDate(offsetDays = 0) {
+  const date = new Date(Date.now() + offsetDays * 24 * 60 * 60 * 1000);
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Dhaka",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 export default function AdminTournaments({ onBack }) {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -378,7 +390,7 @@ export default function AdminTournaments({ onBack }) {
       </div>
 
       <div style={styles.summaryGrid}>
-        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Today</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.tournament_date === new Date().toISOString().slice(0,10)).length}</strong></div>
+        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Today</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.tournament_date === dhakaDate(0)).length}</strong></div>
         <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Open</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.status === "REGISTRATION" && t.is_enabled !== false).length}</strong></div>
         <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Live</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.status === "STARTED").length}</strong></div>
         <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Off</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.is_enabled === false).length}</strong></div>
