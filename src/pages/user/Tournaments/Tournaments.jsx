@@ -68,6 +68,13 @@ export default function Tournaments() {
           <h2 style={styles.time}>{formatTime(tournament.scheduled_start_time)}</h2>
           <span style={styles.date}>{tournament.tournament_date}</span>
         </div>
+        <span style={statusStyle(tournament.status)}>
+          {tournament.status === "REGISTRATION"
+            ? "OPEN"
+            : tournament.status === "STARTED"
+              ? "LIVE"
+              : tournament.status}
+        </span>
       </div>
 
       <div style={styles.stats}>
