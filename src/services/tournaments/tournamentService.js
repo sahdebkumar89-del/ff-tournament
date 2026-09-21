@@ -23,32 +23,64 @@ const TOURNAMENT_SELECT = [
   "is_enabled",
 ].join(",");
 
-function getDhakaDate() {
+function getDhakaDate(offsetDays = 0) {
+  const base = new Date();
+  base.setDate(base.getDate() + offsetDays);
+
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Dhaka",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date());
+  }).format(base);
 }
 
 export async function getTournaments() {
-  const dhakaDate = getDhakaDate();
+  const today = getDhakaDate(0);
+  const tomorrow = getDhakaDate(1);
+  const now = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("tournaments")
     .select(TOURNAMENT_SELECT)
     .eq("is_enabled", true)
-    .gte("tournament_date", dhakaDate)
-    .lte("registration_opens_at", new Date().toISOString())
-    .order("tournament_date", { ascending: true })
-    .order("scheduled_start_time", { ascending: true });
+    .gte("tournament_date", today)
+    .lte("tournament_date", tomorrow)
+    .order("slot_id", { ascending: true })
+    .order("tournament_date", { ascending: true });
 
   if (error) {
     throw error;
   }
 
-  return data ?? [];
+  const bySlot = new Map();
+
+  for (const tournament of data ?? []) {
+    const existing = bySlot.get(tournament.slot_id);
+    if (!existing || tournament.tournament_date < existing.tournament_date) {
+      bySlot.set(tournament.slot_id, tournament);
+    }
+  }
+
+  for (const tournament of data ?? []) {
+    if (
+      tournament.tournament_date === tomorrow &&
+      tournament.registration_opens_at &&
+      tournament.registration_opens_at <= now &&
+      tournament.status === "REGISTRATION"
+    ) {
+      const current = bySlot.get(tournament.slot_id);
+      if (!current || current.status === "COMPLETED") {
+        bySlot.set(tournament.slot_id, tournament);
+      }
+    }
+  }
+
+  return [...bySlot.values()].sort((a, b) => {
+    const slotA = Number(a.slot_id);
+    const slotB = Number(b.slot_id);
+    return slotA - slotB;
+  });
 }
 
 export async function requestTournamentJoin(tournamentId, freeFireUids) {
