@@ -23,6 +23,5 @@ create index if not exists tournament_result_players_uid_idx on public.tournamen
 create index if not exists tournament_result_players_result_idx on public.tournament_result_players(result_id);
 alter table public.tournament_result_players enable row level security;
 revoke all on table public.tournament_result_players from anon, authenticated;
-revoke all on table public.tournament_results from anon, authenticated;
 
 commit;
