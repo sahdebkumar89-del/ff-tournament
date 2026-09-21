@@ -62,9 +62,14 @@ export default function AdminTournaments({ onBack }) {
     setLoading(true);
     setMessage("");
 
+    const today = dhakaDate(0);
+    const tomorrow = dhakaDate(1);
+
     const { data, error } = await supabase
       .from("tournaments")
       .select("*")
+      .gte("tournament_date", today)
+      .lte("tournament_date", tomorrow)
       .order("tournament_date", {
         ascending: true,
       })
@@ -401,6 +406,30 @@ export default function AdminTournaments({ onBack }) {
           {message}
         </div>
       )}
+
+      <div style={styles.daySwitcher}>
+        <button
+          type="button"
+          onClick={() => setDayView("today")}
+          style={dayView === "today" ? styles.dayButtonActive : styles.dayButton}
+        >
+          Today&apos;s Matches
+          <span style={styles.dayCount}>{tournaments.filter((t) => t.tournament_date === dhakaDate(0)).length}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setDayView("tomorrow")}
+          style={dayView === "tomorrow" ? styles.dayButtonActive : styles.dayButton}
+        >
+          Tomorrow&apos;s Matches
+          <span style={styles.dayCount}>{tournaments.filter((t) => t.tournament_date === dhakaDate(1)).length}</span>
+        </button>
+      </div>
+
+      <div style={styles.dayHeading}>
+        <strong>{dayView === "today" ? "Today’s Matches" : "Tomorrow’s Matches"}</strong>
+        <span>{dayView === "today" ? dhakaDate(0) : dhakaDate(1)} · 30-slot main schedule</span>
+      </div>
 
       {showCreate && (
         <section style={styles.createPanel}>
@@ -863,6 +892,16 @@ const styles = {
     color: "#fff",
     fontSize: "10px",
     fontWeight: "900",
+  },
+
+  dayHeading: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "10px",
+    margin: "10px 0 12px",
+    color: "#fff",
+    fontSize: "13px",
   },
 
   summaryGrid: {
