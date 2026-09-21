@@ -68,13 +68,26 @@ export default function Tournaments() {
           <h2 style={styles.time}>{formatTime(tournament.scheduled_start_time)}</h2>
           <span style={styles.date}>{tournament.tournament_date}</span>
         </div>
-        <span style={statusStyle(tournament.status)}>
-          {tournament.status === "REGISTRATION"
-            ? "OPEN"
-            : tournament.status === "STARTED"
-              ? "LIVE"
-              : tournament.status}
-        </span>
+        <div style={styles.headerStatus}>
+          <span style={statusStyle(tournament.status)}>
+            {tournament.status === "REGISTRATION"
+              ? "OPEN"
+              : tournament.status === "STARTED"
+                ? "LIVE"
+                : tournament.status}
+          </span>
+          <span style={styles.capacityMini}>
+            {tournament.playerCount ?? 0}/{tournament.max_players} Players
+          </span>
+          <span style={styles.neededMini}>
+            {Math.max(0, Number(tournament.max_players) - Number(tournament.playerCount ?? 0))} needed
+          </span>
+          {tournament.mode !== "SOLO" && (
+            <span style={styles.teamMini}>
+              {tournament.teamCount ?? 0}/{tournament.max_teams} Teams
+            </span>
+          )}
+        </div>
       </div>
 
       <div style={styles.stats}>
@@ -83,12 +96,7 @@ export default function Tournaments() {
         <Stat label="KILL" value={`৳${Number(tournament.kill_reward).toFixed(0)}`} />
       </div>
 
-      <div style={styles.capacity}>
-        <span>
-          {tournament.mode === "SOLO"
-            ? `${tournament.playerCount ?? 0}/${tournament.max_players} Players • ${Math.max(0, Number(tournament.max_players) - Number(tournament.playerCount ?? 0))} needed`
-            : `${tournament.playerCount ?? 0}/${tournament.max_players} Players • ${Math.max(0, Number(tournament.max_players) - Number(tournament.playerCount ?? 0))} needed • ${tournament.teamCount ?? 0}/${tournament.max_teams} Teams`}
-        </span>
+      <div style={styles.countdownRow}>
         <span style={styles.countdown}>{registrationLabel(tournament, now)}</span>
       </div>
 
@@ -219,10 +227,13 @@ const styles = {
   time: { margin: "9px 0 1px", fontSize: "23px", fontWeight: "900" },
   date: { color: "#77757c", fontSize: "10px" },
   status: { padding: "5px 8px", borderRadius: "8px", fontSize: "8px", fontWeight: "900", whiteSpace: "nowrap" },
-  statusRow: { display: "flex", justifyContent: "flex-start", marginTop: "8px" },
+  headerStatus: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "3px", minWidth: "90px" },
+  capacityMini: { color: "#d5d2d8", fontSize: "9px", fontWeight: "800", whiteSpace: "nowrap" },
+  neededMini: { color: "#77757c", fontSize: "8px", whiteSpace: "nowrap" },
+  teamMini: { color: "#77757c", fontSize: "8px", whiteSpace: "nowrap" },
   stats: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginTop: "15px" },
   stat: { padding: "10px", borderRadius: "11px", background: "#19181c", border: "1px solid #27262a", display: "grid", gap: "4px" },
-  capacity: { display: "flex", justifyContent: "space-between", gap: "10px", marginTop: "11px", color: "#77757c", fontSize: "9px" },
+  countdownRow: { display: "flex", justifyContent: "flex-end", marginTop: "8px" },
   countdown: { color: "#ffad68", fontWeight: "800", textAlign: "right" },
   joinButton: { width: "100%", marginTop: "13px", padding: "12px", border: "1px solid #ff6a2a", borderRadius: "11px", background: "linear-gradient(135deg, #ff7a2f, #e84231)", color: "#fff", fontWeight: "900" },
   statusCard: { padding: "16px", borderRadius: "15px", background: "#121216", border: "1px solid #29272b", color: "#8f8c93", fontSize: "12px" },
