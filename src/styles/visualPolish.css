@@ -1085,3 +1085,14 @@ body {
   color: #ffaaa8 !important;
   box-shadow: none !important;
 }
+
+
+/* FINAL TOURNAMENT SIDE ACCENT REMOVAL — the visible line was an inset shadow, not a border. */
+.tournaments-page .tournament-card,
+.tournaments-page .tournament-card:hover,
+.tournaments-page article,
+.tournaments-page article:hover {
+  border: none !important;
+  border-left: none !important;
+  box-shadow: 0 12px 34px rgba(0,0,0,.20) !important;
+}
