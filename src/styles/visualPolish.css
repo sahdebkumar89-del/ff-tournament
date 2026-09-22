@@ -153,3 +153,215 @@ input:focus, select:focus, textarea:focus {
     border-radius: 16px !important;
   }
 }
+
+
+/* PREMIUM VISUAL PASS — presentation only */
+.ff-app {
+  background:
+    radial-gradient(900px 420px at 50% -120px, rgba(255,84,32,.14), transparent 68%),
+    radial-gradient(700px 380px at 100% 35%, rgba(174,37,32,.08), transparent 72%),
+    #08090c !important;
+}
+
+.ff-app main {
+  position: relative;
+}
+
+.ff-app h1, .ff-app h2, .ff-app h3 {
+  font-weight: 850 !important;
+  letter-spacing: -.55px;
+}
+
+.ff-app article,
+.ff-app section {
+  border-color: rgba(255,255,255,.075) !important;
+}
+
+.ff-app article:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255,103,48,.28) !important;
+  box-shadow: 0 18px 45px rgba(0,0,0,.30), 0 0 0 1px rgba(255,103,48,.035);
+}
+
+.ff-app button {
+  transition: all .18s ease !important;
+}
+
+.ff-app button:not(:disabled):hover {
+  filter: brightness(1.12) saturate(1.08) !important;
+  transform: translateY(-1px);
+}
+
+.ff-app button:not(:disabled):active {
+  transform: translateY(0) scale(.985) !important;
+}
+
+/* Home */
+.ff-app > header {
+  padding-top: 24px !important;
+  padding-bottom: 18px !important;
+}
+
+.ff-app > header h1 {
+  font-size: 25px !important;
+}
+
+.ff-app > header > div:first-child {
+  position: relative;
+}
+
+.ff-app > header > div:first-child::after {
+  content: "";
+  display: block;
+  width: 42px;
+  height: 3px;
+  margin-top: 9px;
+  border-radius: 99px;
+  background: linear-gradient(90deg,#ff7a32,#d83a31);
+  box-shadow: 0 0 14px rgba(255,92,38,.35);
+}
+
+.ff-app .wallet-card,
+.ff-app section[style*="WALLET"] {
+  box-shadow: 0 18px 45px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.045) !important;
+}
+
+.ff-app .wallet-card {
+  border: 1px solid rgba(255,106,46,.24) !important;
+  background: linear-gradient(135deg,#191114 0%,#111216 55%,#171013 100%) !important;
+}
+
+.ff-app .mode-grid article,
+.ff-app .matchCard {
+  background: linear-gradient(145deg,#15161b,#0f1014) !important;
+}
+
+.ff-app .liveCard {
+  background: linear-gradient(135deg,#171312,#111114 62%,#17100f) !important;
+  border-color: rgba(255,92,48,.25) !important;
+}
+
+/* User pages */
+.tournaments-page,
+.tournament-details-page,
+.wallet-page,
+.profile-page,
+.room-page {
+  background: transparent !important;
+}
+
+.tournaments-page article,
+.tournament-details-page section,
+.wallet-page section,
+.profile-page section,
+.room-page section {
+  background-image: linear-gradient(145deg,rgba(255,255,255,.018),transparent 48%) !important;
+  box-shadow: 0 12px 34px rgba(0,0,0,.18);
+}
+
+.tournaments-page h1,
+.tournament-details-page h1,
+.wallet-page h1,
+.profile-page h1,
+.room-page h1 {
+  font-size: 26px !important;
+}
+
+.tournaments-page button,
+.tournament-details-page button,
+.wallet-page button,
+.profile-page button,
+.room-page button {
+  border-radius: 11px !important;
+}
+
+.tournaments-page button[style*="linear-gradient"],
+.tournament-details-page button[style*="linear-gradient"],
+.wallet-page button[style*="linear-gradient"],
+.profile-page button[style*="linear-gradient"],
+.room-page button[style*="linear-gradient"] {
+  box-shadow: 0 8px 22px rgba(235,72,42,.18);
+}
+
+/* Premium filter / tabs */
+.tournaments-page button {
+  letter-spacing: .15px;
+}
+
+.tournaments-page button[style*="#351b18"] {
+  background: linear-gradient(135deg,#482019,#2b1515) !important;
+  color: #ffae70 !important;
+  box-shadow: inset 0 0 0 1px rgba(255,117,62,.08);
+}
+
+/* Wallet balance */
+.wallet-page .balance {
+  text-shadow: 0 0 28px rgba(255,105,43,.18);
+}
+
+/* Admin */
+.ff-admin {
+  background:
+    radial-gradient(850px 400px at 50% -130px,rgba(255,88,35,.12),transparent 65%),
+    #08090c !important;
+}
+
+.ff-admin article {
+  background: linear-gradient(145deg,#15151a,#101115) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.22);
+}
+
+.ff-admin button {
+  border-radius: 10px !important;
+}
+
+.ff-admin button[style*="background: #241615"],
+.ff-admin button[style*="#241615"] {
+  background: linear-gradient(135deg,#281918,#191215) !important;
+  border-color: #7d3926 !important;
+  color: #ffae72 !important;
+}
+
+.ff-admin button[style*="#261516"],
+.ff-admin button[style*="#8e2d2d"] {
+  background: linear-gradient(135deg,#351719,#211113) !important;
+  border-color: #7b3030 !important;
+  color: #ffaaa0 !important;
+}
+
+.ff-admin button[style*="#291716"] {
+  background: linear-gradient(135deg,#2d1a17,#191214) !important;
+  border-color: #814029 !important;
+  color: #ffb27c !important;
+}
+
+/* Bottom navigation */
+.ff-app nav {
+  background: rgba(9,9,12,.88) !important;
+  border-top: 1px solid rgba(255,255,255,.075) !important;
+  box-shadow: 0 -14px 35px rgba(0,0,0,.30) !important;
+  backdrop-filter: blur(20px) saturate(140%) !important;
+}
+
+.ff-app nav button {
+  min-height: 48px !important;
+}
+
+.ff-app nav button[aria-current="page"] {
+  color: #ff8746 !important;
+}
+
+.ff-app nav button[aria-current="page"] span:first-child {
+  box-shadow: 0 0 18px rgba(255,95,39,.16);
+  background: linear-gradient(145deg,#402019,#241416) !important;
+}
+
+@media (max-width:560px) {
+  .ff-app > header { padding-left:16px !important; padding-right:16px !important; }
+  .ff-app h1 { font-size:24px !important; }
+  .tournaments-page h1,
+  .tournament-details-page h1,
+  .wallet-page h1,
+  .profile-page h1,
+  .room-page h1 { font-size:24px !important; }
+}
