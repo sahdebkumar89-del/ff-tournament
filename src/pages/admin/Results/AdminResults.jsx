@@ -23,7 +23,6 @@ export default function AdminResults({ onBack }) {
       .order("tournament_date", { ascending: false })
       .order("scheduled_start_time", { ascending: false })
       .limit(100);
-
     if (error) setMessage(error.message);
     else setTournaments(data || []);
   }
@@ -44,19 +43,12 @@ export default function AdminResults({ onBack }) {
     if (!id) return;
     setLoading(true);
     setMessage("");
-
     const [p, r] = await Promise.all([
       supabase.rpc("admin_get_tournament_participants", { p_tournament_id: Number(id) }),
-      supabase
-        .from("tournament_results")
-        .select("*")
-        .eq("tournament_id", Number(id))
-        .order("position", { ascending: true }),
+      supabase.from("tournament_results").select("*").eq("tournament_id", Number(id)).order("position", { ascending: true }),
     ]);
-
     if (p.error) setMessage(p.error.message);
     if (r.error) setMessage(r.error.message);
-
     const participantRows = p.data || [];
     setParticipants(participantRows);
     setResults(r.data || []);
@@ -69,49 +61,35 @@ export default function AdminResults({ onBack }) {
   async function completeTournament() {
     if (!tournamentId || !window.confirm("Mark this tournament as completed?")) return;
     setBusy("complete");
-    const { error } = await supabase.rpc("admin_complete_tournament", {
-      p_tournament_id: Number(tournamentId),
-    });
+    const { error } = await supabase.rpc("admin_complete_tournament", { p_tournament_id: Number(tournamentId) });
     setMessage(error?.message || "Tournament completed.");
-    if (!error) {
-      await loadTournaments();
-      await loadData();
-    }
+    if (!error) { await loadTournaments(); await loadData(); }
     setBusy("");
   }
 
   function updatePosition(participantId, value) {
-    setDrafts((prev) => ({
-      ...prev,
-      [participantId]: { ...prev[participantId], position: value },
-    }));
+    setDrafts((prev) => ({ ...prev, [participantId]: { ...prev[participantId], position: value } }));
   }
 
   function updateKills(participantId, uid, value) {
     setDrafts((prev) => ({
       ...prev,
-      [participantId]: {
-        ...prev[participantId],
-        kills: { ...prev[participantId].kills, [uid]: value },
-      },
+      [participantId]: { ...prev[participantId], kills: { ...prev[participantId].kills, [uid]: value } },
     }));
   }
 
   async function saveAllResults() {
     if (!tournamentId) return;
-
     const payload = [];
     const usedPositions = new Set();
 
     for (const p of participants) {
       const draft = drafts[p.participant_id];
       const position = Number(draft?.position);
-
       if (!Number.isInteger(position) || position < 1) {
         setMessage(`Enter a valid finishing position for ${p.full_name || "every participant"}.`);
         return;
       }
-
       if (usedPositions.has(position)) {
         setMessage(`Position ${position} is used more than once.`);
         return;
@@ -120,7 +98,6 @@ export default function AdminResults({ onBack }) {
 
       const uids = Array.isArray(p.free_fire_uids) ? p.free_fire_uids : [];
       const playerKills = {};
-
       for (const uid of uids) {
         const value = draft?.kills?.[uid];
         if (value === "" || value === undefined || !Number.isInteger(Number(value)) || Number(value) < 0) {
@@ -129,48 +106,28 @@ export default function AdminResults({ onBack }) {
         }
         playerKills[uid] = Number(value);
       }
-
-      payload.push({
-        participant_id: Number(p.participant_id),
-        position,
-        player_kills: playerKills,
-      });
+      payload.push({ participant_id: Number(p.participant_id), position, player_kills: playerKills });
     }
 
-    if (!payload.length) {
-      setMessage("No joined participants found.");
-      return;
-    }
+    if (!payload.length) return setMessage("No joined participants found.");
 
     setBusy("saveAll");
     setMessage("");
-
     const { error } = await supabase.rpc("admin_create_bulk_uid_results", {
       p_tournament_id: Number(tournamentId),
       p_results: payload,
       p_proof_url: proofUrl.trim() || null,
     });
-
-    if (error) {
-      setMessage(error.message);
-    } else {
-      setMessage(`All ${payload.length} participant results saved for verification.`);
-      await loadData();
-    }
-
+    if (error) setMessage(error.message);
+    else { setMessage(`All ${payload.length} participant results saved for verification.`); await loadData(); }
     setBusy("");
   }
 
   async function verify(id, status) {
     const note = status === "REJECTED" ? window.prompt("Reason for rejection?") : null;
     if (status === "REJECTED" && !note?.trim()) return;
-
     setBusy("verify" + id);
-    const { error } = await supabase.rpc("admin_set_result_verification", {
-      p_result_id: id,
-      p_status: status,
-      p_note: note || null,
-    });
+    const { error } = await supabase.rpc("admin_set_result_verification", { p_result_id: id, p_status: status, p_note: note || null });
     setMessage(error?.message || `Result marked ${status}.`);
     if (!error) await loadData();
     setBusy("");
@@ -194,19 +151,60 @@ export default function AdminResults({ onBack }) {
     setBusy("");
   }
 
+  async function verifyAll() {
+    const pending = results.filter((r) => r.verification_status === "PENDING");
+    if (!pending.length) return;
+    if (!window.confirm(`Verify all ${pending.length} results? Check the result sheet first.`)) return;
+    setBusy("verifyAll");
+    for (const r of pending) {
+      const { error } = await supabase.rpc("admin_set_result_verification", { p_result_id: r.id, p_status: "VERIFIED", p_note: null });
+      if (error) { setMessage(error.message); setBusy(""); return; }
+    }
+    setMessage(`All ${pending.length} results verified.`);
+    await loadData();
+    setBusy("");
+  }
+
+  async function publishAll() {
+    const verified = results.filter((r) => r.verification_status === "VERIFIED" && !r.published_at);
+    if (!verified.length) return;
+    if (!window.confirm(`Publish and lock all ${verified.length} verified results?`)) return;
+    setBusy("publishAll");
+    for (const r of verified) {
+      const { error } = await supabase.rpc("publish_tournament_result", { p_result_id: r.id });
+      if (error) { setMessage(error.message); setBusy(""); return; }
+    }
+    setMessage(`All ${verified.length} results published and locked.`);
+    await loadData();
+    setBusy("");
+  }
+
+  async function payoutAll() {
+    const published = results.filter((r) => r.published_at);
+    if (!published.length) return;
+    if (!window.confirm(`Approve wallet payout for all ${published.length} published results?`)) return;
+    setBusy("payoutAll");
+    for (const r of published) {
+      const { error } = await supabase.rpc("admin_approve_result_payout", { p_result_id: r.id });
+      if (error) { setMessage(error.message); setBusy(""); return; }
+    }
+    setMessage(`Wallet payout approved for all ${published.length} results.`);
+    await loadData();
+    setBusy("");
+  }
+
   const selected = tournaments.find((t) => String(t.id) === String(tournamentId));
   const hasResults = results.length > 0;
+  const pendingCount = results.filter((r) => r.verification_status === "PENDING").length;
+  const verifiedCount = results.filter((r) => r.verification_status === "VERIFIED" && !r.published_at).length;
+  const publishedCount = results.filter((r) => r.published_at).length;
 
   const filteredParticipants = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return participants;
     return participants.filter((p) => {
       const uids = Array.isArray(p.free_fire_uids) ? p.free_fire_uids : [];
-      return (
-        String(p.participant_id).includes(q) ||
-        String(p.full_name || "").toLowerCase().includes(q) ||
-        uids.some((uid) => String(uid).includes(q))
-      );
+      return String(p.participant_id).includes(q) || String(p.full_name || "").toLowerCase().includes(q) || uids.some((uid) => String(uid).includes(q));
     });
   }, [participants, search]);
 
@@ -216,49 +214,26 @@ export default function AdminResults({ onBack }) {
   return (
     <main style={s.page}>
       <header style={s.header}>
-        <div>
-          <div style={s.kicker}>ADMIN PANEL</div>
-          <h1 style={s.title}>Results & Prize Control</h1>
-        </div>
+        <div><div style={s.kicker}>ADMIN PANEL</div><h1 style={s.title}>Results & Prize Control</h1></div>
         <button type="button" onClick={onBack} style={s.back}>Back</button>
       </header>
 
       {message && <div style={s.message}>{message}</div>}
 
       <section style={s.card}>
-        <label style={s.label}>
-          Tournament
-          <select
-            value={tournamentId}
-            onChange={(e) => {
-              setTournamentId(e.target.value);
-              loadData(e.target.value);
-            }}
-            style={s.input}
-          >
+        <label style={s.label}>Tournament
+          <select value={tournamentId} onChange={(e) => { setTournamentId(e.target.value); loadData(e.target.value); }} style={s.input}>
             <option value="">Select started/completed tournament</option>
-            {tournaments.map((t) => (
-              <option key={t.id} value={t.id}>
-                #{t.id} • {t.mode} • {t.tournament_date} • {t.scheduled_start_time.slice(0, 5)} • {t.status}
-              </option>
-            ))}
+            {tournaments.map((t) => <option key={t.id} value={t.id}>#{t.id} • {t.mode} • {t.tournament_date} • {t.scheduled_start_time.slice(0,5)} • {t.status}</option>)}
           </select>
         </label>
-
-        {selected?.status === "STARTED" && (
-          <button type="button" disabled={busy === "complete"} onClick={completeTournament} style={s.secondary}>
-            {busy === "complete" ? "Completing..." : "Mark Tournament Completed"}
-          </button>
-        )}
+        {selected?.status === "STARTED" && <button type="button" disabled={busy === "complete"} onClick={completeTournament} style={s.secondary}>{busy === "complete" ? "Completing..." : "Mark Tournament Completed"}</button>}
       </section>
 
       {tournamentId && !hasResults && (
         <section style={s.card}>
           <div style={s.sheetHeader}>
-            <div>
-              <h2 style={s.sub}>Fast Result Sheet</h2>
-              <p style={s.sheetHint}>সব participant একসাথে আছে। Free Fire result sheet দেখে এখানে Position + Kills বসালেই হবে। UID খুঁজতে profile খুলতে হবে না।</p>
-            </div>
+            <div><h2 style={s.sub}>Fast Result Sheet</h2><p style={s.sheetHint}>সব participant একসাথে আছে। Free Fire result sheet দেখে Position + Kills বসালেই হবে। UID খুঁজতে profile খুলতে হবে না।</p></div>
             <div style={s.progress}>{enteredCount}/{totalCount}</div>
           </div>
 
@@ -267,97 +242,39 @@ export default function AdminResults({ onBack }) {
             <span>1. Free Fire result-এ নাম দেখে একই participant/UID খুঁজুন</span>
             <span>2. Position দিন</span>
             <span>3. প্রতিটি UID-এর kills দিন</span>
-            <span>4. নিচে একবারে Proof URL দিয়ে Save All করুন</span>
+            <span>4. একবারে Proof URL দিয়ে Save All করুন</span>
           </div>
 
-          <label style={s.label}>
-            Search player / UID
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Name, UID or participant ID"
-              style={s.input}
-            />
+          <label style={s.label}>Search player / UID
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, UID or participant ID" style={s.input}/>
           </label>
 
-          <label style={s.label}>
-            Result Proof URL <span style={s.optional}>(একই result screenshot/link)</span>
-            <input
-              value={proofUrl}
-              onChange={(e) => setProofUrl(e.target.value)}
-              placeholder="https://..."
-              style={s.input}
-            />
+          <label style={s.label}>Result Proof URL <span style={s.optional}>(একই result screenshot/link)</span>
+            <input value={proofUrl} onChange={(e) => setProofUrl(e.target.value)} placeholder="https://..." style={s.input}/>
           </label>
 
           <div style={s.list}>
-            {loading ? (
-              <div style={s.empty}>Loading participants...</div>
-            ) : filteredParticipants.length === 0 ? (
-              <div style={s.empty}>No matching participant.</div>
-            ) : (
+            {loading ? <div style={s.empty}>Loading participants...</div> : filteredParticipants.length === 0 ? <div style={s.empty}>No matching participant.</div> :
               filteredParticipants.map((p) => {
                 const uids = Array.isArray(p.free_fire_uids) ? p.free_fire_uids : [];
                 const draft = drafts[p.participant_id] || { position: "", kills: {} };
-
-                return (
-                  <article key={p.participant_id} style={s.teamCard}>
-                    <div style={s.teamHeader}>
-                      <div>
-                        <strong style={s.teamName}>{p.full_name || "Player"}</strong>
-                        <div style={s.teamMeta}>Participant #{p.participant_id} • Captain UID {p.captain_free_fire_uid || "—"}</div>
-                      </div>
-                      <label style={s.positionBox}>
-                        <span>POSITION</span>
-                        <input
-                          type="number"
-                          min="1"
-                          value={draft.position}
-                          onChange={(e) => updatePosition(p.participant_id, e.target.value)}
-                          placeholder="#"
-                          style={s.positionInput}
-                        />
-                      </label>
-                    </div>
-
-                    <div style={s.uidList}>
-                      {uids.map((uid) => (
-                        <div key={uid} style={s.uidRow}>
-                          <div style={s.uidInfo}>
-                            <strong>{uid}</strong>
-                            {uid === p.captain_free_fire_uid && <span style={s.captain}>CAPTAIN</span>}
-                          </div>
-                          <label style={s.killBox}>
-                            <span>KILLS</span>
-                            <input
-                              type="number"
-                              min="0"
-                              value={draft.kills?.[uid] ?? ""}
-                              onChange={(e) => updateKills(p.participant_id, uid, e.target.value)}
-                              placeholder="0"
-                              style={s.killInput}
-                            />
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </article>
-                );
-              })
-            )}
+                return <article key={p.participant_id} style={s.teamCard}>
+                  <div style={s.teamHeader}>
+                    <div><strong style={s.teamName}>{p.full_name || "Player"}</strong><div style={s.teamMeta}>Participant #{p.participant_id} • Captain UID {p.captain_free_fire_uid || "—"}</div></div>
+                    <label style={s.positionBox}><span>POSITION</span><input type="number" min="1" value={draft.position} onChange={(e) => updatePosition(p.participant_id, e.target.value)} placeholder="#" style={s.positionInput}/></label>
+                  </div>
+                  <div style={s.uidList}>
+                    {uids.map((uid) => <div key={uid} style={s.uidRow}>
+                      <div style={s.uidInfo}><strong>{uid}</strong>{uid === p.captain_free_fire_uid && <span style={s.captain}>CAPTAIN</span>}</div>
+                      <label style={s.killBox}><span>KILLS</span><input type="number" min="0" value={draft.kills?.[uid] ?? ""} onChange={(e) => updateKills(p.participant_id, uid, e.target.value)} placeholder="0" style={s.killInput}/></label>
+                    </div>)}
+                  </div>
+                </article>;
+              })}
           </div>
 
-          <div style={s.rule}>
-            Position prize → Captain wallet<br />
-            Kill reward → each UID's wallet; no account → Captain wallet
-          </div>
-
-          <button
-            type="button"
-            disabled={busy === "saveAll" || loading || totalCount === 0}
-            onClick={saveAllResults}
-            style={s.primary}
-          >
+          <div style={s.rule}>Position prize → Captain wallet<br/>Kill reward → each UID's wallet; no account → Captain wallet</div>
+          <button type="button" disabled={busy === "saveAll" || loading || totalCount === 0} onClick={saveAllResults} style={s.primary}>
             {busy === "saveAll" ? "Saving All Results..." : `Save All ${totalCount} Results for Verification`}
           </button>
         </section>
@@ -366,60 +283,39 @@ export default function AdminResults({ onBack }) {
       {tournamentId && hasResults && (
         <section style={s.card}>
           <div style={s.sheetHeader}>
-            <div>
-              <h2 style={s.sub}>Verification & Publish</h2>
-              <p style={s.sheetHint}>সব result একসাথে তৈরি হয়েছে। এখন Verify → Publish & Lock → Approve Payout.</p>
-            </div>
+            <div><h2 style={s.sub}>Verification & Publish</h2><p style={s.sheetHint}>Result entry একবারে হয়ে গেছে। এখন প্রতিটি ধাপে একটি করে bulk action ব্যবহার করতে পারবে।</p></div>
             <div style={s.progress}>{results.length}</div>
           </div>
+          <div style={s.stageGrid}>
+            {pendingCount > 0 && <button type="button" disabled={busy === "verifyAll"} onClick={verifyAll} style={s.primarySmall}>{busy === "verifyAll" ? "Verifying..." : `✓ Verify All (${pendingCount})`}</button>}
+            {verifiedCount > 0 && <button type="button" disabled={busy === "publishAll"} onClick={publishAll} style={s.primarySmall}>{busy === "publishAll" ? "Publishing..." : `Publish & Lock All (${verifiedCount})`}</button>}
+            {publishedCount > 0 && <button type="button" disabled={busy === "payoutAll"} onClick={payoutAll} style={s.secondarySmall}>{busy === "payoutAll" ? "Processing..." : `Approve All Payouts (${publishedCount})`}</button>}
+          </div>
+          <div style={s.stageNote}>প্রতিটি bulk button-এর আগে confirmation থাকবে। কোনো একটি step fail হলে সেখানেই থামবে এবং error দেখাবে।</div>
         </section>
       )}
 
       <section style={s.list}>
-        {loading ? (
-          <div style={s.empty}>Loading results...</div>
-        ) : results.length === 0 && tournamentId ? (
-          <div style={s.empty}>No results entered yet.</div>
-        ) : (
-          results.map((r) => (
-            <article key={r.id} style={s.result}>
-              <div style={s.resultTop}>
-                <div>
-                  <strong>#{r.position} Position</strong>
-                  <div style={s.muted}>
-                    {r.kills} total kills • Position ৳{Number(r.position_prize).toFixed(0)} • Kill ৳{Number(r.kill_reward).toFixed(0)}
-                  </div>
-                </div>
-                <span style={badge(r.verification_status)}>{r.verification_status}</span>
-              </div>
-              <div style={s.total}>Total payout: ৳{Number(r.total_payout).toFixed(0)}</div>
-              {r.proof_url && <a href={r.proof_url} target="_blank" rel="noreferrer" style={s.link}>Open Proof</a>}
-
-              <div style={s.actions}>
-                {r.verification_status === "PENDING" && (
-                  <>
-                    <button type="button" disabled={busy === "verify" + r.id} onClick={() => verify(r.id, "VERIFIED")} style={s.primarySmall}>Verify</button>
-                    <button type="button" disabled={busy === "verify" + r.id} onClick={() => verify(r.id, "REJECTED")} style={s.danger}>Reject</button>
-                  </>
-                )}
-                {r.verification_status === "VERIFIED" && !r.published_at && (
-                  <button type="button" disabled={busy === "publish" + r.id} onClick={() => publish(r.id)} style={s.primarySmall}>Publish & Lock</button>
-                )}
-                {r.published_at && (
-                  <button type="button" disabled={busy === "payout" + r.id} onClick={() => approvePayout(r.id)} style={s.secondarySmall}>Approve UID-wise Wallet Payout</button>
-                )}
-              </div>
-            </article>
-          ))
-        )}
+        {loading ? <div style={s.empty}>Loading results...</div> : results.length === 0 && tournamentId ? <div style={s.empty}>No results entered yet.</div> :
+          results.map((r) => <article key={r.id} style={s.result}>
+            <div style={s.resultTop}>
+              <div><strong>#{r.position} Position</strong><div style={s.muted}>{r.kills} total kills • Position ৳{Number(r.position_prize).toFixed(0)} • Kill ৳{Number(r.kill_reward).toFixed(0)}</div></div>
+              <span style={badge(r.verification_status)}>{r.verification_status}</span>
+            </div>
+            <div style={s.total}>Total payout: ৳{Number(r.total_payout).toFixed(0)}</div>
+            {r.proof_url && <a href={r.proof_url} target="_blank" rel="noreferrer" style={s.link}>Open Proof</a>}
+            <div style={s.actions}>
+              {r.verification_status === "PENDING" && <><button type="button" disabled={busy === "verify" + r.id} onClick={() => verify(r.id, "VERIFIED")} style={s.primarySmall}>Verify</button><button type="button" disabled={busy === "verify" + r.id} onClick={() => verify(r.id, "REJECTED")} style={s.danger}>Reject</button></>}
+              {r.verification_status === "VERIFIED" && !r.published_at && <button type="button" disabled={busy === "publish" + r.id} onClick={() => publish(r.id)} style={s.primarySmall}>Publish & Lock</button>}
+              {r.published_at && <button type="button" disabled={busy === "payout" + r.id} onClick={() => approvePayout(r.id)} style={s.secondarySmall}>Approve UID-wise Wallet Payout</button>}
+            </div>
+          </article>)}
       </section>
     </main>
   );
 }
 
-function badge(v) {
-  return { ...s.badge, color: v === "VERIFIED" ? "#77e39b" : v === "REJECTED" ? "#ff6b6b" : "#ffc064" };
-}
+function badge(v) { return { ...s.badge, color: v === "VERIFIED" ? "#77e39b" : v === "REJECTED" ? "#ff6b6b" : "#ffc064" }; }
 
 const s = {
   page:{minHeight:"100vh",background:"#0b0b0e",color:"#f7f7f8",padding:"20px 18px 40px",maxWidth:"760px",margin:"0 auto"},
@@ -452,6 +348,8 @@ const s = {
   killInput:{width:58,boxSizing:"border-box",border:"1px solid #453139",borderRadius:8,background:"#0f0e11",color:"#fff",padding:"8px",textAlign:"center"},
   primary:{width:"100%",marginTop:15,padding:13,border:0,borderRadius:11,background:"linear-gradient(135deg,#ff7a2f,#e94231)",color:"#fff",fontWeight:900},
   secondary:{width:"100%",marginTop:12,padding:11,border:"1px solid #743021",borderRadius:10,background:"#291716",color:"#ffae6d",fontWeight:900},
+  stageGrid:{display:"grid",gap:8,marginTop:14},
+  stageNote:{marginTop:10,color:"#7f7780",fontSize:9,lineHeight:1.5},
   rule:{marginTop:12,padding:10,borderRadius:9,background:"#1a1516",color:"#c9a18c",fontSize:9,lineHeight:1.6},
   empty:{padding:16,borderRadius:15,background:"#121216",border:"1px solid #29272b",color:"#8f8c93"},
   result:{padding:15,borderRadius:16,background:"#121216",border:"1px solid #29272b"},
