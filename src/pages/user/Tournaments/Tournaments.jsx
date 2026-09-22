@@ -61,7 +61,7 @@ export default function Tournaments() {
   }
 
   const renderCard = (tournament) => (
-    <article key={tournament.id} style={styles.card}>
+    <article key={tournament.id} className="tournament-card" style={styles.card}>
       <div style={styles.cardTop}>
         <div>
           <span style={styles.modeBadge}>{tournament.mode}</span>
@@ -125,6 +125,7 @@ export default function Tournaments() {
           <button
             key={item}
             type="button"
+            className={`tournament-filter ${filter === item ? "is-active" : ""}`}
             onClick={() => setFilter(item)}
             style={{ ...styles.filterButton, ...(filter === item ? styles.filterActive : null) }}
           >
