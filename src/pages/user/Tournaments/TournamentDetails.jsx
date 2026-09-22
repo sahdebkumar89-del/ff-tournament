@@ -58,7 +58,7 @@ export default function TournamentDetails({ tournament, onBack }) {
 
   if (!tournament) {
     return (
-      <main style={styles.page}>
+      <main className="tournament-details-page" style={styles.page}>
         <div style={styles.card}>
           <h2 style={styles.title}>Tournament not found</h2>
           <button type="button" onClick={onBack} style={styles.secondaryButton}>
@@ -148,7 +148,7 @@ export default function TournamentDetails({ tournament, onBack }) {
   }
 
   return (
-    <main style={styles.page}>
+    <main className="tournament-details-page" style={styles.page}>
       <button type="button" onClick={onBack} style={styles.backButton}>
         ← Back
       </button>
