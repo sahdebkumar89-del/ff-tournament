@@ -55,3 +55,101 @@ input:focus, select:focus, textarea:focus {
 @media (max-width: 520px) {
   h1 { letter-spacing: -.35px; }
 }
+
+
+/* Page-level visual system: keeps the existing inline layout/behavior intact. */
+.ff-app {
+  min-height: 100vh;
+}
+
+.tournaments-page,
+.tournament-details-page,
+.wallet-page,
+.profile-page,
+.room-page {
+  position: relative;
+}
+
+.tournaments-page::before,
+.tournament-details-page::before,
+.wallet-page::before,
+.profile-page::before,
+.room-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 92, 44, .045), transparent 24%),
+    radial-gradient(circle at 88% 78%, rgba(220, 48, 44, .035), transparent 26%);
+}
+
+.tournaments-page article,
+.wallet-page section,
+.profile-page section,
+.room-page section,
+.tournament-details-page section {
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.tournaments-page article:hover,
+.wallet-page section:hover,
+.profile-page section:hover,
+.room-page section:hover {
+  border-color: #3b3033 !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,.20);
+}
+
+.tournaments-page button,
+.tournament-details-page button,
+.wallet-page button,
+.profile-page button,
+.room-page button {
+  min-height: 38px;
+}
+
+.tournaments-page h1,
+.tournament-details-page h1,
+.wallet-page h1,
+.profile-page h1,
+.room-page h1 {
+  letter-spacing: -.45px;
+}
+
+.tournaments-page input,
+.tournaments-page select,
+.tournaments-page textarea,
+.tournament-details-page input,
+.tournament-details-page select,
+.tournament-details-page textarea,
+.wallet-page input,
+.wallet-page select,
+.wallet-page textarea,
+.profile-page input,
+.profile-page select,
+.profile-page textarea,
+.room-page input,
+.room-page select,
+.room-page textarea {
+  color-scheme: dark;
+}
+
+@media (max-width: 560px) {
+  .tournaments-page,
+  .tournament-details-page,
+  .wallet-page,
+  .profile-page,
+  .room-page {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .tournaments-page article,
+  .wallet-page section,
+  .profile-page section,
+  .room-page section,
+  .tournament-details-page section {
+    border-radius: 16px !important;
+  }
+}
