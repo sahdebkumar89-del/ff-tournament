@@ -1008,3 +1008,47 @@ body {
 .ff-admin article:hover {
   border: none !important;
 }
+
+
+/* FINAL BUTTON + TOURNAMENT CARD CLEANUP */
+/* Remove any tournament-card side accent/border. */
+.tournaments-page article,
+.tournaments-page article:hover {
+  border: none !important;
+  border-left: none !important;
+  box-shadow: 0 12px 34px rgba(0,0,0,.20) !important;
+}
+
+/* Restore the approved warm premium orange-red button style everywhere on user tournament actions. */
+.tournaments-page button,
+.tournaments-page a[role="button"],
+.tournament-details-page button,
+.wallet-page button,
+.profile-page button,
+.room-page button {
+  background: linear-gradient(135deg, #ff7a32 0%, #f15a32 52%, #d83d31 100%) !important;
+  border: 1px solid rgba(255,139,74,.72) !important;
+  color: #fff !important;
+  box-shadow: 0 7px 20px rgba(235,72,42,.20), inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+
+.tournaments-page button:hover:not(:disabled),
+.tournaments-page a[role="button"]:hover,
+.tournament-details-page button:hover:not(:disabled),
+.wallet-page button:hover:not(:disabled),
+.profile-page button:hover:not(:disabled),
+.room-page button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff8b45 0%, #ff6438 52%, #e24736 100%) !important;
+  border-color: #ff9a62 !important;
+  box-shadow: 0 9px 24px rgba(235,72,42,.28), inset 0 1px 0 rgba(255,255,255,.12) !important;
+}
+
+/* Keep disabled buttons visibly disabled. */
+.tournaments-page button:disabled,
+.tournament-details-page button:disabled,
+.wallet-page button:disabled,
+.profile-page button:disabled,
+.room-page button:disabled {
+  filter: grayscale(.15) brightness(.72) !important;
+  box-shadow: none !important;
+}
