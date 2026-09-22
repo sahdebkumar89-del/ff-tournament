@@ -91,7 +91,7 @@ export default function Profile() {
   const displayName = profile?.full_name || (user?.email ? user.email.split("@")[0] : "Player");
 
   return (
-    <main style={styles.page}>
+    <main className="profile-page" style={styles.page}>
       <div style={styles.header}>
         <div><div style={styles.smallText}>ACCOUNT</div><h1 style={styles.title}>My Profile</h1></div>
         <span style={styles.badge}>BR ONLY</span>
