@@ -128,6 +128,12 @@ export default function AdminTournaments({ onBack }) {
 
   useEffect(() => {
     loadTournaments();
+
+    const timer = window.setInterval(() => {
+      loadTournaments();
+    }, 60 * 1000);
+
+    return () => window.clearInterval(timer);
   }, []);
 
   async function saveSchedule() {
@@ -636,7 +642,7 @@ export default function AdminTournaments({ onBack }) {
                       type="button"
                       onClick={() => {
                         setEditTarget(tournament);
-                        setEditDate(tournament.tournament_date);
+                        setEditDate(dhakaDate(1));
                         setEditTime(tournament.scheduled_start_time?.slice(0, 5) || "");
                       }}
                       style={styles.roomButton}
@@ -824,7 +830,9 @@ export default function AdminTournaments({ onBack }) {
           <section style={styles.modal}>
             <div style={styles.modalKicker}>TOMORROW SCHEDULE</div>
             <h2 style={styles.modalTitle}>Change Schedule</h2>
-            <label style={styles.label}>Date<input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} style={styles.input} /></label>
+            <div style={styles.scheduleDateNote}>
+              Tomorrow · {dhakaDate(1)}
+            </div>
             <label style={styles.label}>Start time<input type="time" step="1800" value={editTime} onChange={(e) => setEditTime(e.target.value)} style={styles.input} /></label>
             <div style={styles.modalActions}>
               <button type="button" onClick={() => setEditTarget(null)} style={styles.modalKeep}>Keep</button>
@@ -989,6 +997,17 @@ const styles = {
     fontSize: "13px",
   },
 
+  scheduleDateNote: {
+    marginTop: "8px",
+    padding: "10px 11px",
+    borderRadius: "10px",
+    background: "#101014",
+    border: "1px solid #302b31",
+    color: "#ff9a5c",
+    fontSize: "11px",
+    fontWeight: "900",
+  },
+
   daySwitcher: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -1021,16 +1040,6 @@ const styles = {
     float: "right",
     color: "#ff9a5c",
     fontWeight: "900",
-  },
-
-  dayHeading: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "10px",
-    margin: "10px 0 12px",
-    color: "#fff",
-    fontSize: "13px",
   },
 
   summaryGrid: {
