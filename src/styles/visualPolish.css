@@ -836,3 +836,149 @@ body {
 .ff-app nav button[aria-current="page"] span:first-child {
   background: linear-gradient(145deg,#402019,#241416) !important;
 }
+
+
+/* FINAL APPROVED THEME: DARK + ORANGE + RED */
+body {
+  background:
+    radial-gradient(circle at 50% -10%, rgba(255,91,39,.08), transparent 34%),
+    #0b0b0e !important;
+  color: #f7f7f8 !important;
+}
+.ff-app {
+  background:
+    radial-gradient(900px 420px at 50% -120px, rgba(255,84,32,.14), transparent 68%),
+    radial-gradient(700px 380px at 100% 35%, rgba(174,37,32,.08), transparent 72%),
+    #08090c !important;
+}
+.ff-app > header {
+  background: transparent !important;
+}
+.ff-app > header > div:first-child::after {
+  background: linear-gradient(90deg,#ff7a32,#d83a31) !important;
+  box-shadow: 0 0 14px rgba(255,92,38,.35) !important;
+}
+.ff-app h1,.ff-app h2,.ff-app h3 {
+  color:#f7f7f8 !important;
+}
+.ff-app article,
+.ff-app section,
+.tournaments-page article,
+.tournament-details-page section,
+.wallet-page section,
+.profile-page section,
+.room-page section,
+.ff-admin article {
+  background: linear-gradient(145deg,#151419,#101115) !important;
+  border-color: rgba(255,255,255,.075) !important;
+  border-left: 1px solid rgba(255,255,255,.075) !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,.22) !important;
+}
+.ff-app article:hover,
+.tournaments-page article:hover,
+.wallet-page section:hover,
+.profile-page section:hover,
+.room-page section:hover {
+  border-color: rgba(255,103,48,.28) !important;
+  box-shadow: 0 18px 45px rgba(0,0,0,.30) !important;
+}
+.ff-app .wallet-card {
+  background: linear-gradient(135deg,#1b1112 0%,#121216 55%,#1a1010 100%) !important;
+  border:1px solid rgba(255,106,46,.24) !important;
+}
+.ff-app .mode-grid > article,
+.ff-app .modeGrid > article,
+.ff-app .matchCard {
+  background: linear-gradient(145deg,#17161a,#101115) !important;
+}
+.ff-app .liveCard {
+  background: linear-gradient(135deg,#1a1211,#111114 62%,#18100f) !important;
+  border-color: rgba(255,92,48,.25) !important;
+}
+.ff-app .openBadge {
+  background:#17351f !important;
+  border-color:#2c8a4a !important;
+  color:#78e09a !important;
+}
+.ff-app .modeBadge {
+  background:#2a1715 !important;
+  border-color:#74351f !important;
+  color:#ff9a62 !important;
+}
+.ff-app .joinButton,
+.ff-app .walletButton,
+.ff-app .liveButton {
+  background:linear-gradient(135deg,#ff7a32,#e34b2f) !important;
+  border-color:#ff8b4a !important;
+  color:#fff !important;
+  box-shadow:0 9px 24px rgba(235,72,42,.20) !important;
+}
+.tournaments-page button {
+  background:#151419 !important;
+  border-color:#33282a !important;
+  color:#aaa2a4 !important;
+}
+.tournaments-page button[style*="351b18"],
+.tournaments-page button[style*="482019"] {
+  background:linear-gradient(135deg,#552018,#321518) !important;
+  border-color:#8e4227 !important;
+  color:#ffad78 !important;
+}
+.wallet-page section:first-of-type {
+  border-color:rgba(53,201,139,.18) !important;
+}
+.wallet-page section:nth-of-type(2) {
+  border-color:rgba(255,106,46,.22) !important;
+}
+.profile-page section,
+.room-page section,
+.tournament-details-page section {
+  border-left:1px solid rgba(255,255,255,.075) !important;
+}
+.profile-page button,
+.room-page button,
+.tournament-details-page button {
+  background:linear-gradient(135deg,#ff7130,#d83d31) !important;
+  color:#fff !important;
+}
+.ff-app input:focus,
+.ff-app select:focus,
+.ff-app textarea:focus {
+  border-color:#ff7130 !important;
+  box-shadow:0 0 0 3px rgba(255,113,48,.10) !important;
+}
+.ff-admin {
+  background:
+    radial-gradient(850px 400px at 50% -130px,rgba(255,88,35,.12),transparent 65%),
+    #08090c !important;
+}
+.ff-admin article {
+  background:linear-gradient(145deg,#15151a,#101115) !important;
+}
+.ff-admin button {
+  border-radius:10px !important;
+}
+.ff-admin button[style*="#241615"],
+.ff-admin button[style*="#291716"] {
+  background:linear-gradient(135deg,#2b1715,#1a1113) !important;
+  border-color:#7d3926 !important;
+  color:#ffae72 !important;
+}
+.ff-admin button[style*="#261516"],
+.ff-admin button[style*="#8e2d2d"] {
+  background:linear-gradient(135deg,#40171a,#241113) !important;
+  border-color:#8b3033 !important;
+  color:#ffaaa0 !important;
+}
+.ff-app nav {
+  background:rgba(9,9,12,.90) !important;
+  border-top:1px solid rgba(255,255,255,.075) !important;
+  box-shadow:0 -14px 35px rgba(0,0,0,.30) !important;
+}
+.ff-app nav button[aria-current="page"] {
+  color:#ff8746 !important;
+}
+.ff-app nav button[aria-current="page"] span:first-child {
+  background:linear-gradient(145deg,#402019,#241416) !important;
+  box-shadow:0 0 18px rgba(255,95,39,.16) !important;
+}
