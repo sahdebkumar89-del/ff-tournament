@@ -111,7 +111,7 @@ export default function Tournaments() {
   );
 
   return (
-    <main style={styles.page}>
+    <main className="tournaments-page" style={styles.page}>
       <div style={styles.header}>
         <div>
           <div style={styles.kicker}>FREE FIRE • BATTLE ROYALE</div>
