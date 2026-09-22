@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase/client.js";
 
 const TABS = ["PENDING", "APPROVED", "REJECTED"];
+const DEFAULT_BKASH_NUMBER = "+8801328594782";
 
 export default function AdminWallet({ onBack }) {
   const [rows, setRows] = useState([]);
@@ -9,17 +10,27 @@ export default function AdminWallet({ onBack }) {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [busyId, setBusyId] = useState(null);
+  const [bkashNumber, setBkashNumber] = useState(DEFAULT_BKASH_NUMBER);
+  const [savingBkash, setSavingBkash] = useState(false);
 
   async function load() {
     setLoading(true);
     setMessage("");
-    const { data, error } = await supabase
-      .from("payment_transactions")
-      .select("id,user_id,amount,transaction_type,payment_method,payment_reference,status,admin_note,approved_at,created_at")
-      .order("created_at", { ascending: false });
+    const [{ data, error }, { data: settings }] = await Promise.all([
+      supabase
+        .from("payment_transactions")
+        .select("id,user_id,amount,transaction_type,payment_method,payment_reference,status,admin_note,approved_at,created_at")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("app_settings")
+        .select("deposit_bkash_number")
+        .eq("id", true)
+        .maybeSingle(),
+    ]);
 
     if (error) setMessage(error.message);
     else setRows(data || []);
+    if (settings?.deposit_bkash_number) setBkashNumber(settings.deposit_bkash_number);
     setLoading(false);
   }
 
@@ -29,6 +40,23 @@ export default function AdminWallet({ onBack }) {
     () => rows.filter((row) => row.status === tab),
     [rows, tab]
   );
+
+  async function saveBkashNumber() {
+    setSavingBkash(true);
+    setMessage("");
+    const { data, error } = await supabase.rpc("admin_update_deposit_bkash_number", {
+      p_bkash_number: bkashNumber.trim(),
+    });
+    setSavingBkash(false);
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setBkashNumber(data?.deposit_bkash_number || bkashNumber.trim());
+    setMessage("Deposit bKash number updated successfully.");
+  }
 
   async function review(id, status) {
     const note = window.prompt(
@@ -63,6 +91,24 @@ export default function AdminWallet({ onBack }) {
         </div>
         <button type="button" onClick={onBack} style={styles.back}>Back</button>
       </div>
+
+      <section style={styles.settingsCard}>
+        <div style={styles.settingsLabel}>DEPOSIT PAYMENT NUMBER</div>
+        <div style={styles.settingsTitle}>bKash Number</div>
+        <div style={styles.settingsRow}>
+          <input
+            value={bkashNumber}
+            onChange={e => setBkashNumber(e.target.value)}
+            placeholder="+8801XXXXXXXXX"
+            inputMode="tel"
+            style={styles.settingsInput}
+          />
+          <button type="button" onClick={saveBkashNumber} disabled={savingBkash} style={styles.saveButton}>
+            {savingBkash ? "Saving..." : "Save"}
+          </button>
+        </div>
+        <div style={styles.settingsNote}>Users will see this number when they open Deposit. You can change it anytime.</div>
+      </section>
 
       <div style={styles.tabs}>
         {TABS.map((item) => (
@@ -129,6 +175,13 @@ const styles = {
   kicker:{fontSize:10,letterSpacing:2,color:"#999"},
   title:{margin:"5px 0 0",fontSize:20,color:"#fff"},
   back:{padding:"8px 12px",borderRadius:9,border:"1px solid #49323a",background:"#181519",color:"#ddd"},
+  settingsCard:{marginTop:16,padding:14,borderRadius:14,background:"#1a1519",border:"1px solid #5a302c"},
+  settingsLabel:{fontSize:9,letterSpacing:1.5,color:"#9f969c",fontWeight:900},
+  settingsTitle:{marginTop:5,fontSize:15,color:"#fff",fontWeight:900},
+  settingsRow:{display:"flex",gap:8,marginTop:9},
+  settingsInput:{flex:1,minWidth:0,padding:"10px 11px",borderRadius:9,border:"1px solid #403037",background:"#0f0e11",color:"#fff",outline:"none",fontSize:13},
+  saveButton:{padding:"10px 14px",border:0,borderRadius:9,background:"linear-gradient(135deg,#ff7a2f,#e94231)",color:"#fff",fontWeight:900},
+  settingsNote:{marginTop:8,color:"#948990",fontSize:10,lineHeight:1.5},
   tabs:{display:"flex",gap:7,marginTop:16},
   tab:{flex:1,padding:"9px 6px",borderRadius:10,border:"1px solid #34282e",background:"#19161b",color:"#9f96a1",fontWeight:800,fontSize:11},
   activeTab:{borderColor:"#ff6b35",background:"#24191a",color:"#fff"},
