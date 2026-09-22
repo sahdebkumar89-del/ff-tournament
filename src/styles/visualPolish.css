@@ -1089,6 +1089,6 @@ body {
 .tournaments-page article:hover,
 .tournaments-page article.tournament-card:hover {
   border: 1px solid #29272b !important;
-  border-left: 1px solid #29272b !important;
+  border-left: none !important;
   box-shadow: 0 12px 34px rgba(0,0,0,.20) !important;
 }
