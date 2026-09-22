@@ -410,7 +410,7 @@ export default function AdminTournaments({ onBack }) {
   }
 
   return (
-    <div style={styles.page}>
+    <div className="ff-admin" style={styles.page}>
       <div style={styles.header}>
         <div>
           <div style={styles.kicker}>ADMIN PANEL</div>
