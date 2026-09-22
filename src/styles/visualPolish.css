@@ -365,3 +365,113 @@ input:focus, select:focus, textarea:focus {
   .profile-page h1,
   .room-page h1 { font-size:24px !important; }
 }
+
+
+/* SEMANTIC COLOR SYSTEM — each color has a job */
+:root {
+  --premium-orange: #ff7a32;
+  --premium-gold: #ffc857;
+  --premium-red: #e24a45;
+  --premium-green: #35c98b;
+  --premium-blue: #55a8ff;
+  --premium-purple: #a98bff;
+  --premium-text: #f7f4f2;
+  --premium-muted: #a6a0a3;
+}
+
+/* Accent strips make different areas easy to scan */
+.ff-app main > section:nth-child(1) {
+  border-color: rgba(255,122,50,.20) !important;
+}
+.ff-app main > section:nth-child(2) {
+  border-color: rgba(169,139,255,.18) !important;
+}
+.ff-app main > section:nth-child(3) {
+  border-color: rgba(53,201,139,.18) !important;
+}
+
+/* Match cards: orange / purple / red identity */
+.ff-app .modeGrid > article:nth-child(1),
+.ff-app .mode-grid > article:nth-child(1) {
+  border-color: rgba(255,122,50,.26) !important;
+}
+.ff-app .modeGrid > article:nth-child(2),
+.ff-app .mode-grid > article:nth-child(2) {
+  border-color: rgba(169,139,255,.25) !important;
+}
+.ff-app .modeGrid > article:nth-child(3),
+.ff-app .mode-grid > article:nth-child(3) {
+  border-color: rgba(226,74,69,.25) !important;
+}
+
+/* Status language */
+.ff-app [style*="color: #35c98b"],
+.ff-app [style*="color:#35c98b"] { color:#35c98b !important; }
+.ff-app [style*="color: #ff7130"],
+.ff-app [style*="color:#ff7130"] { color:#ff8a48 !important; }
+
+/* Forms: calm blue focus, orange primary actions */
+.ff-app input:focus,
+.ff-app select:focus,
+.ff-app textarea:focus {
+  border-color: rgba(85,168,255,.75) !important;
+  box-shadow: 0 0 0 3px rgba(85,168,255,.10), 0 0 18px rgba(85,168,255,.06) !important;
+}
+
+/* User page sections get small visual identity differences */
+.tournaments-page article:nth-of-type(3n+1) { box-shadow: inset 3px 0 0 rgba(255,122,50,.72), 0 12px 34px rgba(0,0,0,.20) !important; }
+.tournaments-page article:nth-of-type(3n+2) { box-shadow: inset 3px 0 0 rgba(169,139,255,.72), 0 12px 34px rgba(0,0,0,.20) !important; }
+.tournaments-page article:nth-of-type(3n)   { box-shadow: inset 3px 0 0 rgba(226,74,69,.72), 0 12px 34px rgba(0,0,0,.20) !important; }
+
+/* Wallet: money actions feel financial, not generic */
+.wallet-page section:first-of-type {
+  border-color: rgba(53,201,139,.22) !important;
+}
+.wallet-page section:nth-of-type(2) {
+  border-color: rgba(255,122,50,.22) !important;
+}
+.wallet-page section:nth-of-type(3) {
+  border-color: rgba(85,168,255,.20) !important;
+}
+
+/* Profile: identity / account area */
+.profile-page section {
+  border-left: 3px solid rgba(169,139,255,.48) !important;
+}
+
+/* Room: live/security feeling */
+.room-page section {
+  border-left: 3px solid rgba(53,201,139,.48) !important;
+}
+
+/* Tournament details: registration/action emphasis */
+.tournament-details-page section:first-of-type {
+  border-color: rgba(255,122,50,.30) !important;
+}
+.tournament-details-page section:last-of-type {
+  border-color: rgba(85,168,255,.20) !important;
+}
+
+/* Admin semantic controls */
+.ff-admin button {
+  box-shadow: 0 5px 16px rgba(0,0,0,.18);
+}
+.ff-admin button:hover:not(:disabled) {
+  box-shadow: 0 8px 22px rgba(0,0,0,.28);
+}
+.ff-admin article:nth-of-type(3n+1) { border-left: 3px solid rgba(255,122,50,.42) !important; }
+.ff-admin article:nth-of-type(3n+2) { border-left: 3px solid rgba(85,168,255,.34) !important; }
+.ff-admin article:nth-of-type(3n)   { border-left: 3px solid rgba(226,74,69,.38) !important; }
+
+/* Keep dangerous actions clearly distinct */
+.ff-admin button[style*="Cancel"],
+.ff-admin button[aria-label*="Cancel"] {
+  border-color: rgba(226,74,69,.55) !important;
+}
+
+/* Navigation uses restrained colors so the content remains the focus */
+.ff-app nav button:nth-child(1)[aria-current="page"] span:first-child { color:#ff8746 !important; }
+.ff-app nav button:nth-child(2)[aria-current="page"] span:first-child { color:#a98bff !important; }
+.ff-app nav button:nth-child(3)[aria-current="page"] span:first-child { color:#55a8ff !important; }
+.ff-app nav button:nth-child(4)[aria-current="page"] span:first-child { color:#35c98b !important; }
+.ff-app nav button:nth-child(5)[aria-current="page"] span:first-child { color:#ffc857 !important; }
