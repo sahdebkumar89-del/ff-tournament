@@ -195,6 +195,7 @@ export default function AdminResults({ onBack }) {
 
   const selected = tournaments.find((t) => String(t.id) === String(tournamentId));
   const hasResults = results.length > 0;
+  const hasParticipants = participants.length > 0;
   const pendingCount = results.filter((r) => r.verification_status === "PENDING").length;
   const verifiedCount = results.filter((r) => r.verification_status === "VERIFIED" && !r.published_at).length;
   const publishedCount = results.filter((r) => r.published_at).length;
@@ -230,7 +231,16 @@ export default function AdminResults({ onBack }) {
         {selected?.status === "STARTED" && <button type="button" disabled={busy === "complete"} onClick={completeTournament} style={s.secondary}>{busy === "complete" ? "Completing..." : "Mark Tournament Completed"}</button>}
       </section>
 
-      {tournamentId && !hasResults && (
+      {tournamentId && !loading && !hasParticipants && !hasResults && (
+        <section style={s.emptyCard}>
+          <div style={s.emptyIcon}>!</div>
+          <h2 style={s.emptyTitle}>No participants joined</h2>
+          <p style={s.emptyText}>এই tournament-এ কোনো player/team join করেনি। তাই এই match-এর জন্য result entry বা payout দেওয়ার কিছু নেই।</p>
+          <button type="button" onClick={() => { setTournamentId(""); setParticipants([]); setResults([]); setDrafts({}); }} style={s.secondarySmall}>Choose Another Tournament</button>
+        </section>
+      )}
+
+      {tournamentId && !hasResults && hasParticipants && (
         <section style={s.card}>
           <div style={s.sheetHeader}>
             <div><h2 style={s.sub}>Fast Result Sheet</h2><p style={s.sheetHint}>সব participant একসাথে আছে। Free Fire result sheet দেখে Position + Kills বসালেই হবে। UID খুঁজতে profile খুলতে হবে না।</p></div>
@@ -254,7 +264,7 @@ export default function AdminResults({ onBack }) {
           </label>
 
           <div style={s.list}>
-            {loading ? <div style={s.empty}>Loading participants...</div> : filteredParticipants.length === 0 ? <div style={s.empty}>No matching participant.</div> :
+            {filteredParticipants.length === 0 ? <div style={s.empty}>No matching participant.</div> :
               filteredParticipants.map((p) => {
                 const uids = Array.isArray(p.free_fire_uids) ? p.free_fire_uids : [];
                 const draft = drafts[p.participant_id] || { position: "", kills: {} };
@@ -296,7 +306,7 @@ export default function AdminResults({ onBack }) {
       )}
 
       <section style={s.list}>
-        {loading ? <div style={s.empty}>Loading results...</div> : results.length === 0 && tournamentId ? <div style={s.empty}>No results entered yet.</div> :
+        {loading ? <div style={s.empty}>Loading results...</div> : results.length === 0 && tournamentId && hasParticipants ? <div style={s.empty}>No results entered yet.</div> :
           results.map((r) => <article key={r.id} style={s.result}>
             <div style={s.resultTop}>
               <div><strong>#{r.position} Position</strong><div style={s.muted}>{r.kills} total kills • Position ৳{Number(r.position_prize).toFixed(0)} • Kill ৳{Number(r.kill_reward).toFixed(0)}</div></div>
@@ -325,6 +335,10 @@ const s = {
   back:{border:"1px solid #5a2a20",borderRadius:10,background:"#1b1415",color:"#ff9b4a",padding:"10px 12px",fontWeight:800},
   message:{padding:12,marginBottom:14,borderRadius:12,background:"#171417",border:"1px solid #3b2928",color:"#ffc064",fontSize:12},
   card:{padding:16,borderRadius:18,background:"#121216",border:"1px solid #29272b",marginBottom:12},
+  emptyCard:{padding:18,borderRadius:18,background:"#121216",border:"1px solid #3a2b2f",marginBottom:12,textAlign:"center"},
+  emptyIcon:{width:38,height:38,borderRadius:"50%",background:"#2a1919",color:"#ff9b63",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px",fontWeight:900},
+  emptyTitle:{margin:"0 0 6px",fontSize:18},
+  emptyText:{margin:"0 auto 14px",maxWidth:480,color:"#8f8c93",fontSize:11,lineHeight:1.6},
   label:{display:"grid",gap:6,marginTop:10,color:"#aaa4aa",fontSize:10,fontWeight:800},
   optional:{fontWeight:600,color:"#666"},
   input:{width:"100%",boxSizing:"border-box",border:"1px solid #3b2c2e",borderRadius:10,background:"#0f0e11",color:"#fff",padding:11,outline:"none"},
