@@ -591,30 +591,47 @@ export default function AdminTournaments({ onBack }) {
                 </span>
               </div>
 
-              <div style={styles.adminCardActions}>
-                <button
-                  type="button"
-                  disabled={busyId === tournament.id}
-                  onClick={() => toggleTournament(tournament)}
-                  style={styles.roomButton}
-                >
-                  {tournament.is_enabled === false ? "Turn ON" : "Turn OFF"}
-                </button>
+              {(
+                (dayView === "today" &&
+                  ["REGISTRATION", "FULL", "STARTED"].includes(tournament.status)) ||
+                (dayView === "tomorrow" &&
+                  ["REGISTRATION", "FULL"].includes(tournament.status))
+              ) && (
+                <div style={styles.adminCardActions}>
+                  {["REGISTRATION", "FULL"].includes(tournament.status) && (
+                    <button
+                      type="button"
+                      disabled={busyId === tournament.id}
+                      onClick={() => toggleTournament(tournament)}
+                      style={styles.roomButton}
+                    >
+                      {tournament.is_enabled === false ? "Turn ON" : "Turn OFF"}
+                    </button>
+                  )}
 
-                {dayView === "today" ? (
-                  <button type="button" onClick={() => openRoomManager(tournament.id)} style={styles.roomButton}>
-                    Room
-                  </button>
-                ) : (
-                  <button type="button" onClick={() => {
-                    setEditTarget(tournament);
-                    setEditDate(tournament.tournament_date);
-                    setEditTime(tournament.scheduled_start_time?.slice(0, 5) || "");
-                  }} style={styles.roomButton}>
-                    Edit Time
-                  </button>
-                )}
-              </div>
+                  {dayView === "today" ? (
+                    <button
+                      type="button"
+                      onClick={() => openRoomManager(tournament.id)}
+                      style={styles.roomButton}
+                    >
+                      Room
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditTarget(tournament);
+                        setEditDate(tournament.tournament_date);
+                        setEditTime(tournament.scheduled_start_time?.slice(0, 5) || "");
+                      }}
+                      style={styles.roomButton}
+                    >
+                      Edit Time
+                    </button>
+                  )}
+                </div>
+              )}
 
               {canManualStart(tournament) && (
                 <button
