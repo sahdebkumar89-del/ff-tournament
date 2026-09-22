@@ -982,3 +982,29 @@ body {
   background:linear-gradient(145deg,#402019,#241416) !important;
   box-shadow:0 0 18px rgba(255,95,39,.16) !important;
 }
+
+
+/* FINAL BORDER CLEANUP — remove decorative card/section borders only */
+.ff-app article,
+.ff-app section,
+.tournaments-page article,
+.tournament-details-page section,
+.wallet-page section,
+.profile-page section,
+.room-page section,
+.ff-admin article {
+  border: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+}
+
+.ff-app article:hover,
+.tournaments-page article:hover,
+.wallet-page section:hover,
+.profile-page section:hover,
+.room-page section:hover,
+.ff-admin article:hover {
+  border: none !important;
+}
