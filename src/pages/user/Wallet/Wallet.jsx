@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase/client.js";
 
+const DEFAULT_BKASH_NUMBER = "+8801328594782";
+
 export default function Wallet() {
   const [balance, setBalance] = useState(0);
   const [positionPrizes, setPositionPrizes] = useState(0);
   const [killRewards, setKillRewards] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [bkashNumber, setBkashNumber] = useState(DEFAULT_BKASH_NUMBER);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [action, setAction] = useState(null);
@@ -27,6 +30,13 @@ export default function Wallet() {
       if (!wallet) throw new Error("Wallet not found.");
 
       setBalance(Number(wallet.balance) || 0);
+
+      const { data: settings } = await supabase
+        .from("app_settings")
+        .select("deposit_bkash_number")
+        .eq("id", true)
+        .maybeSingle();
+      if (settings?.deposit_bkash_number) setBkashNumber(settings.deposit_bkash_number);
 
       const { data: tx, error: txError } = await supabase
         .from("wallet_transactions")
@@ -57,13 +67,22 @@ export default function Wallet() {
 
   useEffect(() => { loadWallet(); }, []);
 
+  async function copyBkashNumber() {
+    try {
+      await navigator.clipboard.writeText(bkashNumber);
+      setActionMessage("bKash number copied.");
+    } catch {
+      setActionMessage("Copy failed. Please copy the number manually.");
+    }
+  }
+
   async function submitWalletRequest() {
     setActionMessage("");
     const amount = Number(form.amount);
     if (!Number.isFinite(amount) || amount <= 0) return setActionMessage("Enter a valid amount.");
     if (action === "WITHDRAWAL" && amount < 50) return setActionMessage("Minimum withdrawal is ৳50.");
     if (!form.method.trim()) return setActionMessage("Payment method is required.");
-    if (action === "DEPOSIT" && !form.reference.trim()) return setActionMessage("Deposit reference is required.");
+    if (action === "DEPOSIT" && !form.reference.trim()) return setActionMessage("bKash TrxID is required.");
 
     const rpc = action === "DEPOSIT" ? "request_deposit" : "request_withdrawal";
     const { error: rpcError } = await supabase.rpc(rpc, {
@@ -98,10 +117,31 @@ export default function Wallet() {
         </section>
 
         {action && <section style={styles.requestCard}>
-          <h2 style={styles.sectionTitle}>{action === "DEPOSIT" ? "Request Deposit" : "Request Withdrawal"}</h2>
+          <h2 style={styles.sectionTitle}>{action === "DEPOSIT" ? "Deposit via bKash" : "Request Withdrawal"}</h2>
+
+          {action === "DEPOSIT" && (
+            <div style={styles.bkashBox}>
+              <div style={styles.bkashLabel}>SEND MONEY TO</div>
+              <div style={styles.bkashRow}>
+                <strong style={styles.bkashNumber}>{bkashNumber}</strong>
+                <button type="button" onClick={copyBkashNumber} style={styles.copyButton}>Copy</button>
+              </div>
+              <p style={styles.bkashNote}>Send the exact amount to this bKash number, then enter the TrxID below.</p>
+            </div>
+          )}
+
           <input type="number" min="1" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} placeholder="Amount (৳)" style={styles.formInput}/>
-          <input value={form.method} onChange={e=>setForm({...form,method:e.target.value})} placeholder="Payment method" style={styles.formInput}/>
-          <input value={form.reference} onChange={e=>setForm({...form,reference:e.target.value})} placeholder={action==="DEPOSIT" ? "Transaction/reference ID" : "Payment account/reference (optional)"} style={styles.formInput}/>
+
+          {action === "WITHDRAWAL" && (
+            <input value={form.method} onChange={e=>setForm({...form,method:e.target.value})} placeholder="Payment method" style={styles.formInput}/>
+          )}
+
+          {action === "DEPOSIT" ? (
+            <input value={form.reference} onChange={e=>setForm({...form,reference:e.target.value})} placeholder="bKash TrxID" style={styles.formInput}/>
+          ) : (
+            <input value={form.reference} onChange={e=>setForm({...form,reference:e.target.value})} placeholder="Payment account/reference (optional)" style={styles.formInput}/>
+          )}
+
           {actionMessage && <div style={styles.actionMessage}>{actionMessage}</div>}
           <div style={styles.formButtons}>
             <button type="button" onClick={submitWalletRequest} style={styles.submitButton}>Submit for Approval</button>
@@ -110,11 +150,11 @@ export default function Wallet() {
         </section>}
 
         <section style={styles.actions}>
-          <button type="button" onClick={()=>{setAction("DEPOSIT");setActionMessage("")}} style={{...styles.actionButton,...styles.depositButton}}>
+          <button type="button" onClick={()=>{setAction("DEPOSIT");setForm({...form,method:"bKash"});setActionMessage("")}} style={{...styles.actionButton,...styles.depositButton}}>
             <span style={styles.actionIcon}>↓</span>
             <strong>Deposit</strong>
           </button>
-          <button type="button" onClick={()=>{setAction("WITHDRAWAL");setActionMessage("")}} style={{...styles.actionButton,...styles.withdrawButton}}>
+          <button type="button" onClick={()=>{setAction("WITHDRAWAL");setForm({...form,method:""});setActionMessage("")}} style={{...styles.actionButton,...styles.withdrawButton}}>
             <span style={styles.actionIcon}>↗</span>
             <strong>Withdraw</strong>
           </button>
@@ -193,6 +233,12 @@ const styles = {
   actionIcon:{width:"34px",height:"34px",flexShrink:0,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,.94)",color:"#111",fontSize:"22px",fontWeight:"900"},
   card:{padding:"18px",borderRadius:"20px",background:"#131116",border:"1px solid #3b2930",marginBottom:"14px"},
   requestCard:{padding:"16px",borderRadius:"18px",background:"#171416",border:"1px solid #4b2b25",marginBottom:"14px"},
+  bkashBox:{marginBottom:"10px",padding:"14px",borderRadius:"14px",background:"#21191d",border:"1px solid #61352f"},
+  bkashLabel:{fontSize:"10px",letterSpacing:"1.5px",fontWeight:"900",color:"#9f969c"},
+  bkashRow:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginTop:"7px"},
+  bkashNumber:{fontSize:"20px",color:"#fff",letterSpacing:"0.5px"},
+  copyButton:{padding:"8px 11px",border:"1px solid #ff7a2f",borderRadius:"9px",background:"#2a1a1b",color:"#ff9a5c",fontWeight:"900"},
+  bkashNote:{margin:"8px 0 0",color:"#a99da2",fontSize:"11px",lineHeight:1.5},
   sectionTitle:{margin:"0 0 12px",fontSize:"18px",color:"#fff"},
   formInput:{width:"100%",boxSizing:"border-box",marginTop:"9px",padding:"11px",borderRadius:"10px",border:"1px solid #3b2c2e",background:"#0f0e11",color:"#fff",outline:"none"},
   formButtons:{display:"flex",gap:"8px",marginTop:"12px"},
@@ -204,6 +250,5 @@ const styles = {
   paymentRight:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"5px"},
   emptyText:{color:"#888",fontSize:"12px"},
   infoCard:{padding:"16px 18px",borderRadius:"16px",background:"#171316",border:"1px solid #3b2930",color:"#d9cfd2"},
-  infoCardP:{margin:"7px 0 0",color:"#968b90",fontSize:"11px",lineHeight:1.6},
   errorCard:{padding:"24px",borderRadius:"18px",background:"#2a171b",border:"1px solid #713039",color:"#fecaca"},
 };
