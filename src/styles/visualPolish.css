@@ -419,9 +419,6 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* User page sections get small visual identity differences */
-.tournaments-page article:nth-of-type(3n+1) { box-shadow: inset 3px 0 0 rgba(255,122,50,.72), 0 12px 34px rgba(0,0,0,.20) !important; }
-.tournaments-page article:nth-of-type(3n+2) { box-shadow: inset 3px 0 0 rgba(169,139,255,.72), 0 12px 34px rgba(0,0,0,.20) !important; }
-.tournaments-page article:nth-of-type(3n)   { box-shadow: inset 3px 0 0 rgba(226,74,69,.72), 0 12px 34px rgba(0,0,0,.20) !important; }
 
 /* Wallet: money actions feel financial, not generic */
 .wallet-page section:first-of-type {
@@ -625,18 +622,6 @@ body {
 }
 
 /* Tournament cards cycle through blue, violet, green, amber */
-.tournaments-page article:nth-of-type(4n+1) {
-  border-left: 3px solid var(--ui-cyan) !important;
-}
-.tournaments-page article:nth-of-type(4n+2) {
-  border-left: 3px solid var(--ui-violet) !important;
-}
-.tournaments-page article:nth-of-type(4n+3) {
-  border-left: 3px solid var(--ui-green) !important;
-}
-.tournaments-page article:nth-of-type(4n) {
-  border-left: 3px solid var(--ui-yellow) !important;
-}
 
 /* Wallet: green = money, blue = payment info, amber = pending */
 .wallet-page section:first-of-type {
@@ -1094,5 +1079,16 @@ body {
 .tournaments-page article:hover {
   border: none !important;
   border-left: none !important;
+  box-shadow: 0 12px 34px rgba(0,0,0,.20) !important;
+}
+
+
+/* DEFINITIVE TOURNAMENT CARD STYLE — NO LEFT ACCENT */
+.tournaments-page article,
+.tournaments-page article.tournament-card,
+.tournaments-page article:hover,
+.tournaments-page article.tournament-card:hover {
+  border: 1px solid #29272b !important;
+  border-left: 1px solid #29272b !important;
   box-shadow: 0 12px 34px rgba(0,0,0,.20) !important;
 }
