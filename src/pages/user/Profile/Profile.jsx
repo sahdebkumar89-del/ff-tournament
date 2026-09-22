@@ -150,7 +150,7 @@ export default function Profile() {
           <div style={styles.row}><span>Game Mode</span><strong>Battle Royale</strong></div>
           <div style={styles.row}><span>Role</span><strong>{profile?.role || "USER"}</strong></div>
           <div style={styles.row}><span>Account Status</span><strong style={styles.active}>Active</strong></div>
-          <button type="button" onClick={signOut} style={styles.logoutButton}>Sign Out</button>
+          <button type="button" className="profile-signout" onClick={signOut} style={styles.logoutButton}>Sign Out</button>
         </section>
       </>}
     </main>
