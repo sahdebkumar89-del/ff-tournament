@@ -108,7 +108,7 @@ export default function Room() {
   }, [matches]);
 
   return (
-    <main style={styles.page}>
+    <main className="room-page" style={styles.page}>
       <div style={styles.header}>
         <div>
           <div style={styles.kicker}>MATCH ACCESS</div>
