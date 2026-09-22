@@ -578,6 +578,20 @@ export default function AdminTournaments({ onBack }) {
                   )}
                 </span>
 
+                {dayView === "tomorrow" && (
+                  <span
+                    style={
+                      isRegistrationOpen(tournament)
+                        ? styles.registrationOpen
+                        : styles.registrationClosed
+                    }
+                  >
+                    {isRegistrationOpen(tournament)
+                      ? "Registration OPEN"
+                      : "Not Open · " + formatRegistrationOpenAt(tournament.registration_opens_at)}
+                  </span>
+                )}
+
                 <span style={styles.capacityMeta}>
                   Enrolled{" "}
                   {tournament.mode === "SOLO"
@@ -859,6 +873,22 @@ export default function AdminTournaments({ onBack }) {
   );
 }
 
+function isRegistrationOpen(tournament) {
+  if (!tournament?.registration_opens_at) return false;
+  return Date.now() >= new Date(tournament.registration_opens_at).getTime();
+}
+
+function formatRegistrationOpenAt(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleString("en-BD", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Dhaka",
+  });
+}
+
 function formatReleasedAt(value) {
   if (!value) return "";
 
@@ -1112,6 +1142,16 @@ const styles = {
 
   capacityMeta: {
     color: "#ffc064",
+    fontWeight: "900",
+  },
+
+  registrationOpen: {
+    color: "#77e39b",
+    fontWeight: "900",
+  },
+
+  registrationClosed: {
+    color: "#9e979f",
     fontWeight: "900",
   },
 
