@@ -475,3 +475,289 @@ input:focus, select:focus, textarea:focus {
 .ff-app nav button:nth-child(3)[aria-current="page"] span:first-child { color:#55a8ff !important; }
 .ff-app nav button:nth-child(4)[aria-current="page"] span:first-child { color:#35c98b !important; }
 .ff-app nav button:nth-child(5)[aria-current="page"] span:first-child { color:#ffc857 !important; }
+
+
+/* FULL MULTI-COLOR VISUAL THEME
+   Intent: move away from the red/orange-heavy look.
+   Colors are semantic and deliberately balanced. */
+:root {
+  --ui-bg: #080b14;
+  --ui-bg-2: #0d1220;
+  --ui-surface: #111827;
+  --ui-surface-2: #151d2e;
+  --ui-border: #26334a;
+  --ui-text: #f4f7fb;
+  --ui-muted: #94a3b8;
+
+  --ui-cyan: #38bdf8;
+  --ui-blue: #60a5fa;
+  --ui-violet: #a78bfa;
+  --ui-purple: #c084fc;
+  --ui-green: #34d399;
+  --ui-teal: #2dd4bf;
+  --ui-yellow: #fbbf24;
+  --ui-pink: #f472b6;
+  --ui-orange: #fb923c;
+  --ui-red: #fb7185;
+}
+
+/* Replace the dominant warm background with a cool premium base. */
+body {
+  background:
+    radial-gradient(700px 420px at 8% -5%, rgba(56,189,248,.13), transparent 62%),
+    radial-gradient(700px 420px at 94% 12%, rgba(167,139,250,.11), transparent 62%),
+    radial-gradient(650px 380px at 50% 110%, rgba(52,211,153,.055), transparent 65%),
+    var(--ui-bg) !important;
+  color: var(--ui-text) !important;
+}
+
+.ff-app {
+  background:
+    radial-gradient(620px 360px at 0% 0%, rgba(56,189,248,.10), transparent 64%),
+    radial-gradient(620px 360px at 100% 15%, rgba(167,139,250,.09), transparent 64%),
+    radial-gradient(600px 360px at 70% 100%, rgba(52,211,153,.045), transparent 68%),
+    var(--ui-bg) !important;
+}
+
+.ff-app > header {
+  background: linear-gradient(180deg, rgba(8,11,20,.92), rgba(8,11,20,.45)) !important;
+}
+
+.ff-app > header > div:first-child::after {
+  background: linear-gradient(90deg,var(--ui-cyan),var(--ui-violet),var(--ui-pink)) !important;
+  box-shadow: 0 0 16px rgba(56,189,248,.25) !important;
+}
+
+/* Typography hierarchy */
+.ff-app h1, .ff-app h2, .ff-app h3 {
+  color: #f8fafc !important;
+}
+.ff-app p { color: var(--ui-muted); }
+
+/* Cards: cool glass surfaces instead of red-black blocks */
+.ff-app article,
+.ff-app section,
+.tournaments-page article,
+.tournament-details-page section,
+.wallet-page section,
+.profile-page section,
+.room-page section,
+.ff-admin article {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.035), rgba(255,255,255,.008)),
+    var(--ui-surface) !important;
+  border-color: var(--ui-border) !important;
+  box-shadow: 0 16px 38px rgba(0,0,0,.24) !important;
+}
+
+/* Home wallet = emerald money identity */
+.ff-app .wallet-card {
+  background:
+    radial-gradient(circle at 90% 10%, rgba(52,211,153,.13), transparent 42%),
+    linear-gradient(145deg,#10221f,#111827 62%,#101722) !important;
+  border-color: rgba(52,211,153,.30) !important;
+}
+.ff-app .wallet-card .balance {
+  color: #6ee7b7 !important;
+}
+
+/* Home match cards: each mode gets its own identity */
+.ff-app .mode-grid > article:nth-child(1),
+.ff-app .modeGrid > article:nth-child(1) {
+  background: linear-gradient(145deg,rgba(56,189,248,.10),#111827 58%) !important;
+  border-color: rgba(56,189,248,.32) !important;
+}
+.ff-app .mode-grid > article:nth-child(2),
+.ff-app .modeGrid > article:nth-child(2) {
+  background: linear-gradient(145deg,rgba(167,139,250,.11),#111827 58%) !important;
+  border-color: rgba(167,139,250,.32) !important;
+}
+.ff-app .mode-grid > article:nth-child(3),
+.ff-app .modeGrid > article:nth-child(3) {
+  background: linear-gradient(145deg,rgba(244,114,182,.09),#111827 58%) !important;
+  border-color: rgba(244,114,182,.30) !important;
+}
+
+/* LIVE = green/teal, never red */
+.ff-app .liveCard {
+  background:
+    radial-gradient(circle at 90% 10%, rgba(45,212,191,.14), transparent 42%),
+    linear-gradient(145deg,#102421,#111827 62%) !important;
+  border-color: rgba(45,212,191,.34) !important;
+}
+.ff-app .liveBadge {
+  color: #5eead4 !important;
+}
+
+/* Semantic badges */
+.ff-app .openBadge {
+  background: rgba(52,211,153,.12) !important;
+  border-color: rgba(52,211,153,.34) !important;
+  color: #6ee7b7 !important;
+}
+.ff-app .modeBadge {
+  background: rgba(56,189,248,.10) !important;
+  border-color: rgba(56,189,248,.28) !important;
+  color: #7dd3fc !important;
+}
+
+/* Primary buttons = blue/cyan, not orange */
+.ff-app .joinButton,
+.ff-app .walletButton,
+.ff-app .liveButton {
+  background: linear-gradient(135deg,#2563eb,#0891b2) !important;
+  border-color: rgba(96,165,250,.45) !important;
+  color: white !important;
+  box-shadow: 0 9px 24px rgba(37,99,235,.22) !important;
+}
+
+/* Tournament page filters use distinct category colors */
+.tournaments-page button {
+  background: #121a29 !important;
+  border-color: #293852 !important;
+  color: #aab7ca !important;
+}
+.tournaments-page button[style*="351b18"],
+.tournaments-page button[style*="482019"] {
+  background: linear-gradient(135deg,#1d4ed8,#2563eb) !important;
+  border-color: #60a5fa !important;
+  color: #fff !important;
+}
+
+/* Tournament cards cycle through blue, violet, green, amber */
+.tournaments-page article:nth-of-type(4n+1) {
+  border-left: 3px solid var(--ui-cyan) !important;
+}
+.tournaments-page article:nth-of-type(4n+2) {
+  border-left: 3px solid var(--ui-violet) !important;
+}
+.tournaments-page article:nth-of-type(4n+3) {
+  border-left: 3px solid var(--ui-green) !important;
+}
+.tournaments-page article:nth-of-type(4n) {
+  border-left: 3px solid var(--ui-yellow) !important;
+}
+
+/* Wallet: green = money, blue = payment info, amber = pending */
+.wallet-page section:first-of-type {
+  border-color: rgba(52,211,153,.34) !important;
+}
+.wallet-page section:nth-of-type(2) {
+  border-color: rgba(96,165,250,.28) !important;
+}
+.wallet-page section:nth-of-type(3) {
+  border-color: rgba(251,191,36,.25) !important;
+}
+.wallet-page button {
+  background: linear-gradient(135deg,#2563eb,#0891b2) !important;
+  color: #fff !important;
+}
+
+/* Profile = violet identity */
+.profile-page section {
+  border-left: 3px solid rgba(167,139,250,.70) !important;
+}
+.profile-page button {
+  background: linear-gradient(135deg,#7c3aed,#a855f7) !important;
+  color: white !important;
+}
+
+/* Room = teal/green live-access identity */
+.room-page section {
+  border-left: 3px solid rgba(45,212,191,.70) !important;
+}
+.room-page button {
+  background: linear-gradient(135deg,#0f766e,#059669) !important;
+  color: white !important;
+}
+
+/* Tournament details = blue primary + violet information */
+.tournament-details-page section:first-of-type {
+  border-color: rgba(96,165,250,.35) !important;
+}
+.tournament-details-page section:last-of-type {
+  border-color: rgba(167,139,250,.28) !important;
+}
+.tournament-details-page button {
+  background: linear-gradient(135deg,#2563eb,#4f46e5) !important;
+  color: white !important;
+}
+
+/* Inputs: blue/cyan focus */
+.ff-app input,
+.ff-app select,
+.ff-app textarea {
+  background: #0d1523 !important;
+  border-color: #263852 !important;
+  color: #e5edf7 !important;
+}
+.ff-app input:focus,
+.ff-app select:focus,
+.ff-app textarea:focus {
+  border-color: var(--ui-cyan) !important;
+  box-shadow: 0 0 0 3px rgba(56,189,248,.12) !important;
+}
+
+/* Admin gets a professional dashboard palette */
+.ff-admin {
+  background:
+    radial-gradient(700px 400px at 0% 0%, rgba(56,189,248,.08), transparent 62%),
+    radial-gradient(700px 400px at 100% 0%, rgba(167,139,250,.08), transparent 62%),
+    var(--ui-bg) !important;
+}
+.ff-admin article {
+  background: linear-gradient(145deg,#121a29,#0f1623) !important;
+}
+
+/* Admin actions: clear semantic colors */
+.ff-admin button {
+  color: #eaf2ff !important;
+}
+.ff-admin button[style*="#241615"],
+.ff-admin button[style*="#291716"] {
+  background: linear-gradient(135deg,#1d4ed8,#2563eb) !important;
+  border-color: rgba(96,165,250,.48) !important;
+}
+.ff-admin button[style*="#261516"],
+.ff-admin button[style*="#8e2d2d"] {
+  background: linear-gradient(135deg,#be123c,#e11d48) !important;
+  border-color: rgba(251,113,133,.48) !important;
+}
+.ff-admin button[style*="green"],
+.ff-admin button[style*="#166534"] {
+  background: linear-gradient(135deg,#047857,#10b981) !important;
+  border-color: rgba(52,211,153,.48) !important;
+}
+
+/* Admin cards rotate subtle accent colors */
+.ff-admin article:nth-of-type(4n+1) { border-left: 3px solid var(--ui-cyan) !important; }
+.ff-admin article:nth-of-type(4n+2) { border-left: 3px solid var(--ui-violet) !important; }
+.ff-admin article:nth-of-type(4n+3) { border-left: 3px solid var(--ui-green) !important; }
+.ff-admin article:nth-of-type(4n) { border-left: 3px solid var(--ui-yellow) !important; }
+
+/* Bottom nav: active destination gets its own color */
+.ff-app nav {
+  background: rgba(8,11,20,.90) !important;
+  border-top-color: #26334a !important;
+}
+.ff-app nav button[aria-current="page"] span:first-child {
+  background: #172235 !important;
+  box-shadow: none !important;
+}
+.ff-app nav button:nth-child(1)[aria-current="page"] { color: var(--ui-cyan) !important; }
+.ff-app nav button:nth-child(2)[aria-current="page"] { color: var(--ui-violet) !important; }
+.ff-app nav button:nth-child(3)[aria-current="page"] { color: var(--ui-blue) !important; }
+.ff-app nav button:nth-child(4)[aria-current="page"] { color: var(--ui-green) !important; }
+.ff-app nav button:nth-child(5)[aria-current="page"] { color: var(--ui-yellow) !important; }
+
+/* Notifications / unread emphasis */
+.ff-app .notificationDot {
+  background: var(--ui-pink) !important;
+  color: #fff !important;
+}
+
+/* Danger remains red only where danger is actually meant */
+.ff-app [style*="danger"],
+.ff-admin [style*="danger"] {
+  color: #fb7185 !important;
+}
