@@ -101,6 +101,16 @@ export default function Wallet() {
 
   return (
     <main className="wallet-page" style={styles.page}>
+      <style>{`
+        .wallet-page .wallet-deposit-action {
+          background: linear-gradient(135deg,#1689ff,#075de8) !important;
+          border-color: #2188ff !important;
+        }
+        .wallet-page .wallet-withdraw-action {
+          background: linear-gradient(135deg,#65c92d,#1f9d2d) !important;
+          border-color: #62c52a !important;
+        }
+      `}</style>
       <div style={styles.header}>
         <div><div style={styles.smallText}>MONEY & EARNINGS</div><h1 style={styles.title}>My Wallet</h1></div>
         <span style={styles.badge}>৳</span>
@@ -150,11 +160,11 @@ export default function Wallet() {
         </section>}
 
         <section style={styles.actions}>
-          <button type="button" onClick={()=>{setAction("DEPOSIT");setForm({...form,method:"bKash"});setActionMessage("")}} style={{...styles.actionButton,...styles.depositButton}}>
+          <button type="button" onClick={()=>{setAction("DEPOSIT");setForm({...form,method:"bKash"});setActionMessage("")}} className="wallet-deposit-action" style={{...styles.actionButton,...styles.depositButton}}>
             <span style={{...styles.actionIcon,...styles.depositIcon}}>↓</span>
             <strong>Deposit</strong>
           </button>
-          <button type="button" onClick={()=>{setAction("WITHDRAWAL");setForm({...form,method:""});setActionMessage("")}} style={{...styles.actionButton,...styles.withdrawButton}}>
+          <button type="button" onClick={()=>{setAction("WITHDRAWAL");setForm({...form,method:""});setActionMessage("")}} className="wallet-withdraw-action" style={{...styles.actionButton,...styles.withdrawButton}}>
             <span style={{...styles.actionIcon,...styles.withdrawIcon}}>↗</span>
             <strong>Withdraw</strong>
           </button>
