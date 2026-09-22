@@ -761,3 +761,78 @@ body {
 .ff-admin [style*="danger"] {
   color: #fb7185 !important;
 }
+
+
+/* Restore the previous premium warm theme.
+   Removes the experimental multi-color redesign without touching functionality. */
+body {
+  background:
+    radial-gradient(circle at 50% -10%, rgba(255,91,39,.08), transparent 34%),
+    #0b0b0e !important;
+  color: #f7f7f8 !important;
+}
+.ff-app {
+  background:
+    radial-gradient(900px 420px at 50% -120px, rgba(255,84,32,.14), transparent 68%),
+    radial-gradient(700px 380px at 100% 35%, rgba(174,37,32,.08), transparent 72%),
+    #08090c !important;
+}
+.ff-app > header > div:first-child::after {
+  background: linear-gradient(90deg,#ff7a32,#d83a31) !important;
+  box-shadow: 0 0 14px rgba(255,92,38,.35) !important;
+}
+.ff-app article,
+.ff-app section,
+.tournaments-page article,
+.tournament-details-page section,
+.wallet-page section,
+.profile-page section,
+.room-page section,
+.ff-admin article {
+  border-left: 1px solid rgba(255,255,255,.075) !important;
+  border-color: rgba(255,255,255,.075) !important;
+}
+.ff-app .wallet-card {
+  background: linear-gradient(135deg,#191114 0%,#111216 55%,#171013 100%) !important;
+  border: 1px solid rgba(255,106,46,.24) !important;
+}
+.ff-app .mode-grid > article,
+.ff-app .modeGrid > article {
+  background: linear-gradient(145deg,#15161b,#0f1014) !important;
+}
+.ff-app .liveCard {
+  background: linear-gradient(135deg,#171312,#111114 62%,#17100f) !important;
+  border-color: rgba(255,92,48,.25) !important;
+}
+.tournaments-page article:nth-of-type(4n+1),
+.tournaments-page article:nth-of-type(4n+2),
+.tournaments-page article:nth-of-type(4n+3),
+.tournaments-page article:nth-of-type(4n),
+.ff-admin article:nth-of-type(4n+1),
+.ff-admin article:nth-of-type(4n+2),
+.ff-admin article:nth-of-type(4n+3),
+.ff-admin article:nth-of-type(4n) {
+  border-left: 1px solid rgba(255,255,255,.075) !important;
+}
+.profile-page section,
+.room-page section {
+  border-left: 1px solid rgba(255,255,255,.075) !important;
+}
+.tournaments-page button {
+  background: inherit;
+}
+.ff-admin {
+  background:
+    radial-gradient(850px 400px at 50% -130px,rgba(255,88,35,.12),transparent 65%),
+    #08090c !important;
+}
+.ff-admin article {
+  background: linear-gradient(145deg,#15151a,#101115) !important;
+}
+.ff-app nav {
+  background: rgba(9,9,12,.88) !important;
+  border-top: 1px solid rgba(255,255,255,.075) !important;
+}
+.ff-app nav button[aria-current="page"] span:first-child {
+  background: linear-gradient(145deg,#402019,#241416) !important;
+}
