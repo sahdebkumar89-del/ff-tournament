@@ -235,7 +235,7 @@ const styles = {
   stat: { padding: "10px", borderRadius: "11px", background: "#19181c", border: "1px solid #27262a", display: "grid", gap: "4px" },
   countdownRow: { display: "flex", justifyContent: "flex-end", marginTop: "8px" },
   countdown: { color: "#ffad68", fontWeight: "800", textAlign: "right" },
-  joinButton: { width: "100%", marginTop: "13px", padding: "12px", border: "1px solid #ff6a2a", borderRadius: "11px", background: "linear-gradient(135deg, #ff7a2f, #e84231)", color: "#fff", fontWeight: "900" },
+  joinButton: { width: "100%", marginTop: "13px", padding: "12px", border: "none", borderRadius: "11px", background: "linear-gradient(135deg, #ff9a3d 0%, #ff7130 48%, #d83d31 100%)", color: "#fff", fontWeight: "900", boxShadow: "0 8px 22px rgba(235,72,42,.20)" },
   statusCard: { padding: "16px", borderRadius: "15px", background: "#121216", border: "1px solid #29272b", color: "#8f8c93", fontSize: "12px" },
   errorCard: { padding: "16px", borderRadius: "15px", background: "#2b1518", border: "1px solid #713038", color: "#ffaaa8", fontSize: "12px" },
   emptyCard: { padding: "35px 20px", borderRadius: "19px", background: "#121216", border: "1px solid #29272b", textAlign: "center" },
