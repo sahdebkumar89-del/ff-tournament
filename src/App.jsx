@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import "./styles/visualPolish.css";
 import Login from "./pages/user/Auth/Login.jsx";
 import AdminLogin from "./pages/admin/Auth/AdminLogin.jsx";
 import Signup from "./pages/user/Auth/Signup.jsx";
@@ -294,7 +295,7 @@ function Home({ isAdmin, onOpenAdmin }) {
 
   if (selectedTournament) {
     return (
-      <div style={styles.app}>
+      <div className="ff-app" style={styles.app}>
         <TournamentDetails
           tournament={selectedTournament}
           onBack={() => setSelectedTournament(null)}
