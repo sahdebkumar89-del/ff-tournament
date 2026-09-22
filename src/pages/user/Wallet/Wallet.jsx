@@ -110,11 +110,13 @@ export default function Wallet() {
         </section>}
 
         <section style={styles.actions}>
-          <button type="button" onClick={()=>{setAction("DEPOSIT");setActionMessage("")}} style={styles.actionButton}>
-            <span style={styles.actionIcon}>＋</span><span><strong>Deposit</strong><small>Add money to wallet</small></span>
+          <button type="button" onClick={()=>{setAction("DEPOSIT");setActionMessage("")}} style={{...styles.actionButton,...styles.depositButton}}>
+            <span style={styles.actionIcon}>↓</span>
+            <strong>Deposit</strong>
           </button>
-          <button type="button" onClick={()=>{setAction("WITHDRAWAL");setActionMessage("")}} style={styles.actionButton}>
-            <span style={styles.actionIcon}>↗</span><span><strong>Withdraw</strong><small>Minimum withdrawal ৳50</small></span>
+          <button type="button" onClick={()=>{setAction("WITHDRAWAL");setActionMessage("")}} style={{...styles.actionButton,...styles.withdrawButton}}>
+            <span style={styles.actionIcon}>↗</span>
+            <strong>Withdraw</strong>
           </button>
         </section>
 
@@ -185,9 +187,10 @@ const styles = {
   balance:{marginTop:"8px",fontSize:"34px",fontWeight:"900",color:"#fff"},
   balanceNote:{margin:"6px 0 0",color:"#9f9295",fontSize:"12px"},
   actions:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"14px"},
-  actionButton:{minWidth:0,padding:"15px",border:"1px solid #4a2928",borderRadius:"16px",background:"#181316",color:"#fff",display:"flex",alignItems:"center",gap:"10px",textAlign:"left"},
-  actionIcon:{width:"34px",height:"34px",flexShrink:0,borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",background:"#2a1a1b",color:"#ff7a2f",fontSize:"19px"},
-  actionButtonText:{display:"flex",flexDirection:"column"},
+  actionButton:{minWidth:0,minHeight:"76px",padding:"14px 18px",borderRadius:"16px",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:"12px",textAlign:"center",fontSize:"17px",fontWeight:"900",boxShadow:"0 8px 24px rgba(0,0,0,.18)"},
+  depositButton:{border:"1px solid #2188ff",background:"linear-gradient(135deg,#1689ff,#075de8)"},
+  withdrawButton:{border:"1px solid #62c52a",background:"linear-gradient(135deg,#65c92d,#1f9d2d)"},
+  actionIcon:{width:"34px",height:"34px",flexShrink:0,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,.94)",color:"#111",fontSize:"22px",fontWeight:"900"},
   card:{padding:"18px",borderRadius:"20px",background:"#131116",border:"1px solid #3b2930",marginBottom:"14px"},
   requestCard:{padding:"16px",borderRadius:"18px",background:"#171416",border:"1px solid #4b2b25",marginBottom:"14px"},
   sectionTitle:{margin:"0 0 12px",fontSize:"18px",color:"#fff"},
