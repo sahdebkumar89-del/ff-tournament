@@ -100,7 +100,7 @@ export default function Wallet() {
   const totalEarnings = positionPrizes + killRewards;
 
   return (
-    <main style={styles.page}>
+    <main className="wallet-page" style={styles.page}>
       <div style={styles.header}>
         <div><div style={styles.smallText}>MONEY & EARNINGS</div><h1 style={styles.title}>My Wallet</h1></div>
         <span style={styles.badge}>৳</span>
