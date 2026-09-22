@@ -1052,3 +1052,36 @@ body {
   filter: grayscale(.15) brightness(.72) !important;
   box-shadow: none !important;
 }
+
+
+/* FINAL USER UI EXCEPTIONS — keep filters and Sign Out in their original neutral style. */
+.tournaments-page .tournament-card,
+.tournaments-page .tournament-card:hover {
+  border: none !important;
+  border-left: none !important;
+  box-shadow: 0 12px 34px rgba(0,0,0,.20) !important;
+}
+
+.tournaments-page .tournament-filter,
+.tournaments-page .tournament-filter:hover {
+  background: transparent !important;
+  border: none !important;
+  color: #85828a !important;
+  box-shadow: none !important;
+}
+
+.tournaments-page .tournament-filter.is-active,
+.tournaments-page .tournament-filter.is-active:hover {
+  background: #351b18 !important;
+  border: none !important;
+  color: #ff9b5a !important;
+  box-shadow: none !important;
+}
+
+.profile-page .profile-signout,
+.profile-page .profile-signout:hover {
+  background: #2b171b !important;
+  border: 1px solid #713038 !important;
+  color: #ffaaa8 !important;
+  box-shadow: none !important;
+}
