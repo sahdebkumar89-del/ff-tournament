@@ -49,9 +49,9 @@ jobs:
         run: |
           set -euxo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          VERSION_CODE=\${GITHUB_RUN_NUMBER}
-          sed -i -E "s/versionCode [0-9]+/versionCode \${VERSION_CODE}/" android/app/build.gradle
-          sed -i -E "s/versionName \\\"[^\\\"]+\\\"/versionName \\\"\${VERSION}\\\"/" android/app/build.gradle
+          VERSION_CODE=${{ github.run_number }}
+          sed -i -E "s/versionCode [0-9]+/versionCode ${VERSION_CODE}/" android/app/build.gradle
+          sed -i -E 's/versionName "[^"]+"/versionName "'$VERSION'"/' android/app/build.gradle
           grep -nE "versionCode|versionName" android/app/build.gradle
 
       - name: Sync Capacitor
