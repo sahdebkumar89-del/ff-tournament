@@ -16,33 +16,20 @@ jobs:
         with:
           node-version: 22
 
-      - name: Verify Node and npm
-        run: |
-          set -euxo pipefail
-          node --version
-          npm --version
-
       - name: Install dependencies
         run: |
-          set -euxo pipefail
-          npm install
-          npm list --depth=0
+          npm install --no-audit --no-fund
 
       - name: Build web app
         run: |
-          set -euxo pipefail
           npm run build
-          test -f dist/index.html
-          echo "Web build completed successfully."
 
       - name: Add Android platform
         run: |
-          set -euxo pipefail
           npx cap add android
 
       - name: Sync Capacitor
         run: |
-          set -euxo pipefail
           npx cap sync android
 
       - name: Setup Java
@@ -51,23 +38,14 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Verify Java and Android project
-        run: |
-          set -euxo pipefail
-          java -version
-          test -f android/gradlew
-          test -f android/app/build.gradle
-          chmod +x android/gradlew
-
       - name: Build debug APK
         working-directory: android
         run: |
-          set -euxo pipefail
-          ./gradlew assembleDebug --stacktrace
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace --info
 
       - name: Verify APK
         run: |
-          set -euxo pipefail
           test -f android/app/build/outputs/apk/debug/app-debug.apk
           ls -lh android/app/build/outputs/apk/debug/app-debug.apk
 
@@ -76,3 +54,11 @@ jobs:
         with:
           name: ff-tournament-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Failure summary
+        if: failure()
+        run: |
+          echo "## Android APK build failed" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "The failed step above contains the exact error." >> "$GITHUB_STEP_SUMMARY"
+          echo "Please open the failed step to see its error output." >> "$GITHUB_STEP_SUMMARY"
