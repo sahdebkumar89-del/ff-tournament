@@ -24,13 +24,21 @@ jobs:
         run: |
           npm run build
 
-      - name: Generate Android app icons
-        run: |
-          npx --yes @capacitor/assets generate --android
-
       - name: Add Android platform
         run: |
           npx cap add android
+
+      - name: Prepare FF Tournament app icon
+        run: |
+          set -euxo pipefail
+          mkdir -p resources
+          cp src/logo.png.png resources/icon.png
+          file resources/icon.png
+          ls -lh resources/icon.png
+
+      - name: Generate Android app icons
+        run: |
+          npx --yes @capacitor/assets generate --android
 
       - name: Sync Capacitor
         run: |
