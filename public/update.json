@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "title": "FF Tournament 1.0.0",
+  "changelog": [
+    "New in-app update notification system",
+    "Improved Android app update flow",
+    "Performance and stability improvements"
+  ]
+}
