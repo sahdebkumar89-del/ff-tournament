@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import logo from "./logo.png.png";
 import "./styles/visualPolish.css";
 import Login from "./pages/user/Auth/Login.jsx";
 import AdminLogin from "./pages/admin/Auth/AdminLogin.jsx";
@@ -313,14 +314,17 @@ function Home({ isAdmin, onOpenAdmin }) {
     <div style={styles.app}>
       {activePage === "home" && (
         <header style={styles.header}>
-          <div>
-            <div style={styles.brandKicker}>
-              FF TOURNAMENT
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <img src={logo} alt="FF Tournament" style={styles.headerLogo} />
+            <div>
+              <div style={styles.brandKicker}>
+                FF TOURNAMENT
+              </div>
 
-            <h1 style={styles.headerTitle}>
-              Battle Royale
-            </h1>
+              <h1 style={styles.headerTitle}>
+                Battle Royale
+              </h1>
+            </div>
           </div>
 
           <div
@@ -714,6 +718,7 @@ const styles = {
     letterSpacing: "2px",
   },
 
+  headerLogo: { width: "46px", height: "46px", borderRadius: "12px", objectFit: "cover", border: "1px solid #4b2925", boxShadow: "0 6px 18px rgba(0,0,0,.25)" },
   headerTitle: {
     margin: "5px 0 0",
     fontSize: "26px",
