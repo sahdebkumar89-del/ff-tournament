@@ -13,6 +13,7 @@ import Wallet from "./pages/user/Wallet/Wallet.jsx";
 import Notifications from "./pages/user/Notifications/Notifications.jsx";
 import Room from "./pages/user/Room/Room.jsx";
 import AdminTournaments from "./pages/admin/Tournaments/AdminTournaments.jsx";
+import UpdatePrompt from "./components/common/UpdatePrompt.jsx";
 import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
 import { supabase } from "./lib/supabase/client.js";
@@ -585,6 +586,8 @@ function Home({ isAdmin, onOpenAdmin }) {
           <Notifications />
         )}
       </main>
+
+      <UpdatePrompt />
 
       <BottomNav
         activePage={activePage}
