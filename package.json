@@ -1,7 +1,7 @@
 {
   "name": "ff-tournament",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,8 @@
     "@capacitor/core": "^8.0.0",
     "@supabase/supabase-js": "^2.57.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "@capacitor/app": "^8.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0",
