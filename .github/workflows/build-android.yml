@@ -44,21 +44,24 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace --info
 
-      - name: Verify APK
+      - name: Prepare APK artifact
         run: |
-          test -f android/app/build/outputs/apk/debug/app-debug.apk
-          ls -lh android/app/build/outputs/apk/debug/app-debug.apk
+          set -euxo pipefail
+          mkdir -p artifacts
+          cp android/app/build/outputs/apk/debug/app-debug.apk artifacts/FF-Tournament.apk
+          ls -lh artifacts/FF-Tournament.apk
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: ff-tournament-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: artifacts/FF-Tournament.apk
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Failure summary
         if: failure()
         run: |
           echo "## Android APK build failed" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "The failed step above contains the exact error." >> "$GITHUB_STEP_SUMMARY"
-          echo "Please open the failed step to see its error output." >> "$GITHUB_STEP_SUMMARY"
+          echo "Check the failed step above for the exact error." >> "$GITHUB_STEP_SUMMARY"
