@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import logo from "../../../logo.png.png";
 import { signUp } from "../../../services/auth/authService.js";
 
 export default function Signup({ onBackToLogin }) {
@@ -40,7 +41,7 @@ export default function Signup({ onBackToLogin }) {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <div style={styles.brand}>FF TOURNAMENT</div>
+        <img src={logo} alt="FF Tournament" style={styles.logo} />
         <h1 style={styles.title}>Create Account</h1>
         <p style={styles.subtitle}>
           Your Free Fire UID is the primary game identity for this account.
@@ -91,6 +92,7 @@ export default function Signup({ onBackToLogin }) {
 const styles = {
   page: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 18px", background: "#0b0f19" },
   card: { width: "100%", maxWidth: "420px", padding: "28px 22px", borderRadius: "22px", background: "#131a28", border: "1px solid #283247" },
+  logo: { width: "72px", height: "72px", objectFit: "cover", borderRadius: "18px", marginBottom: "12px", border: "1px solid #4b2925", boxShadow: "0 8px 22px rgba(0,0,0,.28)" },
   brand: { fontSize: "11px", letterSpacing: "2px", fontWeight: "800", color: "#b8a0ff" },
   title: { margin: "8px 0 6px", fontSize: "28px", color: "#f5f7fb" },
   subtitle: { margin: "0 0 24px", color: "#aeb7c7", fontSize: "14px", lineHeight: 1.5 },
