@@ -14,6 +14,7 @@ import Notifications from "./pages/user/Notifications/Notifications.jsx";
 import Room from "./pages/user/Room/Room.jsx";
 import AdminTournaments from "./pages/admin/Tournaments/AdminTournaments.jsx";
 import UpdatePrompt from "./components/common/UpdatePrompt.jsx";
+import DownloadPage from "./components/common/DownloadPage.jsx";
 import { useAuthContext } from "./app/providers/AuthProvider.jsx";
 import { useTournaments } from "./hooks/useTournaments.js";
 import { supabase } from "./lib/supabase/client.js";
@@ -34,6 +35,10 @@ export default function App() {
         Loading FF Tournament...
       </div>
     );
+  }
+
+  if (window.location.pathname === "/download") {
+    return <DownloadPage />;
   }
 
   if (!user) {
