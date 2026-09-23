@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-android:
     runs-on: ubuntu-24.04
@@ -72,6 +75,14 @@ jobs:
           path: artifacts/FF-Tournament.apk
           if-no-files-found: error
           retention-days: 7
+
+      - name: Publish APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.0.${{ github.run_number }}
+          name: FF Tournament Android v0.0.${{ github.run_number }}
+          files: artifacts/FF-Tournament.apk
+          generate_release_notes: true
 
       - name: Failure summary
         if: failure()
