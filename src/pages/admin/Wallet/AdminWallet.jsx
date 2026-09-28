@@ -55,7 +55,7 @@ export default function AdminWallet({ onBack }) {
     }
 
     setBkashNumber(data?.deposit_bkash_number || bkashNumber.trim());
-    setMessage("Deposit bKash number updated successfully.");
+    setMessage("Deposit payment number updated successfully.");
   }
 
   async function review(id, status) {
@@ -94,7 +94,7 @@ export default function AdminWallet({ onBack }) {
 
       <section style={styles.settingsCard}>
         <div style={styles.settingsLabel}>DEPOSIT PAYMENT NUMBER</div>
-        <div style={styles.settingsTitle}>bKash Number</div>
+        <div style={styles.settingsTitle}>bKash / Nagad Payment Number</div>
         <div style={styles.settingsRow}>
           <input
             value={bkashNumber}
@@ -107,7 +107,7 @@ export default function AdminWallet({ onBack }) {
             {savingBkash ? "Saving..." : "Save"}
           </button>
         </div>
-        <div style={styles.settingsNote}>Users will see this number when they open Deposit. You can change it anytime.</div>
+        <div style={styles.settingsNote}>Users will use this same number for both bKash and Nagad deposits. You can change it anytime.</div>
       </section>
 
       <div style={styles.tabs}>
