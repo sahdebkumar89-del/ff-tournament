@@ -67,7 +67,7 @@ export default function Tournaments() {
           <span style={styles.date}>{tournament.tournament_date}</span>
         </div>
         <div style={styles.headerStatus}>
-          <span style={statusStyle(displayStatus(tournament, now))}>
+          <span style={statusStyle(tournament.status)}>
             {displayStatus(tournament, now)}
           </span>
           <span style={styles.capacityMini}>
@@ -189,28 +189,8 @@ function isFinishedForDisplay(tournament, now) {
     return true;
   }
 
-  // 11:00 PM is the daily cutoff. The 11:30 PM final slot remains
-  // visible for the day, but after 11:00 PM it must be treated as
-  // completed and moved into the completed section.
-  if (
-    String(tournament.scheduled_start_time ?? "").slice(0, 5) === "23:30" &&
-    isDhakaCutoffReached(tournament.tournament_date, now)
-  ) {
-    return true;
-  }
-
   const end = tournamentEndTimestamp(tournament);
   return Number.isFinite(end) && now >= end;
-}
-
-function isDhakaCutoffReached(tournamentDate, now) {
-  if (!tournamentDate) return false;
-
-  const cutoff = new Date(
-    tournamentDate + "T23:00:00+06:00"
-  ).getTime();
-
-  return Number.isFinite(cutoff) && now >= cutoff;
 }
 
 function displayStatus(tournament, now) {
@@ -258,16 +238,6 @@ function registrationLabel(tournament, now) {
   if (tournament.status === "CANCELLED") return "CANCELLED";
 
   if (isFinishedForDisplay(tournament, now)) {
-    // After the 11:00 PM daily cutoff, the 11:30 PM final slot is
-    // permanently completed for that day. Do not advertise another
-    // registration cycle from this card.
-    if (
-      String(tournament.scheduled_start_time ?? "").slice(0, 5) === "23:30" &&
-      isDhakaCutoffReached(tournament.tournament_date, now)
-    ) {
-      return "COMPLETED";
-    }
-
     const nextOpen = nextRegistrationOpenTimestamp(tournament);
 
     if (Number.isFinite(nextOpen) && now < nextOpen) {
