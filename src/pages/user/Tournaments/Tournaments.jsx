@@ -210,16 +210,26 @@ function tournamentEndTimestamp(tournament) {
 }
 
 function nextRegistrationOpenTimestamp(tournament) {
-  const scheduledEnd = tournamentEndTimestamp(tournament);
-  const scheduledEndPlusHour = Number.isFinite(scheduledEnd)
-    ? scheduledEnd + 60 * 60 * 1000
+  // A completed slot may show a countdown only when the actual next-day
+  // tournament exists and is enabled. If Admin turned that next-day slot
+  // OFF, there is no next registration cycle to advertise.
+  const nextTournament = tournament?.nextRegistrationTournament;
+
+  if (!nextTournament?.is_enabled) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  if (!nextTournament.registration_opens_at) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const nextOpen = new Date(
+    nextTournament.registration_opens_at
+  ).getTime();
+
+  return Number.isFinite(nextOpen)
+    ? nextOpen
     : Number.POSITIVE_INFINITY;
-
-  const completedAt = tournament.completed_at
-    ? new Date(tournament.completed_at).getTime() + 60 * 60 * 1000
-    : Number.NEGATIVE_INFINITY;
-
-  return Math.max(scheduledEndPlusHour, completedAt);
 }
 
 function registrationLabel(tournament, now) {
@@ -230,6 +240,12 @@ function registrationLabel(tournament, now) {
 
     if (Number.isFinite(nextOpen) && now < nextOpen) {
       return `Registration opens again in ${formatCountdown(nextOpen - now)}`;
+    }
+
+    // Do not claim that this completed slot is reopening. The next
+    // registration belongs to the separate next-day tournament instance.
+    if (!Number.isFinite(nextOpen)) {
+      return "COMPLETED";
     }
 
     return "Registration Open";
