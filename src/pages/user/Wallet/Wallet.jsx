@@ -67,7 +67,11 @@ export default function Wallet() {
 
   useEffect(() => { loadWallet(); }, []);
 
-  async function copyBkashNumber() {
+  async function copyPaymentNumber() {
+    if (form.method === "Nagad") {
+      setActionMessage("Nagad number is not configured yet.");
+      return;
+    }
     try {
       await navigator.clipboard.writeText(bkashNumber);
       setActionMessage("bKash number copied.");
@@ -82,7 +86,7 @@ export default function Wallet() {
     if (!Number.isFinite(amount) || amount <= 0) return setActionMessage("Enter a valid amount.");
     if (action === "WITHDRAWAL" && amount < 50) return setActionMessage("Minimum withdrawal is ৳50.");
     if (!form.method.trim()) return setActionMessage("Payment method is required.");
-    if (action === "DEPOSIT" && !form.reference.trim()) return setActionMessage("bKash TrxID is required.");
+    if (action === "DEPOSIT" && !form.reference.trim()) return setActionMessage("bKash/Nagad TrxID is required.");
 
     const rpc = action === "DEPOSIT" ? "request_deposit" : "request_withdrawal";
     const { error: rpcError } = await supabase.rpc(rpc, {
@@ -127,16 +131,27 @@ export default function Wallet() {
         </section>
 
         {action && <section style={styles.requestCard}>
-          <h2 style={styles.sectionTitle}>{action === "DEPOSIT" ? "Deposit via bKash" : "Request Withdrawal"}</h2>
+          <h2 style={styles.sectionTitle}>{action === "DEPOSIT" ? "Deposit via bKash / Nagad" : "Request Withdrawal"}</h2>
 
           {action === "DEPOSIT" && (
             <div style={styles.bkashBox}>
-              <div style={styles.bkashLabel}>SEND MONEY TO</div>
-              <div style={styles.bkashRow}>
-                <strong style={styles.bkashNumber}>{bkashNumber}</strong>
-                <button type="button" onClick={copyBkashNumber} style={styles.copyButton}>Copy</button>
-              </div>
-              <p style={styles.bkashNote}>Send the exact amount to this bKash number, then enter the TrxID below.</p>
+              <div style={styles.bkashLabel}>PAYMENT METHOD</div>
+              <select value={form.method} onChange={e=>setForm({...form,method:e.target.value})} style={styles.formInput}>
+                <option value="bKash">bKash</option>
+                <option value="Nagad">Nagad</option>
+              </select>
+              {form.method === "bKash" ? (
+                <>
+                  <div style={{...styles.bkashLabel,marginTop:"12px"}}>SEND MONEY TO</div>
+                  <div style={styles.bkashRow}>
+                    <strong style={styles.bkashNumber}>{bkashNumber}</strong>
+                    <button type="button" onClick={copyPaymentNumber} style={styles.copyButton}>Copy</button>
+                  </div>
+                  <p style={styles.bkashNote}>Send the exact amount to this bKash number, then enter the TrxID below.</p>
+                </>
+              ) : (
+                <p style={styles.bkashNote}>Nagad is available as a deposit method. The Nagad payment number will be shown here once it is configured by Admin.</p>
+              )}
             </div>
           )}
 
@@ -147,7 +162,7 @@ export default function Wallet() {
           )}
 
           {action === "DEPOSIT" ? (
-            <input value={form.reference} onChange={e=>setForm({...form,reference:e.target.value})} placeholder="bKash TrxID" style={styles.formInput}/>
+            <input value={form.reference} onChange={e=>setForm({...form,reference:e.target.value})} placeholder="bKash/Nagad TrxID" style={styles.formInput}/>
           ) : (
             <input value={form.reference} onChange={e=>setForm({...form,reference:e.target.value})} placeholder="Payment account/reference (optional)" style={styles.formInput}/>
           )}
