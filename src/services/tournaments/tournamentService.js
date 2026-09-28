@@ -35,6 +35,15 @@ export async function getTournaments() {
   const rawTournaments = data ?? [];
   if (rawTournaments.length === 0) return rawTournaments;
 
+  // Keep the next enabled day's instance available as metadata even when
+  // it is not ready yet. The user-facing list still shows only the current
+  // rolling slot until the next instance's registration window is ready.
+  const tomorrowBySlot = new Map(
+    rawTournaments
+      .filter((tournament) => String(tournament.tournament_date) === tomorrow)
+      .map((tournament) => [Number(tournament.slot_id), tournament])
+  );
+
   // The player-facing list is a rolling 30-slot board.
   // A next-day slot replaces today's completed slot only after its
   // registration_open_at time has actually arrived. This prevents
@@ -92,11 +101,19 @@ export async function getTournaments() {
     ])
   );
 
-  return tournaments.map((tournament) => ({
-    ...tournament,
-    playerCount: countMap.get(Number(tournament.id))?.playerCount ?? 0,
-    teamCount: countMap.get(Number(tournament.id))?.teamCount ?? 0,
-  }));
+  return tournaments.map((tournament) => {
+    const nextDayTournament =
+      String(tournament.tournament_date) === today
+        ? tomorrowBySlot.get(Number(tournament.slot_id)) ?? null
+        : null;
+
+    return {
+      ...tournament,
+      playerCount: countMap.get(Number(tournament.id))?.playerCount ?? 0,
+      teamCount: countMap.get(Number(tournament.id))?.teamCount ?? 0,
+      nextRegistrationTournament: nextDayTournament,
+    };
+  });
 }
 
 export async function requestTournamentJoin(tournamentId, freeFireUids) {
