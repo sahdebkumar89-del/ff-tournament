@@ -382,7 +382,30 @@ export default function AdminTournaments({ onBack }) {
       return false;
     }
 
-    return Date.now() >= scheduledStart(tournament);
+    if (Date.now() < scheduledStart(tournament)) {
+      return false;
+    }
+
+    const joinedPlayers =
+      tournament.mode === "SOLO"
+        ? Number(tournament.playerCount ?? 0)
+        : Number(tournament.teamCount ?? 0) *
+          (tournament.mode === "DUO" ? 2 : 4);
+
+    const capacityPlayers =
+      tournament.mode === "SOLO"
+        ? Number(tournament.max_players ?? 0)
+        : Number(tournament.max_teams ?? 0) *
+          (tournament.mode === "DUO" ? 2 : 4);
+
+    const missingPlayers = Math.max(
+      0,
+      capacityPlayers - joinedPlayers
+    );
+
+    // Manual start is only available for the approved 1–2 player short case.
+    // Empty and heavily under-filled tournaments move to the next-day cycle automatically.
+    return joinedPlayers > 0 && missingPlayers >= 1 && missingPlayers <= 2;
   }
 
   if (showWallet) {
