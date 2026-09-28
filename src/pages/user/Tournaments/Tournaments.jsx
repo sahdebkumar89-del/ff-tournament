@@ -206,9 +206,18 @@ function tournamentEndTimestamp(tournament) {
     return Number.POSITIVE_INFINITY;
   }
 
-  return new Date(
+  const start = tournamentStartTimestamp(tournament);
+  const end = new Date(
     `${tournament.tournament_date}T${String(tournament.scheduled_end_time).slice(0, 8)}+06:00`
   ).getTime();
+
+  // The final 11:30 PM slot can end after midnight. In that case the
+  // end time belongs to the following day, not earlier on the same day.
+  if (Number.isFinite(start) && Number.isFinite(end) && end <= start) {
+    return end + 24 * 60 * 60 * 1000;
+  }
+
+  return end;
 }
 
 function nextRegistrationOpenTimestamp(tournament) {
