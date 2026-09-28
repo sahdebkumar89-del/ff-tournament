@@ -9,7 +9,8 @@ export default function Profile() {
   const [phone, setPhone] = useState("");
   const [freeFireUid, setFreeFireUid] = useState("");
   const [freeFireIgn, setFreeFireIgn] = useState("");
-  const [editing, setEditing] = useState(false);
+  const [editingPersonal, setEditingPersonal] = useState(false);
+  const [editingGameIdentity, setEditingGameIdentity] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -24,8 +25,10 @@ export default function Profile() {
         .select("id,full_name,phone,free_fire_uid,free_fire_ign,role,created_at")
         .eq("id", user.id)
         .maybeSingle();
+
       if (!active) return;
       if (loadError) setError(loadError.message);
+
       if (data) {
         setProfile(data);
         setFullName(data.full_name || "");
@@ -35,30 +38,93 @@ export default function Profile() {
       }
       setLoading(false);
     }
+
     loadProfile();
     return () => { active = false; };
   }, [user?.id]);
 
-  async function saveProfile() {
-    const uid = freeFireUid.trim();
-    if (uid && !/^\d{5,20}$/.test(uid)) {
-      setError("Free Fire UID must contain 5–20 digits.");
-      return;
-    }
-    if (uid && !freeFireIgn.trim()) {
-      setError("Please enter your Free Fire In-Game Name (IGN).");
-      return;
-    }
-
-    setSaving(true);
+  function clearStatus() {
     setMessage("");
     setError("");
+  }
+
+  function startPersonalEdit() {
+    clearStatus();
+    setFullName(profile?.full_name || "");
+    setPhone(profile?.phone || "");
+    setEditingGameIdentity(false);
+    setEditingPersonal(true);
+  }
+
+  function startGameIdentityEdit() {
+    clearStatus();
+    setFreeFireUid(profile?.free_fire_uid || "");
+    setFreeFireIgn(profile?.free_fire_ign || "");
+    setEditingPersonal(false);
+    setEditingGameIdentity(true);
+  }
+
+  function cancelPersonalEdit() {
+    setFullName(profile?.full_name || "");
+    setPhone(profile?.phone || "");
+    setEditingPersonal(false);
+  }
+
+  function cancelGameIdentityEdit() {
+    setFreeFireUid(profile?.free_fire_uid || "");
+    setFreeFireIgn(profile?.free_fire_ign || "");
+    setEditingGameIdentity(false);
+  }
+
+  async function savePersonalProfile() {
+    setSaving(true);
+    clearStatus();
 
     const { data, error: saveError } = await supabase
       .from("profiles")
       .update({
         full_name: fullName.trim() || null,
         phone: phone.trim() || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", user.id)
+      .select("id,full_name,phone,free_fire_uid,free_fire_ign,role,created_at")
+      .single();
+
+    if (saveError) {
+      setError(saveError.message);
+    } else {
+      setProfile(data);
+      setFullName(data.full_name || "");
+      setPhone(data.phone || "");
+      setFreeFireUid(data.free_fire_uid || "");
+      setFreeFireIgn(data.free_fire_ign || "");
+      setEditingPersonal(false);
+      setMessage("Personal information updated successfully.");
+    }
+
+    setSaving(false);
+  }
+
+  async function saveGameIdentity() {
+    const uid = freeFireUid.trim();
+
+    if (uid && !/^\d{5,20}$/.test(uid)) {
+      setError("Free Fire UID must contain 5–20 digits.");
+      return;
+    }
+
+    if (uid && !freeFireIgn.trim()) {
+      setError("Please enter your Free Fire In-Game Name (IGN).");
+      return;
+    }
+
+    setSaving(true);
+    clearStatus();
+
+    const { data, error: saveError } = await supabase
+      .from("profiles")
+      .update({
         free_fire_uid: uid || null,
         free_fire_ign: freeFireIgn.trim() || null,
         updated_at: new Date().toISOString()
@@ -77,9 +143,10 @@ export default function Profile() {
       setPhone(data.phone || "");
       setFreeFireUid(data.free_fire_uid || "");
       setFreeFireIgn(data.free_fire_ign || "");
-      setEditing(false);
-      setMessage("Profile updated successfully.");
+      setEditingGameIdentity(false);
+      setMessage("Free Fire identity updated successfully.");
     }
+
     setSaving(false);
   }
 
@@ -109,14 +176,25 @@ export default function Profile() {
         {error && <div style={styles.error}>{error}</div>}
 
         <section style={styles.card}>
-          <h2 style={styles.sectionTitle}>Personal Information</h2>
+          <div style={styles.sectionHeader}>
+            <h2 style={styles.sectionTitle}>Personal Information</h2>
+            {!editingPersonal && (
+              <button type="button" onClick={startPersonalEdit} style={styles.editButton}>Edit</button>
+            )}
+          </div>
+
           <div style={styles.row}><span>Email</span><strong>{user?.email || "—"}</strong></div>
-          {editing ? <>
-            <label style={styles.label}>Full Name<input value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Your full name" style={styles.input}/></label>
-            <label style={styles.label}>Phone<input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="01XXXXXXXXX" inputMode="tel" style={styles.input}/></label>
+
+          {editingPersonal ? <>
+            <label style={styles.label}>Full Name
+              <input value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Your full name" style={styles.input}/>
+            </label>
+            <label style={styles.label}>Phone
+              <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="01XXXXXXXXX" inputMode="tel" style={styles.input}/>
+            </label>
             <div style={styles.buttonRow}>
-              <button type="button" disabled={saving} onClick={saveProfile} style={styles.primaryButton}>{saving ? "Saving..." : "Save Changes"}</button>
-              <button type="button" disabled={saving} onClick={()=>setEditing(false)} style={styles.secondaryButton}>Cancel</button>
+              <button type="button" disabled={saving} onClick={savePersonalProfile} style={styles.primaryButton}>{saving ? "Saving..." : "Save Changes"}</button>
+              <button type="button" disabled={saving} onClick={cancelPersonalEdit} style={styles.secondaryButton}>Cancel</button>
             </div>
           </> : <>
             <div style={styles.row}><span>Full Name</span><strong>{profile?.full_name || "Not set"}</strong></div>
@@ -125,8 +203,14 @@ export default function Profile() {
         </section>
 
         <section style={styles.card}>
-          <h2 style={styles.sectionTitle}>Free Fire Identity</h2>
-          {editing ? <>
+          <div style={styles.sectionHeader}>
+            <h2 style={styles.sectionTitle}>Free Fire Identity</h2>
+            {!editingGameIdentity && (
+              <button type="button" onClick={startGameIdentityEdit} style={styles.editButton}>Edit</button>
+            )}
+          </div>
+
+          {editingGameIdentity ? <>
             <label style={styles.label}>Free Fire UID
               <input value={freeFireUid} onChange={e=>setFreeFireUid(e.target.value.replace(/\D/g,"").slice(0,20))} placeholder="Enter your Free Fire UID" inputMode="numeric" style={styles.input}/>
             </label>
@@ -135,13 +219,12 @@ export default function Profile() {
             </label>
             <p style={styles.hint}>Use the UID and IGN of the Free Fire account you actually play with. The UID is unique and is used to identify your tournament player identity.</p>
             <div style={styles.buttonRow}>
-              <button type="button" disabled={saving} onClick={saveProfile} style={styles.primaryButton}>{saving ? "Saving..." : "Save Game Identity"}</button>
-              <button type="button" disabled={saving} onClick={()=>setEditing(false)} style={styles.secondaryButton}>Cancel</button>
+              <button type="button" disabled={saving} onClick={saveGameIdentity} style={styles.primaryButton}>{saving ? "Saving..." : "Save Game Identity"}</button>
+              <button type="button" disabled={saving} onClick={cancelGameIdentityEdit} style={styles.secondaryButton}>Cancel</button>
             </div>
           </> : <>
             <div style={styles.row}><span>Free Fire UID</span><strong>{profile?.free_fire_uid || "Not set"}</strong></div>
             <div style={styles.row}><span>In-Game Name</span><strong>{profile?.free_fire_ign || "Not set"}</strong></div>
-            <button type="button" onClick={()=>{setMessage("");setError("");setEditing(true)}} style={styles.primaryButton}>Edit Profile</button>
           </>}
         </section>
 
@@ -169,7 +252,9 @@ const styles = {
   email:{margin:"6px 0 0",color:"#9ca3af",fontSize:"13px"},
   gameIdentity:{margin:"10px 0 0",color:"#ff9b5a",fontSize:"11px",fontWeight:"800"},
   card:{padding:"18px",borderRadius:"20px",background:"#131116",border:"1px solid #3b2930",marginBottom:"14px"},
-  sectionTitle:{margin:"0 0 12px",fontSize:"18px"},
+  sectionHeader:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",marginBottom:"12px"},
+  sectionTitle:{margin:0,fontSize:"18px"},
+  editButton:{padding:"7px 12px",border:"1px solid #63352e",borderRadius:"9px",background:"#241719",color:"#ff9b5a",fontWeight:"900",fontSize:"11px"},
   row:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",padding:"11px 0",borderTop:"1px solid #2b2529",color:"#aaa4a8",fontSize:"13px"},
   label:{display:"grid",gap:"7px",marginTop:"12px",color:"#d8d2d5",fontSize:"12px",fontWeight:"800"},
   input:{width:"100%",boxSizing:"border-box",padding:"12px",borderRadius:"10px",border:"1px solid #443137",background:"#0f0e11",color:"#fff",outline:"none"},
