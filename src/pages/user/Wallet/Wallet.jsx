@@ -68,13 +68,9 @@ export default function Wallet() {
   useEffect(() => { loadWallet(); }, []);
 
   async function copyPaymentNumber() {
-    if (form.method === "Nagad") {
-      setActionMessage("Nagad number is not configured yet.");
-      return;
-    }
     try {
       await navigator.clipboard.writeText(bkashNumber);
-      setActionMessage("bKash number copied.");
+      setActionMessage(form.method === "Nagad" ? "Payment number copied for Nagad." : "Payment number copied for bKash.");
     } catch {
       setActionMessage("Copy failed. Please copy the number manually.");
     }
@@ -140,18 +136,12 @@ export default function Wallet() {
                 <option value="bKash">bKash</option>
                 <option value="Nagad">Nagad</option>
               </select>
-              {form.method === "bKash" ? (
-                <>
-                  <div style={{...styles.bkashLabel,marginTop:"12px"}}>SEND MONEY TO</div>
-                  <div style={styles.bkashRow}>
-                    <strong style={styles.bkashNumber}>{bkashNumber}</strong>
-                    <button type="button" onClick={copyPaymentNumber} style={styles.copyButton}>Copy</button>
-                  </div>
-                  <p style={styles.bkashNote}>Send the exact amount to this bKash number, then enter the TrxID below.</p>
-                </>
-              ) : (
-                <p style={styles.bkashNote}>Nagad is available as a deposit method. The Nagad payment number will be shown here once it is configured by Admin.</p>
-              )}
+              <div style={{...styles.bkashLabel,marginTop:"12px"}}>SEND MONEY TO THIS NUMBER</div>
+              <div style={styles.bkashRow}>
+                <strong style={styles.bkashNumber}>{bkashNumber}</strong>
+                <button type="button" onClick={copyPaymentNumber} style={styles.copyButton}>Copy</button>
+              </div>
+              <p style={styles.bkashNote}>Send the exact amount to this same number using bKash or Nagad, then enter the TrxID below.</p>
             </div>
           )}
 
