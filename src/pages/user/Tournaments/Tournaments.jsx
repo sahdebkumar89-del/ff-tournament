@@ -30,7 +30,7 @@ export default function Tournaments() {
 
       return Number(a.slot_id) - Number(b.slot_id);
     });
-  }, [tournaments, filter]);
+  }, [tournaments, filter, now]);
 
   const today = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Dhaka",
@@ -99,7 +99,9 @@ export default function Tournaments() {
         onClick={() => setSelectedTournament(tournament)}
         style={styles.joinButton}
       >
-        {tournament.status === "REGISTRATION" ? "View & Join" : "View Tournament"}
+        {tournament.status === "REGISTRATION" && !isFinishedForDisplay(tournament, now)
+          ? "View & Join"
+          : "View Tournament"}
       </button>
     </article>
   );
@@ -187,8 +189,28 @@ function isFinishedForDisplay(tournament, now) {
     return true;
   }
 
+  // 11:00 PM is the daily cutoff. The 11:30 PM final slot remains
+  // visible for the day, but after 11:00 PM it must be treated as
+  // completed and moved into the completed section.
+  if (
+    String(tournament.scheduled_start_time ?? "").slice(0, 5) === "23:30" &&
+    isDhakaCutoffReached(tournament.tournament_date, now)
+  ) {
+    return true;
+  }
+
   const end = tournamentEndTimestamp(tournament);
   return Number.isFinite(end) && now >= end;
+}
+
+function isDhakaCutoffReached(tournamentDate, now) {
+  if (!tournamentDate) return false;
+
+  const cutoff = new Date(
+    tournamentDate + "T23:00:00+06:00"
+  ).getTime();
+
+  return Number.isFinite(cutoff) && now >= cutoff;
 }
 
 function displayStatus(tournament, now) {
