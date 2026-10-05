@@ -1,3 +1,4 @@
+import { App as CapacitorApp } from "@capacitor/app";
 import React, { useEffect, useMemo, useState } from "react";
 import logo from "./logo.png.png";
 import "./styles/visualPolish.css";
@@ -72,12 +73,20 @@ export default function App() {
     );
   }
 
+
   useEffect(() => {
-    const handleBack = () => {
-      setActivePage((current) => current === "home" ? current : "home");
+    const listener = CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+      setActivePage((current) => {
+        if (current !== "home") return "home";
+        if (canGoBack) window.history.back();
+        else window.dispatchEvent(new Event("ff-exit-confirmation"));
+        return current;
+      });
+    });
+
+    return () => {
+      listener.then((handle) => handle.remove());
     };
-    document.addEventListener("ff-back-navigation", handleBack);
-    return () => document.removeEventListener("ff-back-navigation", handleBack);
   }, []);
   return (
     <AuthenticatedApp
