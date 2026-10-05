@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory } from "@capacitor/filesystem";
+import { FileTransfer } from "@capacitor/file-transfer";
+import { FileOpener } from "@capacitor-community/file-opener";
 
-const UPDATE_PAGE_URL = "https://ff-tournament-livid.vercel.app/download";
+const APK_URL = "https://ff-tournament-livid.vercel.app/downloads/FF-Tournament.apk";
+const APK_FILE_NAME = "FF-Tournament-latest.apk";
 
 export default function UpdatePrompt() {
   const [update, setUpdate] = useState(null);
   const [dismissed, setDismissed] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [downloadError, setDownloadError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -44,50 +52,160 @@ export default function UpdatePrompt() {
 
   if (!update || dismissed) return null;
 
+  const startUpdate = async () => {
+    if (downloading) return;
+
+    if (!Capacitor.isNativePlatform()) {
+      window.location.href = "/download";
+      return;
+    }
+
+    setDownloading(true);
+    setProgress(0);
+    setDownloadError("");
+
+    let progressHandle;
+
+    try {
+      const fileInfo = await Filesystem.getUri({
+        directory: Directory.Cache,
+        path: APK_FILE_NAME,
+      });
+
+      progressHandle = await FileTransfer.addListener("progress", (event) => {
+        if (event.type !== "download" || event.url !== APK_URL) return;
+
+        if (event.lengthComputable && event.contentLength > 0) {
+          const percent = Math.min(
+            100,
+            Math.round((event.bytes / event.contentLength) * 100)
+          );
+          setProgress(percent);
+        }
+      });
+
+      await FileTransfer.downloadFile({
+        url: APK_URL,
+        path: fileInfo.uri,
+        progress: true,
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      });
+
+      setProgress(100);
+
+      // Give the final progress state a moment to render before opening
+      // Android's package installer.
+      await new Promise((resolve) => setTimeout(resolve, 450));
+
+      await FileOpener.open({
+        filePath: fileInfo.uri,
+        contentType: "application/vnd.android.package-archive",
+        openWithDefault: true,
+      });
+    } catch (error) {
+      console.error("FF Tournament update failed:", error);
+      setDownloadError(
+        "Update download failed. Please check your internet connection and try again."
+      );
+      setDownloading(false);
+    } finally {
+      if (progressHandle) {
+        try {
+          await progressHandle.remove();
+        } catch {
+          // Ignore listener cleanup errors.
+        }
+      }
+    }
+  };
+
   return (
     <div style={styles.overlay}>
       <div style={styles.card}>
-        <div style={styles.icon}>↻</div>
+        <div style={styles.icon}>{downloading ? "↓" : "↻"}</div>
 
-        <div style={styles.kicker}>NEW UPDATE AVAILABLE</div>
+        <div style={styles.kicker}>
+          {downloading ? "UPDATING FF TOURNAMENT" : "NEW UPDATE AVAILABLE"}
+        </div>
 
         <h2 style={styles.title}>
           FF Tournament {update.version}
         </h2>
 
-        <p style={styles.text}>
-          নতুন feature এবং improvement এসেছে। সর্বশেষ version ব্যবহার করতে
-          এখনই update করো।
-        </p>
+        {!downloading ? (
+          <>
+            <p style={styles.text}>
+              নতুন feature এবং improvement এসেছে। সর্বশেষ version ব্যবহার করতে
+              এখনই update করো।
+            </p>
 
-        {Array.isArray(update.changelog) && update.changelog.length > 0 && (
-          <div style={styles.changelog}>
-            {update.changelog.map((item, index) => (
-              <div key={index} style={styles.item}>
-                <span style={styles.bullet}>•</span>
-                <span>{item}</span>
+            {Array.isArray(update.changelog) && update.changelog.length > 0 && (
+              <div style={styles.changelog}>
+                {update.changelog.map((item, index) => (
+                  <div key={index} style={styles.item}>
+                    <span style={styles.bullet}>•</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+
+            {downloadError && (
+              <div style={styles.errorBox}>{downloadError}</div>
+            )}
+
+            <button
+              type="button"
+              onClick={startUpdate}
+              style={styles.updateButton}
+            >
+              Update Now
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDismissed(true)}
+              style={styles.laterButton}
+            >
+              Later
+            </button>
+          </>
+        ) : (
+          <>
+            <p style={styles.text}>
+              Update download হচ্ছে। শেষ হলে Android installer নিজে থেকেই
+              খুলবে।
+            </p>
+
+            <div style={styles.progressWrap}>
+              <div style={styles.progressTrack}>
+                <div
+                  style={{
+                    ...styles.progressBar,
+                    width: `${progress}%`,
+                  }}
+                />
+              </div>
+
+              <div style={styles.progressRow}>
+                <span>
+                  {progress >= 100
+                    ? "Download complete"
+                    : "Downloading update..."}
+                </span>
+                <strong>{progress}%</strong>
+              </div>
+            </div>
+
+            <div style={styles.installNote}>
+              {progress >= 100
+                ? "Opening installer… Please confirm Install on the Android screen."
+                : "Please keep the app open until the download finishes."}
+            </div>
+          </>
         )}
-
-        <button
-          type="button"
-          onClick={() => {
-            window.location.href = UPDATE_PAGE_URL;
-          }}
-          style={styles.updateButton}
-        >
-          Update Now
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setDismissed(true)}
-          style={styles.laterButton}
-        >
-          Later
-        </button>
       </div>
     </div>
   );
@@ -178,6 +296,16 @@ const styles = {
     color: "#ff7a3d",
     fontWeight: "900",
   },
+  errorBox: {
+    marginTop: "12px",
+    padding: "10px 12px",
+    borderRadius: "11px",
+    background: "rgba(210, 48, 48, .12)",
+    border: "1px solid rgba(255, 82, 82, .28)",
+    color: "#ffb0b0",
+    fontSize: "10px",
+    lineHeight: 1.45,
+  },
   updateButton: {
     width: "100%",
     marginTop: "15px",
@@ -199,5 +327,40 @@ const styles = {
     color: "#aaa5aa",
     fontWeight: "800",
     fontSize: "11px",
+  },
+  progressWrap: {
+    marginTop: "18px",
+    padding: "14px",
+    borderRadius: "14px",
+    background: "#151216",
+    border: "1px solid #30282b",
+  },
+  progressTrack: {
+    width: "100%",
+    height: "8px",
+    overflow: "hidden",
+    borderRadius: "999px",
+    background: "#29262a",
+  },
+  progressBar: {
+    height: "100%",
+    borderRadius: "999px",
+    background: "#168cff",
+    transition: "width .18s ease",
+    boxShadow: "0 0 12px rgba(22, 140, 255, .45)",
+  },
+  progressRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "9px",
+    color: "#8e898d",
+    fontSize: "10px",
+  },
+  installNote: {
+    marginTop: "13px",
+    color: "#b8b2b5",
+    fontSize: "10px",
+    lineHeight: 1.5,
+    textAlign: "center",
   },
 };
