@@ -70,7 +70,18 @@ export default function Tournaments() {
         style={styles.card}
       >
         <div style={styles.cardGlow} />
-        <div style={styles.cardTop}>
+        <div style={styles.poster}>
+          <HeroArt mode={mode} />
+          <div style={styles.posterShade} />
+          <div style={styles.posterLabel}>
+            <span style={styles.posterKicker}>BATTLE ROYALE</span>
+            <strong>{mode}</strong>
+            <span style={styles.posterSeason}>DAILY MATCH</span>
+          </div>
+          {live && <div style={styles.posterLive}>● LIVE</div>}
+        </div>
+        <div style={styles.cardContent}>
+          <div style={styles.cardTop}>
           <div style={styles.cardIdentity}>
             <div style={styles.modeRow}>
               <span style={styles.modeBadge}><span style={styles.modeDot} />{mode}</span>
@@ -91,6 +102,7 @@ export default function Tournaments() {
           </div>
         </div>
 
+        </div>
         <div style={styles.divider} />
 
         <div style={styles.stats}>
@@ -190,6 +202,53 @@ export default function Tournaments() {
         </>
       )}
     </main>
+  );
+}
+
+function HeroArt({ mode }) {
+  const count = mode === "SOLO" ? 1 : mode === "DUO" ? 2 : 4;
+  const positions = count === 1
+    ? [{ x: 105, scale: 1.16 }]
+    : count === 2
+      ? [{ x: 78, scale: 0.98 }, { x: 132, scale: 1.02 }]
+      : [{ x: 55, scale: 0.78 }, { x: 90, scale: 0.92 }, { x: 122, scale: 0.92 }, { x: 157, scale: 0.78 }];
+
+  return (
+    <div style={styles.heroArt} aria-hidden="true">
+      <svg viewBox="0 0 210 112" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id={`heroBg-${mode}`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#27120f" />
+            <stop offset=".55" stopColor="#121116" />
+            <stop offset="1" stopColor="#09090b" />
+          </linearGradient>
+          <radialGradient id={`heroGlow-${mode}`}>
+            <stop offset="0" stopColor="#ff7a36" stopOpacity=".46" />
+            <stop offset="1" stopColor="#ff3d24" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id={`heroArmor-${mode}`} x1="0" y1="0" x2="1" y2="1">
+            <stop stopColor="#f7b26b" />
+            <stop offset=".45" stopColor="#e64d32" />
+            <stop offset="1" stopColor="#701f26" />
+          </linearGradient>
+        </defs>
+        <rect width="210" height="112" fill={`url(#heroBg-${mode})`} />
+        <circle cx="160" cy="35" r="58" fill={`url(#heroGlow-${mode})`} />
+        <path d="M0 94 Q70 60 126 91 T210 76 V112 H0Z" fill="#0b0b0e" />
+        {positions.map((p, i) => (
+          <g key={i} transform={`translate(${p.x} 4) scale(${p.scale})`}>
+            <circle cx="0" cy="18" r="11" fill="#17151a" stroke="#ff7741" strokeWidth="1.2" />
+            <path d="M-8 16 Q0 5 8 16 L6 23 Q0 27 -6 23Z" fill="#0a0a0d" />
+            <path d="M-17 42 Q-12 29 0 28 Q12 29 17 42 L13 70 L-13 70Z" fill={`url(#heroArmor-${mode})`} stroke="#ff7540" strokeWidth="1" />
+            <path d="M-11 35 L-22 55 L-16 58 L-5 43 M11 35 L22 53 L16 58 L5 43" fill="#242127" stroke="#ff6338" strokeWidth=".9" />
+            <path d="M-12 70 L-17 99 L-5 99 L0 72 L5 99 L17 99 L12 70Z" fill="#17161c" stroke="#9b3a2e" strokeWidth=".8" />
+            <path d="M-6 42 L6 42 L9 62 L0 68 L-9 62Z" fill="#f2a45f" opacity=".45" />
+          </g>
+        ))}
+        <path d="M12 88 H198" stroke="#ff6338" strokeOpacity=".38" />
+        <path d="M20 92 H118" stroke="#fff" strokeOpacity=".08" />
+      </svg>
+    </div>
   );
 }
 
@@ -360,6 +419,15 @@ const styles = {
   list:{display:"grid",gap:"12px"},
   card:{position:"relative",overflow:"hidden",padding:"15px",borderRadius:"18px",background:"linear-gradient(145deg,rgba(27,22,25,.99) 0%,rgba(14,14,18,.99) 72%)",border:"1px solid #342d32",boxShadow:"0 12px 30px rgba(0,0,0,.28)"},
   cardGlow:{position:"absolute",top:"-65px",right:"-45px",width:"150px",height:"150px",borderRadius:"50%",background:"radial-gradient(circle,rgba(255,80,32,.12),transparent 66%)",pointerEvents:"none"},
+  poster:{position:"relative",height:"132px",margin:"-15px -15px 13px",overflow:"hidden",background:"#0b0b0e",borderBottom:"1px solid #3b2b2d"},
+  heroArt:{position:"absolute",inset:0},
+  posterShade:{position:"absolute",inset:0,background:"linear-gradient(90deg,rgba(7,7,9,.18),rgba(7,7,9,.05) 45%,rgba(7,7,9,.74) 100%),linear-gradient(0deg,rgba(7,7,9,.72),transparent 58%)"},
+  posterLabel:{position:"absolute",left:"13px",bottom:"12px",display:"flex",flexDirection:"column",alignItems:"flex-start",textShadow:"0 2px 10px rgba(0,0,0,.8)"},
+  posterKicker:{color:"#ff8c55",fontSize:"6px",fontWeight:"950",letterSpacing:"1.4px"},
+  posterLabelStrong:{},
+  posterSeason:{marginTop:"2px",color:"#b7a9a9",fontSize:"6px",fontWeight:"850",letterSpacing:"1px"},
+  posterLive:{position:"absolute",top:"10px",right:"11px",padding:"5px 8px",borderRadius:"7px",background:"rgba(68,24,18,.9)",border:"1px solid #a34a30",color:"#ffb16e",fontSize:"7px",fontWeight:"950"},
+  cardContent:{position:"relative",zIndex:1},
   cardTop:{position:"relative",zIndex:1,display:"flex",justifyContent:"space-between",alignItems:"start",gap:"12px"},
   cardIdentity:{minWidth:0},
   modeRow:{display:"flex",alignItems:"center",flexWrap:"wrap",gap:"6px"},
