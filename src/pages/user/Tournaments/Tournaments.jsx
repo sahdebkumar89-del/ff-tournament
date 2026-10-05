@@ -248,13 +248,18 @@ function nextRegistrationOpenTimestamp(tournament) {
     return Number.POSITIVE_INFINITY;
   }
 
-  const nextOpen = new Date(
-    nextTournament.registration_opens_at
-  ).getTime();
+  // The reopening time is tied to the ACTUAL completion time of today's
+  // tournament, not to the next-day row's registration_opens_at value.
+  // The next-day row may temporarily use the 9999-12-31 sentinel while the
+  // current tournament is still running. Using that sentinel here produces
+  // the huge countdown values seen in the UI.
+  const completedAt = tournament?.completed_at;
+  if (!completedAt) return Number.POSITIVE_INFINITY;
 
-  return Number.isFinite(nextOpen)
-    ? nextOpen
-    : Number.POSITIVE_INFINITY;
+  const completedTimestamp = new Date(completedAt).getTime();
+  if (!Number.isFinite(completedTimestamp)) return Number.POSITIVE_INFINITY;
+
+  return completedTimestamp + 60 * 60 * 1000;
 }
 
 function registrationLabel(tournament, now) {
