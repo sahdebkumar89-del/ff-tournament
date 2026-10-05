@@ -26,15 +26,12 @@ export default function UpdatePrompt() {
       setDownloading(false);
     };
 
-    window.__ffUpdateStart = (apkUrl) => {
-      window.location.href = `ffupdate://download?url=${encodeURIComponent(apkUrl)}`;
-    };
+
 
     return () => {
       delete window.__ffUpdateProgress;
       delete window.__ffUpdateComplete;
       delete window.__ffUpdateError;
-      delete window.__ffUpdateStart;
     };
   }, []);
 
@@ -90,11 +87,11 @@ export default function UpdatePrompt() {
     setDownloadError("");
 
     try {
-      if (!window.__ffUpdateProgress || !window.__ffUpdateStart) {
+      if (!window.__ffUpdateProgress || !window.FFUpdater?.startUpdate) {
         throw new Error("Native updater is not available in this Android build");
       }
 
-      window.__ffUpdateStart(apkUrl);
+      window.FFUpdater.startUpdate(apkUrl);
     } catch (error) {
       console.error("FF Tournament update failed:", error);
       const message =
