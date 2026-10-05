@@ -511,6 +511,22 @@ function Home({ isAdmin, onOpenAdmin }) {
                   })}
                 </div>
               )}
+
+              <button
+                type="button"
+                onClick={() => setActivePage("tournaments")}
+                style={styles.allTournamentsButton}
+              >
+                <span>
+                  <strong style={styles.allTournamentsTitle}>
+                    🏆 View All Tournaments
+                  </strong>
+                  <span style={styles.allTournamentsText}>
+                    See all Solo, Duo & Squad tournaments
+                  </span>
+                </span>
+                <span style={styles.allTournamentsArrow}>→</span>
+              </button>
             </section>
 
             <section style={styles.section}>
@@ -903,6 +919,41 @@ const styles = {
     fontSize: "9px",
     fontWeight: "800",
     minHeight: "14px",
+  },
+
+  allTournamentsButton: {
+    width: "100%",
+    marginTop: "12px",
+    padding: "13px 14px",
+    border: "1px solid #5a2a20",
+    borderRadius: "13px",
+    background: "#171216",
+    color: "#f7f7f8",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    textAlign: "left",
+  },
+
+  allTournamentsTitle: {
+    display: "block",
+    color: "#ff9b4a",
+    fontSize: "12px",
+    fontWeight: "900",
+  },
+
+  allTournamentsText: {
+    display: "block",
+    marginTop: "3px",
+    color: "#85828a",
+    fontSize: "9px",
+  },
+
+  allTournamentsArrow: {
+    color: "#ff7130",
+    fontSize: "20px",
+    fontWeight: "900",
   },
 
   joinButton: {
