@@ -38,8 +38,10 @@ export default function AdminHelpInbox({ onBack }) {
     event.preventDefault();
     if (!selected || !reply.trim()) return;
     setBusy(true); setError("");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setError("Please sign in again."); setBusy(false); return; }
     const { error: sendError } = await supabase.from("support_messages").insert({
-      ticket_id: selected.id, sender_role: "ADMIN", message: reply.trim()
+      ticket_id: selected.id, sender_user_id: user.id, sender_role: "ADMIN", message: reply.trim()
     });
     if (sendError) setError(sendError.message);
     else { setReply(""); await openTicket(selected); }
