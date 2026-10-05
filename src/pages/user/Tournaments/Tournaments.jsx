@@ -91,7 +91,21 @@ export default function Tournaments() {
       </div>
 
       <div style={styles.countdownRow}>
-        <span style={styles.countdown}>{registrationLabel(tournament, now)}</span>
+        {isFinishedForDisplay(tournament, now) &&
+        Number.isFinite(nextRegistrationOpenTimestamp(tournament)) &&
+        now < nextRegistrationOpenTimestamp(tournament) &&
+        tournament.nextRegistrationTournament?.tournament_date ? (
+          <div style={styles.reRegistrationInfo}>
+            <span style={styles.nextRegistrationDate}>
+              Next Registration : {formatDateDDMMYYYY(tournament.nextRegistrationTournament.tournament_date)}
+            </span>
+            <span style={styles.openAgain}>
+              Open Again in {formatCountdown(nextRegistrationOpenTimestamp(tournament) - now)}
+            </span>
+          </div>
+        ) : (
+          <span style={styles.countdown}>{registrationLabel(tournament, now)}</span>
+        )}
       </div>
 
       <button
@@ -284,6 +298,12 @@ function registrationLabel(tournament, now) {
   return `Closes in ${formatCountdown(remaining)}`;
 }
 
+function formatDateDDMMYYYY(value) {
+  if (!value) return "";
+  const [year, month, day] = String(value).slice(0, 10).split("-");
+  return day && month && year ? `${day}-${month}-${year}` : value;
+}
+
 function formatCountdown(ms) {
   const total = Math.max(0, Math.floor(ms / 1000));
   const hours = Math.floor(total / 3600);
@@ -328,6 +348,9 @@ const styles = {
   stat: { padding: "10px", borderRadius: "11px", background: "#19181c", border: "1px solid #27262a", display: "grid", gap: "4px" },
   countdownRow: { display: "flex", justifyContent: "flex-end", marginTop: "8px" },
   countdown: { color: "#ffad68", fontWeight: "800", textAlign: "right" },
+  reRegistrationInfo: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "3px", width: "100%", fontSize: "10px", lineHeight: 1.25 },
+  nextRegistrationDate: { color: "#d5d2d8", fontWeight: "800", textAlign: "right" },
+  openAgain: { color: "#ffad68", fontWeight: "800", textAlign: "right" },
   joinButton: { width: "100%", marginTop: "13px", padding: "12px", border: "none", borderRadius: "11px", background: "linear-gradient(135deg, #ff9a3d 0%, #ff7130 48%, #d83d31 100%)", color: "#fff", fontWeight: "900", boxShadow: "0 8px 22px rgba(235,72,42,.20)" },
   statusCard: { padding: "16px", borderRadius: "15px", background: "#121216", border: "1px solid #29272b", color: "#8f8c93", fontSize: "12px" },
   errorCard: { padding: "16px", borderRadius: "15px", background: "#2b1518", border: "1px solid #713038", color: "#ffaaa8", fontSize: "12px" },
