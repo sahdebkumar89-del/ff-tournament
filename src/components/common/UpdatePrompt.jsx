@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { Filesystem, Directory } from "@capacitor/filesystem";
-import { FileOpener } from "@capacitor-community/file-opener";
 
 const APK_BASE_URL = "https://ff-tournament-livid.vercel.app/downloads/FF-Tournament.apk";
 const APK_FILE_NAME = "FF-Tournament-latest.apk";
@@ -13,6 +11,32 @@ export default function UpdatePrompt() {
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [downloadError, setDownloadError] = useState("");
+
+  useEffect(() => {
+    window.__ffUpdateProgress = (percent) => {
+      setProgress(Math.max(0, Math.min(100, Number(percent) || 0)));
+    };
+
+    window.__ffUpdateComplete = () => {
+      setProgress(100);
+    };
+
+    window.__ffUpdateError = (message) => {
+      setDownloadError(`Update failed: ${message || "Unknown Android update error"}`);
+      setDownloading(false);
+    };
+
+    window.__ffUpdateStart = (apkUrl) => {
+      window.location.href = `ffupdate://download?url=${encodeURIComponent(apkUrl)}`;
+    };
+
+    return () => {
+      delete window.__ffUpdateProgress;
+      delete window.__ffUpdateComplete;
+      delete window.__ffUpdateError;
+      delete window.__ffUpdateStart;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -66,32 +90,11 @@ export default function UpdatePrompt() {
     setDownloadError("");
 
     try {
-      const apkBase64 = await downloadApkAsBase64(
-        apkUrl,
-        (percent) => setProgress(Math.min(99, percent))
-      );
+      if (!window.__ffUpdateProgress || !window.__ffUpdateStart) {
+        throw new Error("Native updater is not available in this Android build");
+      }
 
-      await Filesystem.writeFile({
-        directory: Directory.Cache,
-        path: APK_FILE_NAME,
-        data: apkBase64,
-        recursive: true,
-      });
-
-      setProgress(100);
-
-      const fileInfo = await Filesystem.getUri({
-        directory: Directory.Cache,
-        path: APK_FILE_NAME,
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 450));
-
-      await FileOpener.open({
-        filePath: fileInfo.uri,
-        contentType: "application/vnd.android.package-archive",
-        openWithDefault: true,
-      });
+      window.__ffUpdateStart(apkUrl);
     } catch (error) {
       console.error("FF Tournament update failed:", error);
       const message =
@@ -100,7 +103,6 @@ export default function UpdatePrompt() {
       setDownloading(false);
     }
   };
-
   return (
     <div style={styles.overlay}>
       <div style={styles.card}>
