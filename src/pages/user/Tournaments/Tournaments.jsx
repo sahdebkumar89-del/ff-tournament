@@ -205,49 +205,43 @@ export default function Tournaments() {
   );
 }
 
+const CHARACTER_ART = {
+  maleA: "https://cdn.imgbin.com/16/1/14/imgbin-call-of-duty-modern-warfare-3-call-of-duty-ghosts-call-of-duty-advanced-warfare-call-of-duty-wwii-call-of-duty-black-ops-soldiers-game-characters-soldier-carrying-rifle-B69th5ftVjJtXfMq5sGjYxsiV.jpg",
+  femaleA: "https://staticdelivery.nexusmods.com/images/1151/32430455-1599756701.png",
+  maleB: "https://3dprop.store/uploads/product_images/original/240104_14AC_webshop_color_v02_01_2000px-texture-3388.jpg",
+  femaleB: "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2b0452ba-b660-467d-b111-121e4c627767/dfk6d06-f3fc7233-3064-4ac8-957e-03494ca8e44e.png/v1/fill/w_894%2Ch_894%2Cq_70%2Cstrp/call_of_duty_female_character_by_immortalxuniverse_dfk6d06-pre.jpg",
+};
+
 function HeroArt({ mode }) {
-  const count = mode === "SOLO" ? 1 : mode === "DUO" ? 2 : 4;
-  const positions = count === 1
-    ? [{ x: 105, scale: 1.16 }]
-    : count === 2
-      ? [{ x: 78, scale: 0.98 }, { x: 132, scale: 1.02 }]
-      : [{ x: 55, scale: 0.78 }, { x: 90, scale: 0.92 }, { x: 122, scale: 0.92 }, { x: 157, scale: 0.78 }];
+  const people = mode === "SOLO"
+    ? [CHARACTER_ART.maleA]
+    : mode === "DUO"
+      ? [CHARACTER_ART.maleA, CHARACTER_ART.femaleA]
+      : [CHARACTER_ART.maleA, CHARACTER_ART.femaleA, CHARACTER_ART.maleB, CHARACTER_ART.femaleB];
 
   return (
     <div style={styles.heroArt} aria-hidden="true">
-      <svg viewBox="0 0 210 112" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <linearGradient id={`heroBg-${mode}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#27120f" />
-            <stop offset=".55" stopColor="#121116" />
-            <stop offset="1" stopColor="#09090b" />
-          </linearGradient>
-          <radialGradient id={`heroGlow-${mode}`}>
-            <stop offset="0" stopColor="#ff7a36" stopOpacity=".46" />
-            <stop offset="1" stopColor="#ff3d24" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id={`heroArmor-${mode}`} x1="0" y1="0" x2="1" y2="1">
-            <stop stopColor="#f7b26b" />
-            <stop offset=".45" stopColor="#e64d32" />
-            <stop offset="1" stopColor="#701f26" />
-          </linearGradient>
-        </defs>
-        <rect width="210" height="112" fill={`url(#heroBg-${mode})`} />
-        <circle cx="160" cy="35" r="58" fill={`url(#heroGlow-${mode})`} />
-        <path d="M0 94 Q70 60 126 91 T210 76 V112 H0Z" fill="#0b0b0e" />
-        {positions.map((p, i) => (
-          <g key={i} transform={`translate(${p.x} 4) scale(${p.scale})`}>
-            <circle cx="0" cy="18" r="11" fill="#17151a" stroke="#ff7741" strokeWidth="1.2" />
-            <path d="M-8 16 Q0 5 8 16 L6 23 Q0 27 -6 23Z" fill="#0a0a0d" />
-            <path d="M-17 42 Q-12 29 0 28 Q12 29 17 42 L13 70 L-13 70Z" fill={`url(#heroArmor-${mode})`} stroke="#ff7540" strokeWidth="1" />
-            <path d="M-11 35 L-22 55 L-16 58 L-5 43 M11 35 L22 53 L16 58 L5 43" fill="#242127" stroke="#ff6338" strokeWidth=".9" />
-            <path d="M-12 70 L-17 99 L-5 99 L0 72 L5 99 L17 99 L12 70Z" fill="#17161c" stroke="#9b3a2e" strokeWidth=".8" />
-            <path d="M-6 42 L6 42 L9 62 L0 68 L-9 62Z" fill="#f2a45f" opacity=".45" />
-          </g>
+      <div style={styles.posterSky} />
+      <div style={styles.posterHorizon} />
+      <div style={styles.posterSmoke} />
+      <div className={`poster-characters poster-characters-${people.length}`} style={styles.posterCharacters}>
+        {people.map((src, index) => (
+          <img
+            key={src + index}
+            src={src}
+            alt=""
+            className="poster-character"
+            style={{
+              ...styles.posterCharacter,
+              ...styles[`posterCharacter${people.length}`],
+              ...(index % 2 ? styles.posterCharacterAlt : {}),
+            }}
+            loading="lazy"
+            draggable="false"
+          />
         ))}
-        <path d="M12 88 H198" stroke="#ff6338" strokeOpacity=".38" />
-        <path d="M20 92 H118" stroke="#fff" strokeOpacity=".08" />
-      </svg>
+      </div>
+      <div style={styles.posterParticles} />
     </div>
   );
 }
@@ -419,9 +413,19 @@ const styles = {
   list:{display:"grid",gap:"12px"},
   card:{position:"relative",overflow:"hidden",padding:"15px",borderRadius:"18px",background:"linear-gradient(145deg,rgba(27,22,25,.99) 0%,rgba(14,14,18,.99) 72%)",border:"1px solid #342d32",boxShadow:"0 12px 30px rgba(0,0,0,.28)"},
   cardGlow:{position:"absolute",top:"-65px",right:"-45px",width:"150px",height:"150px",borderRadius:"50%",background:"radial-gradient(circle,rgba(255,80,32,.12),transparent 66%)",pointerEvents:"none"},
-  poster:{position:"relative",height:"132px",margin:"-15px -15px 13px",overflow:"hidden",background:"#0b0b0e",borderBottom:"1px solid #3b2b2d"},
-  heroArt:{position:"absolute",inset:0},
-  posterShade:{position:"absolute",inset:0,background:"linear-gradient(90deg,rgba(7,7,9,.18),rgba(7,7,9,.05) 45%,rgba(7,7,9,.74) 100%),linear-gradient(0deg,rgba(7,7,9,.72),transparent 58%)"},
+  poster:{position:"relative",height:"168px",margin:"-15px -15px 13px",overflow:"hidden",background:"#0b0b0e",borderBottom:"1px solid #3b2b2d"},
+  heroArt:{position:"absolute",inset:0,overflow:"hidden",background:"linear-gradient(135deg,#171116 0%,#0a0a0d 58%,#160d0d 100%)"},
+  posterSky:{position:"absolute",inset:"-20%",background:"radial-gradient(circle at 68% 28%,rgba(255,120,54,.38),transparent 24%),radial-gradient(circle at 18% 42%,rgba(119,28,22,.32),transparent 32%),linear-gradient(135deg,rgba(255,100,42,.08),transparent 42%)"},
+  posterHorizon:{position:"absolute",left:0,right:0,bottom:"-8px",height:"62%",background:"linear-gradient(180deg,transparent,#07070a 72%),repeating-linear-gradient(112deg,rgba(255,103,46,.11) 0 1px,transparent 1px 34px)",transform:"skewY(-4deg)"},
+  posterSmoke:{position:"absolute",inset:"10% -10% 0",background:"radial-gradient(ellipse at 35% 65%,rgba(255,111,45,.18),transparent 36%),radial-gradient(ellipse at 80% 55%,rgba(120,33,28,.2),transparent 34%)",filter:"blur(12px)"},
+  posterCharacters:{position:"absolute",inset:"-8px 8px 0",display:"flex",alignItems:"flex-end",justifyContent:"center",gap:"-2px",overflow:"hidden"},
+  posterCharacter:{height:"118%",width:"auto",maxWidth:"58%",objectFit:"contain",objectPosition:"center bottom",filter:"drop-shadow(0 8px 14px rgba(0,0,0,.7)) saturate(1.08) contrast(1.04)",userSelect:"none",pointerEvents:"none",mixBlendMode:"normal"},
+  posterCharacter1:{height:"132%",maxWidth:"82%"},
+  posterCharacter2:{height:"116%",maxWidth:"58%"},
+  posterCharacter4:{height:"108%",maxWidth:"38%"},
+  posterCharacterAlt:{transform:"translateY(3px) scale(.97)"},
+  posterParticles:{position:"absolute",inset:0,pointerEvents:"none",background:"radial-gradient(circle at 14% 22%,rgba(255,170,93,.7) 0 1px,transparent 2px),radial-gradient(circle at 77% 18%,rgba(255,125,60,.55) 0 1px,transparent 2px),radial-gradient(circle at 52% 34%,rgba(255,205,126,.4) 0 1px,transparent 2px),linear-gradient(90deg,rgba(255,89,42,.12),transparent 28%,transparent 72%,rgba(255,89,42,.08))"},
+  posterShade:{position:"absolute",inset:0,background:"linear-gradient(90deg,rgba(7,7,9,.5),rgba(7,7,9,.03) 38%,rgba(7,7,9,.42) 100%),linear-gradient(0deg,rgba(7,7,9,.76),transparent 54%)"},
   posterLabel:{position:"absolute",left:"13px",bottom:"12px",display:"flex",flexDirection:"column",alignItems:"flex-start",textShadow:"0 2px 10px rgba(0,0,0,.8)"},
   posterKicker:{color:"#ff8c55",fontSize:"6px",fontWeight:"950",letterSpacing:"1.4px"},
   posterLabelStrong:{},
