@@ -7,7 +7,6 @@ import Signup from "./pages/user/Auth/Signup.jsx";
 import BottomNav from "./components/common/BottomNav.jsx";
 import Tournaments from "./pages/user/Tournaments/Tournaments.jsx";
 import Leaderboard from "./pages/user/Leaderboard/Leaderboard.jsx";
-import HelpRules from "./pages/user/HelpRules/HelpRules.jsx";
 import TournamentDetails from "./pages/user/Tournaments/TournamentDetails.jsx";
 import MyTournaments from "./pages/user/MyTournaments/MyTournaments.jsx";
 import Profile from "./pages/user/Profile/Profile.jsx";
@@ -542,17 +541,7 @@ function Home({ isAdmin, onOpenAdmin }) {
               </span>
               <span style={styles.allTournamentsArrow}>→</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setActivePage("help-rules")}
-              style={styles.homeFeatureButton}
-            >
-              <span>
-                <strong>📖 Help & Rules</strong>
-                <small>How tournaments, rooms, results & wallet work</small>
-              </span>
-              <span>→</span>
-            </button>
+
 
 
             <section style={styles.section}>
@@ -620,7 +609,6 @@ function Home({ isAdmin, onOpenAdmin }) {
         )}
 
         {activePage === "leaderboard" && <Leaderboard />}
-        {activePage === "help-rules" && <HelpRules />}
 
         {activePage === "my-tournaments" && (
           <MyTournaments />
