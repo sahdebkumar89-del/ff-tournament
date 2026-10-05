@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import AdminWallet from "../Wallet/AdminWallet.jsx";
 import AdminResults from "../Results/AdminResults.jsx";
 import AdminNotifications from "../Notifications/AdminNotifications.jsx";
+import AdminHelpInbox from "../HelpInbox/AdminHelpInbox.jsx";
 import { supabase } from "../../../lib/supabase/client.js";
 
 function dhakaDate(offsetDays = 0) {
@@ -44,6 +45,7 @@ export default function AdminTournaments({ onBack }) {
 
   const [showResults, setShowResults] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showHelpInbox, setShowHelpInbox] = useState(false);
   const [dayView, setDayView] = useState("today");
   const [editTarget, setEditTarget] = useState(null);
   const [editDate, setEditDate] = useState("");
@@ -432,6 +434,14 @@ export default function AdminTournaments({ onBack }) {
     );
   }
 
+  if (showHelpInbox) {
+    return (
+      <AdminHelpInbox
+        onBack={() => setShowHelpInbox(false)}
+      />
+    );
+  }
+
   return (
     <div className="ff-admin" style={styles.page}>
       <div style={styles.header}>
@@ -452,6 +462,7 @@ export default function AdminTournaments({ onBack }) {
         <button type="button" onClick={() => setShowResults(true)} style={styles.navButton}>Results</button>
         <button type="button" onClick={() => setShowWallet(true)} style={styles.navButton}>Wallet</button>
         <button type="button" onClick={() => setShowNotifications(true)} style={styles.navButton}>Notify</button>
+        <button type="button" onClick={() => setShowHelpInbox(true)} style={styles.navButton}>Help</button>
       </div>
 
       <div style={styles.summaryGrid}>
@@ -985,7 +996,7 @@ const styles = {
 
   adminNav: {
     display: "grid",
-    gridTemplateColumns: "1.25fr 1fr 1fr 1fr",
+    gridTemplateColumns: "1.1fr 1fr 1fr 1fr 1fr",
     gap: "7px",
     marginBottom: "12px",
   },
