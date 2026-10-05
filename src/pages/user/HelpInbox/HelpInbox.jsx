@@ -21,12 +21,18 @@ export default function HelpInbox() {
   const [reply, setReply] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [unread, setUnread] = useState(0);
 
   async function loadTickets() {
     const { data, error: loadError } = await supabase
       .from("support_tickets").select("*").order("updated_at", { ascending: false });
-    if (loadError) setError(loadError.message);
-    else setTickets(data || []);
+    if (loadError) { setError(loadError.message); return; }
+    setTickets(data || []);
+    const ids = (data || []).map((item) => item.id);
+    if (!ids.length) { setUnread(0); return; }
+    const { data: unreadRows } = await supabase.from("support_messages")
+      .select("id").in("ticket_id", ids).eq("sender_role", "ADMIN").eq("read_by_user", false);
+    setUnread((unreadRows || []).length);
   }
 
   async function openTicket(item) {
@@ -89,8 +95,6 @@ export default function HelpInbox() {
     else { setReply(""); await openTicket(ticket); }
     setBusy(false);
   }
-
-  const unread = tickets.filter((item) => item.status === "REPLIED").length;
 
   return (
     <main style={styles.page}>
