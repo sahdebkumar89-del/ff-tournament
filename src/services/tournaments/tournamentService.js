@@ -62,12 +62,17 @@ export async function getTournaments() {
 
     const currentDate = String(existing.tournament_date);
     const candidateDate = String(tournament.tournament_date);
+    const currentCompletedAt = existing?.completed_at;
+    const currentReopenAt = currentCompletedAt
+      ? new Date(currentCompletedAt).getTime() + 60 * 60 * 1000
+      : Number.POSITIVE_INFINITY;
+
     const candidateIsReady =
       candidateDate === tomorrow &&
       tournament.status === "REGISTRATION" &&
       tournament.is_enabled === true &&
-      tournament.registration_opens_at &&
-      new Date(tournament.registration_opens_at) <= now;
+      Number.isFinite(currentReopenAt) &&
+      now.getTime() >= currentReopenAt;
 
     if (candidateIsReady) {
       bySlot.set(slotId, tournament);
