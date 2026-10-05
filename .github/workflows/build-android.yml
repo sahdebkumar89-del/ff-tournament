@@ -3,6 +3,8 @@ name: Build Android APK
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - public/downloads/FF-Tournament.apk
   workflow_dispatch:
 
 permissions:
@@ -32,6 +34,13 @@ jobs:
       - name: Add Android platform
         run: |
           npx cap add android
+
+      - name: Allow APK installation from FF Tournament
+        run: |
+          set -euxo pipefail
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<manifest /a\    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />' "$MANIFEST"
+          grep -n "REQUEST_INSTALL_PACKAGES" "$MANIFEST"
 
       - name: Prepare FF Tournament app icon
         run: |
