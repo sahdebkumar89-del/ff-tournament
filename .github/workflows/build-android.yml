@@ -81,19 +81,17 @@ public class MainActivity extends BridgeActivity {
         if (bridge == null) return;
 
         WebView webView = bridge.getWebView();
-        final WebViewClient capacitorClient = webView.getWebViewClient();
-
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 if (handleUpdateUrl(request.getUrl())) return true;
-                return capacitorClient != null && capacitorClient.shouldOverrideUrlLoading(view, request);
+                return false;
             }
 
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 if (handleUpdateUrl(Uri.parse(url))) return true;
-                return capacitorClient != null && capacitorClient.shouldOverrideUrlLoading(view, url);
+                return false;
             }
         });
     }
