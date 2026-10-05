@@ -6,6 +6,7 @@ import AdminLogin from "./pages/admin/Auth/AdminLogin.jsx";
 import Signup from "./pages/user/Auth/Signup.jsx";
 import BottomNav from "./components/common/BottomNav.jsx";
 import Tournaments from "./pages/user/Tournaments/Tournaments.jsx";
+import HelpInbox from "./pages/user/HelpInbox/HelpInbox.jsx";
 import TournamentDetails from "./pages/user/Tournaments/TournamentDetails.jsx";
 import MyTournaments from "./pages/user/MyTournaments/MyTournaments.jsx";
 import Profile from "./pages/user/Profile/Profile.jsx";
@@ -527,6 +528,17 @@ function Home({ isAdmin, onOpenAdmin }) {
                 </span>
                 <span style={styles.allTournamentsArrow}>→</span>
               </button>
+            <button
+              type="button"
+              onClick={() => setActivePage("help-inbox")}
+              style={styles.helpInboxButton}
+            >
+              <span>
+                <strong style={styles.helpInboxTitle}>📩 Help Inbox</strong>
+                <span style={styles.helpInboxText}>Contact Admin about a problem or payment issue</span>
+              </span>
+              <span style={styles.allTournamentsArrow}>→</span>
+            </button>
             </section>
 
             <section style={styles.section}>
@@ -592,6 +604,8 @@ function Home({ isAdmin, onOpenAdmin }) {
         {activePage === "tournaments" && (
           <Tournaments />
         )}
+
+        {activePage === "help-inbox" && <HelpInbox />}
 
         {activePage === "my-tournaments" && (
           <MyTournaments />
@@ -919,6 +933,33 @@ const styles = {
     fontSize: "9px",
     fontWeight: "800",
     minHeight: "14px",
+  },
+
+  helpInboxButton: {
+    width: "100%",
+    marginTop: "10px",
+    padding: "11px 14px",
+    border: "1px solid #3b2a28",
+    borderRadius: "12px",
+    background: "#151216",
+    color: "#f7f7f8",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    textAlign: "left",
+  },
+  helpInboxTitle: {
+    display: "block",
+    color: "#ff9b5a",
+    fontSize: "11px",
+    fontWeight: "900",
+  },
+  helpInboxText: {
+    display: "block",
+    marginTop: "3px",
+    color: "#85828a",
+    fontSize: "9px",
   },
 
   allTournamentsButton: {
