@@ -8,6 +8,7 @@ export default function MyTournaments() {
   const [filter, setFilter] = useState("ALL");
   const [now, setNow] = useState(Date.now());
   const [publishedResults, setPublishedResults] = useState({});
+  const [playerStatsResults, setPlayerStatsResults] = useState({ played: 0, wins: 0, topThree: 0, kills: 0 });
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -74,7 +75,18 @@ export default function MyTournaments() {
             const { data: resultData } = await supabase.rpc("get_my_published_tournament_results", { p_tournament_id: id });
             return [id, resultData || []];
           }));
-          if (active) setPublishedResults(Object.fromEntries(entries));
+          const { data: statsData, error: statsError } = await supabase.rpc("get_my_player_stats");
+          if (statsError) throw statsError;
+
+          if (active) {
+            setPublishedResults(Object.fromEntries(entries));
+            setPlayerStatsResults({
+              played: Number(statsData?.[0]?.played || 0),
+              wins: Number(statsData?.[0]?.wins || 0),
+              topThree: Number(statsData?.[0]?.top_three || 0),
+              kills: Number(statsData?.[0]?.kills || 0),
+            });
+          }
         }
       } catch (err) {
         if (active) {
@@ -97,19 +109,13 @@ export default function MyTournaments() {
     return tournaments.filter((item) => item.tournaments?.mode === filter);
   }, [tournaments, filter]);
 
-  const playerStats = useMemo(() => {
-    const resultRows = Object.values(publishedResults).flatMap((rows) =>
-      Array.isArray(rows) ? rows : []
-    );
-
-    return {
-      registered: tournaments.length,
-      played: resultRows.length,
-      wins: resultRows.filter((row) => Number(row.result_position) === 1).length,
-      topThree: resultRows.filter((row) => Number(row.result_position) >= 1 && Number(row.result_position) <= 3).length,
-      kills: resultRows.reduce((sum, row) => sum + Math.max(0, Number(row.result_kills) || 0), 0),
-    };
-  }, [tournaments, publishedResults]);
+  const playerStats = useMemo(() => ({
+    registered: tournaments.length,
+    played: playerStatsResults.played,
+    wins: playerStatsResults.wins,
+    topThree: playerStatsResults.topThree,
+    kills: playerStatsResults.kills,
+  }), [tournaments.length, playerStatsResults]);
 
   return (
     <main style={styles.page}>
