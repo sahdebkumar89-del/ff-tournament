@@ -991,6 +991,20 @@ const styles = {
     fontSize: "9px",
   },
 
+  homeFeatureButton: {
+    width: "100%",
+    marginTop: "10px",
+    padding: "13px 14px",
+    border: "1px solid #3b2a28",
+    borderRadius: "13px",
+    background: "#151216",
+    color: "#f7f7f8",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    textAlign: "left",
+  },
   leaderboardButton: {
     width: "100%",
     marginTop: "8px",
