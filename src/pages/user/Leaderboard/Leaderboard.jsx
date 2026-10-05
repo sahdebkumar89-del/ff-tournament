@@ -102,16 +102,16 @@ export default function Leaderboard() {
                 </div>
 
                 <div style={styles.player}>
-                  <strong>{row.full_name}</strong>
-                  <span>
+                  <strong style={styles.playerName}>{row.full_name}</strong>
+                  <span style={styles.playerMeta}>
                     {row.wins} Win{Number(row.wins) === 1 ? "" : "s"} •{" "}
                     {row.top_three} Top 3 • {row.kills} Kills
                   </span>
                 </div>
 
                 <div style={styles.earnings}>
-                  <strong>৳{Number(row.earnings || 0).toFixed(0)}</strong>
-                  <span>EARNINGS</span>
+                  <strong style={styles.earningsValue}>৳{Number(row.earnings || 0).toFixed(0)}</strong>
+                  <span style={styles.earningsLabel}>EARNINGS</span>
                 </div>
               </article>
             ))}
@@ -146,11 +146,11 @@ const styles = {
   row: { display: "grid", gridTemplateColumns: "38px minmax(0, 1fr) auto", alignItems: "center", gap: "9px", padding: "11px 10px", borderRadius: "12px", background: "#19181c", border: "1px solid #27262a" },
   rank: { color: "#ff9b5a", fontSize: "11px", fontWeight: "900" },
   player: { minWidth: 0, display: "grid", gap: "4px" },
-  player strong: { color: "#f4f2f4", fontSize: "11px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  player span: { color: "#77747d", fontSize: "8px" },
+  playerName: { color: "#f4f2f4", fontSize: "11px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  playerMeta: { color: "#77747d", fontSize: "8px" },
   earnings: { display: "grid", gap: "3px", textAlign: "right" },
-  earnings strong: { color: "#ffb06c", fontSize: "11px" },
-  earnings span: { color: "#6f6c73", fontSize: "7px", fontWeight: "900", letterSpacing: ".8px" },
+  earningsValue: { color: "#ffb06c", fontSize: "11px" },
+  earningsLabel: { color: "#6f6c73", fontSize: "7px", fontWeight: "900", letterSpacing: ".8px" },
   state: { padding: "34px 12px", textAlign: "center", color: "#85828a", fontSize: "11px", lineHeight: 1.5 },
   error: { padding: "16px", borderRadius: "11px", background: "#2a171b", color: "#fca5a5", fontSize: "10px", lineHeight: 1.5 },
   note: { marginTop: "11px", padding: "10px 12px", borderRadius: "10px", background: "#171619", color: "#77747d", fontSize: "8px", lineHeight: 1.5 },
