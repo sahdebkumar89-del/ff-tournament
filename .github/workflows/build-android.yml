@@ -53,7 +53,6 @@ package com.fftournament.app;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -61,15 +60,12 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.Settings;
-import android.webkit.WebResourceRequest;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
-    private static final String UPDATE_SCHEME = "ffupdate:";
-    private static final String UPDATE_HOST = "download";
     private final Handler handler = new Handler();
     private long downloadId = -1L;
     private Uri pendingInstallUri;
@@ -81,35 +77,26 @@ public class MainActivity extends BridgeActivity {
         if (bridge == null) return;
 
         WebView webView = bridge.getWebView();
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                if (handleUpdateUrl(request.getUrl())) return true;
-                return false;
-            }
-
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (handleUpdateUrl(Uri.parse(url))) return true;
-                return false;
-            }
-        });
+        webView.addJavascriptInterface(new FFUpdaterBridge(), "FFUpdater");
     }
 
-    private boolean handleUpdateUrl(Uri uri) {
-        if (uri == null) return false;
-        if (!UPDATE_SCHEME.equals(uri.getScheme()) || !UPDATE_HOST.equals(uri.getHost())) {
-            return false;
-        }
+    private class FFUpdaterBridge {
+        @JavascriptInterface
+        public void startUpdate(String downloadUrl) {
+            if (downloadUrl == null || downloadUrl.trim().isEmpty()) {
+                notifyJsError("Update URL is missing");
+                return;
+            }
 
-        String downloadUrl = uri.getQueryParameter("url");
-        if (downloadUrl == null || downloadUrl.trim().isEmpty()) {
-            notifyJsError("Update URL is missing");
-            return true;
-        }
+            Uri uri = Uri.parse(downloadUrl);
+            if (!"https".equalsIgnoreCase(uri.getScheme())
+                || !"ff-tournament-livid.vercel.app".equalsIgnoreCase(uri.getHost())) {
+                notifyJsError("Invalid FF Tournament update URL");
+                return;
+            }
 
-        startNativeUpdate(downloadUrl);
-        return true;
+            startNativeUpdate(downloadUrl);
+        }
     }
 
     private void startNativeUpdate(String downloadUrl) {
@@ -172,7 +159,6 @@ public class MainActivity extends BridgeActivity {
                     notifyJsProgress(100);
                     notifyJsComplete();
                     pendingInstallUri = fileUri;
-
                     handler.postDelayed(this::openInstaller, 450);
                     return;
                 }
@@ -249,7 +235,7 @@ public class MainActivity extends BridgeActivity {
         if (bridge == null) return;
         String safe = message == null ? "Unknown update error" : message
             .replace("\\", "\\\\")
-            .replace(""", "\\"");
+            .replace("\"", "\\\"");
         bridge.eval(
             "window.__ffUpdateError && window.__ffUpdateError(\"" + safe + "\");",
             null
