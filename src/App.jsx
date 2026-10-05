@@ -79,7 +79,7 @@ export default function App() {
       setActivePage((current) => {
         if (current !== "home") return "home";
         if (canGoBack) window.history.back();
-        else window.dispatchEvent(new Event("ff-exit-confirmation"));
+        else CapacitorApp.exitApp();
         return current;
       });
     });
