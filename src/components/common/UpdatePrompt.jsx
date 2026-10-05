@@ -5,7 +5,7 @@ import { Filesystem, Directory } from "@capacitor/filesystem";
 import { FileTransfer } from "@capacitor/file-transfer";
 import { FileOpener } from "@capacitor-community/file-opener";
 
-const APK_URL = "https://ff-tournament-livid.vercel.app/downloads/FF-Tournament.apk";
+const APK_BASE_URL = "https://ff-tournament-livid.vercel.app/downloads/FF-Tournament.apk";
 const APK_FILE_NAME = "FF-Tournament-latest.apk";
 
 export default function UpdatePrompt() {
@@ -60,6 +60,8 @@ export default function UpdatePrompt() {
       return;
     }
 
+    const apkUrl = `${APK_BASE_URL}?update=${encodeURIComponent(update.version)}&t=${Date.now()}`;
+
     setDownloading(true);
     setProgress(0);
     setDownloadError("");
@@ -73,7 +75,7 @@ export default function UpdatePrompt() {
       });
 
       progressHandle = await FileTransfer.addListener("progress", (event) => {
-        if (event.type !== "download" || event.url !== APK_URL) return;
+        if (event.type !== "download" || event.url !== apkUrl) return;
 
         if (event.lengthComputable && event.contentLength > 0) {
           const percent = Math.min(
@@ -85,7 +87,7 @@ export default function UpdatePrompt() {
       });
 
       await FileTransfer.downloadFile({
-        url: APK_URL,
+        url: apkUrl,
         path: fileInfo.uri,
         progress: true,
         headers: {
