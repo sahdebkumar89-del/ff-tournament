@@ -1,8 +1,7 @@
 import React from "react";
-import { Browser } from "@capacitor/browser";
 import logo from "../../logo.png.png";
 
-const APK_URL = "https://github.com/sahdebkumar89-del/ff-tournament/releases/latest/download/FF-Tournament.apk";
+const APK_URL = "/downloads/FF-Tournament.apk";
 
 export default function DownloadPage() {
   return (
@@ -16,13 +15,9 @@ export default function DownloadPage() {
           Free Fire BR Tournament-এর জন্য অফিসিয়াল Android app।
         </p>
 
-        <button
-          type="button"
-          onClick={() => Browser.open({ url: APK_URL })}
-          style={styles.button}
-        >
+        <a href={APK_URL} download="FF-Tournament.apk" style={styles.button}>
           DOWNLOAD NOW
-        </button>
+        </a>
 
         <div style={styles.info}>
           <div style={styles.infoTitle}>Latest Android APK</div>
