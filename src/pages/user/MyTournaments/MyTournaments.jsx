@@ -97,6 +97,20 @@ export default function MyTournaments() {
     return tournaments.filter((item) => item.tournaments?.mode === filter);
   }, [tournaments, filter]);
 
+  const playerStats = useMemo(() => {
+    const resultRows = Object.values(publishedResults).flatMap((rows) =>
+      Array.isArray(rows) ? rows : []
+    );
+
+    return {
+      registered: tournaments.length,
+      played: resultRows.length,
+      wins: resultRows.filter((row) => Number(row.result_position) === 1).length,
+      topThree: resultRows.filter((row) => Number(row.result_position) >= 1 && Number(row.result_position) <= 3).length,
+      kills: resultRows.reduce((sum, row) => sum + Math.max(0, Number(row.result_kills) || 0), 0),
+    };
+  }, [tournaments, publishedResults]);
+
   return (
     <main style={styles.page}>
       <header style={styles.header}>
@@ -107,6 +121,25 @@ export default function MyTournaments() {
         </div>
         <span style={styles.brBadge}>BR ONLY</span>
       </header>
+
+      {!loading && !error && tournaments.length > 0 && (
+        <section style={styles.playerStatsCard}>
+          <div style={styles.playerStatsHeader}>
+            <div>
+              <div style={styles.kicker}>PLAYER PERFORMANCE</div>
+              <h2 style={styles.playerStatsTitle}>My Stats</h2>
+            </div>
+            <span style={styles.statsBadge}>BR</span>
+          </div>
+          <div style={styles.playerStatsGrid}>
+            <Stat label="REGISTERED" value={playerStats.registered} />
+            <Stat label="PLAYED" value={playerStats.played} />
+            <Stat label="WINS" value={playerStats.wins} />
+            <Stat label="TOP 3" value={playerStats.topThree} />
+            <Stat label="KILLS" value={playerStats.kills} />
+          </div>
+        </section>
+      )}
 
       {!loading && !error && tournaments.length > 0 && (
         <div style={styles.filterBar}>
@@ -375,6 +408,11 @@ const styles = {
   title: { margin: "5px 0 0", fontSize: "27px", letterSpacing: "-.6px" },
   subtitle: { margin: "6px 0 0", color: "#85828a", fontSize: "11px", lineHeight: 1.45 },
   brBadge: { padding: "7px 9px", borderRadius: "8px", background: "#241719", color: "#ff8964", fontSize: "9px", fontWeight: "900", whiteSpace: "nowrap" },
+  playerStatsCard: { padding: "14px", borderRadius: "17px", background: "linear-gradient(145deg, #1b1413, #121216)", border: "1px solid #4b2925", marginBottom: "12px" },
+  playerStatsHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", marginBottom: "10px" },
+  playerStatsTitle: { margin: "4px 0 0", fontSize: "17px" },
+  statsBadge: { padding: "5px 7px", borderRadius: "7px", background: "#321a18", color: "#ff9b5a", fontSize: "8px", fontWeight: "900" },
+  playerStatsGrid: { display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: "6px" },
   filterBar: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "7px", padding: "5px", borderRadius: "13px", background: "#121216", border: "1px solid #29272b", marginBottom: "15px" },
   filterButton: { border: "none", borderRadius: "9px", background: "transparent", color: "#77747d", padding: "9px 3px", fontSize: "9px", fontWeight: "900" },
   filterActive: { background: "#351b18", color: "#ff9b5a" },
