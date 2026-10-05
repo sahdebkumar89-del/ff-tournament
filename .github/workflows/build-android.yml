@@ -259,6 +259,26 @@ jobs:
         run: |
           npx cap sync android
 
+      - name: Limit APK to ARM64
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+          marker = "    defaultConfig {"
+          insert = '''    defaultConfig {
+        ndk {
+            abiFilters "arm64-v8a"
+        }
+'''
+          if marker not in s:
+              raise SystemExit("defaultConfig block not found")
+          s = s.replace(marker, insert, 1)
+          p.write_text(s)
+          PY
+          grep -n -A8 "defaultConfig" android/app/build.gradle
+
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
