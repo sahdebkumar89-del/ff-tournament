@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
 
-const APK_URL =
-  "https://github.com/sahdebkumar89-del/ff-tournament/releases/latest/download/FF-Tournament.apk";
+const UPDATE_PAGE_URL = "https://ff-tournament-livid.vercel.app/download";
 
 export default function UpdatePrompt() {
   const [update, setUpdate] = useState(null);
@@ -75,7 +74,7 @@ export default function UpdatePrompt() {
         <button
           type="button"
           onClick={() => {
-            window.location.href = APK_URL;
+            window.location.href = UPDATE_PAGE_URL;
           }}
           style={styles.updateButton}
         >
