@@ -283,7 +283,15 @@ function registrationLabel(tournament, now) {
 
 function formatCountdown(ms) {
   const total = Math.max(0, Math.floor(ms / 1000));
-  return `${Math.floor(total / 60)}m ${String(total % 60).padStart(2, "0")}s`;
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+  }
+
+  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 }
 
 function statusStyle(status) {
