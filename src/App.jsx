@@ -72,6 +72,13 @@ export default function App() {
     );
   }
 
+  useEffect(() => {
+    const handleBack = () => {
+      setActivePage((current) => current === "home" ? current : "home");
+    };
+    document.addEventListener("ff-back-navigation", handleBack);
+    return () => document.removeEventListener("ff-back-navigation", handleBack);
+  }, []);
   return (
     <AuthenticatedApp
       user={user}
