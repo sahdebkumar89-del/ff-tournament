@@ -250,7 +250,10 @@ function registrationLabel(tournament, now) {
     const nextOpen = nextRegistrationOpenTimestamp(tournament);
 
     if (Number.isFinite(nextOpen) && now < nextOpen) {
-      return `Registration opens again in ${formatCountdown(nextOpen - now)}`;
+      const nextDate = tournament.nextRegistrationTournament?.tournament_date;
+      return nextDate
+        ? `Registration opens again in ${formatCountdown(nextOpen - now)} • Next Registration: ${nextDate}`
+        : `Registration opens again in ${formatCountdown(nextOpen - now)}`;
     }
 
     // Do not claim that this completed slot is reopening. The next
