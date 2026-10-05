@@ -3,6 +3,8 @@ name: Build Android APK
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - public/downloads/FF-Tournament.apk
   workflow_dispatch:
 
 permissions:
@@ -92,6 +94,21 @@ jobs:
           name: FF Tournament Android v0.0.${{ github.run_number }}
           files: artifacts/FF-Tournament.apk
           generate_release_notes: true
+
+      - name: Publish latest APK to Vercel
+        run: |
+          set -euxo pipefail
+          mkdir -p public/downloads
+          cp artifacts/FF-Tournament.apk public/downloads/FF-Tournament.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/downloads/FF-Tournament.apk
+          if git diff --cached --quiet; then
+            echo "APK unchanged"
+            exit 0
+          fi
+          git commit -m "Update latest Android APK"
+          git push
 
       - name: Failure summary
         if: failure()
