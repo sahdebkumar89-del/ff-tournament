@@ -210,17 +210,6 @@ jobs:
                   }
               }
           
-              @Override
-              protected void onResume() {
-                  super.onResume();
-          
-                  if (pendingInstallUri != null
-                      && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                      && getPackageManager().canRequestPackageInstalls()) {
-                      handler.postDelayed(this::openInstaller, 250);
-                  }
-              }
-          
               private void notifyJsProgress(int percent) {
                   if (bridge == null) return;
                   bridge.eval("window.__ffUpdateProgress && window.__ffUpdateProgress(" + percent + ");", null);
