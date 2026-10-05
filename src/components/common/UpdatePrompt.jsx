@@ -65,14 +65,7 @@ export default function UpdatePrompt() {
     setProgress(0);
     setDownloadError("");
 
-    let progressHandle;
-
     try {
-      const fileInfo = await Filesystem.getUri({
-        directory: Directory.Cache,
-        path: APK_FILE_NAME,
-      });
-
       const apkBase64 = await downloadApkAsBase64(
         apkUrl,
         (percent) => setProgress(Math.min(99, percent))
@@ -87,8 +80,11 @@ export default function UpdatePrompt() {
 
       setProgress(100);
 
-      // Give the final progress state a moment to render before opening
-      // Android's package installer.
+      const fileInfo = await Filesystem.getUri({
+        directory: Directory.Cache,
+        path: APK_FILE_NAME,
+      });
+
       await new Promise((resolve) => setTimeout(resolve, 450));
 
       await FileOpener.open({
@@ -98,13 +94,10 @@ export default function UpdatePrompt() {
       });
     } catch (error) {
       console.error("FF Tournament update failed:", error);
-      setDownloadError(
-        "Update download failed. Please check your internet connection and try again."
-      );
+      const message =
+        error instanceof Error ? error.message : String(error || "Unknown error");
+      setDownloadError(`Update failed: ${message}`);
       setDownloading(false);
-    } finally {
-      // No native progress listener is needed; progress is tracked from the
-      // response stream above.
     }
   };
 
@@ -117,9 +110,7 @@ export default function UpdatePrompt() {
           {downloading ? "UPDATING FF TOURNAMENT" : "NEW UPDATE AVAILABLE"}
         </div>
 
-        <h2 style={styles.title}>
-          FF Tournament {update.version}
-        </h2>
+        <h2 style={styles.title}>FF Tournament {update.version}</h2>
 
         {!downloading ? (
           <>
@@ -139,15 +130,9 @@ export default function UpdatePrompt() {
               </div>
             )}
 
-            {downloadError && (
-              <div style={styles.errorBox}>{downloadError}</div>
-            )}
+            {downloadError && <div style={styles.errorBox}>{downloadError}</div>}
 
-            <button
-              type="button"
-              onClick={startUpdate}
-              style={styles.updateButton}
-            >
+            <button type="button" onClick={startUpdate} style={styles.updateButton}>
               Update Now
             </button>
 
@@ -162,8 +147,7 @@ export default function UpdatePrompt() {
         ) : (
           <>
             <p style={styles.text}>
-              Update download হচ্ছে। শেষ হলে Android installer নিজে থেকেই
-              খুলবে।
+              Update download হচ্ছে। শেষ হলে Android installer নিজে থেকেই খুলবে।
             </p>
 
             <div style={styles.progressWrap}>
@@ -178,9 +162,7 @@ export default function UpdatePrompt() {
 
               <div style={styles.progressRow}>
                 <span>
-                  {progress >= 100
-                    ? "Download complete"
-                    : "Downloading update..."}
+                  {progress >= 100 ? "Download complete" : "Downloading update..."}
                 </span>
                 <strong>{progress}%</strong>
               </div>
@@ -340,6 +322,7 @@ const styles = {
     color: "#ffb0b0",
     fontSize: "10px",
     lineHeight: 1.45,
+    wordBreak: "break-word",
   },
   updateButton: {
     width: "100%",
