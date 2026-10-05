@@ -73,54 +73,15 @@ export default function UpdatePrompt() {
         path: APK_FILE_NAME,
       });
 
-      const response = await fetch(apkUrl, {
-        cache: "no-store",
-        headers: { "Cache-Control": "no-cache" },
-      });
-
-      if (!response.ok) {
-        throw new Error(`APK download returned HTTP ${response.status}`);
-      }
-
-      if (!response.body) {
-        throw new Error("APK download stream is unavailable");
-      }
-
-      const reader = response.body.getReader();
-      const chunks = [];
-      let received = 0;
-      const total = Number(response.headers.get("content-length")) || 0;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (!value) continue;
-
-        chunks.push(value);
-        received += value.byteLength;
-
-        if (total > 0) {
-          setProgress(Math.min(99, Math.round((received / total) * 100)));
-        }
-      }
-
-      const bytes = new Uint8Array(received);
-      let offset = 0;
-      for (const chunk of chunks) {
-        bytes.set(chunk, offset);
-        offset += chunk.byteLength;
-      }
-
-      let binary = "";
-      const sliceSize = 0x8000;
-      for (let i = 0; i < bytes.length; i += sliceSize) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + sliceSize));
-      }
+      const apkBase64 = await downloadApkAsBase64(
+        apkUrl,
+        (percent) => setProgress(Math.min(99, percent))
+      );
 
       await Filesystem.writeFile({
         directory: Directory.Cache,
         path: APK_FILE_NAME,
-        data: btoa(binary),
+        data: apkBase64,
         recursive: true,
       });
 
@@ -235,6 +196,54 @@ export default function UpdatePrompt() {
       </div>
     </div>
   );
+}
+
+function downloadApkAsBase64(url, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.open("GET", url, true);
+    xhr.responseType = "blob";
+    xhr.setRequestHeader("Cache-Control", "no-cache");
+
+    xhr.onprogress = (event) => {
+      if (event.lengthComputable && event.total > 0) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(new Error(`APK download returned HTTP ${xhr.status}`));
+        return;
+      }
+
+      if (!xhr.response || xhr.response.size === 0) {
+        reject(new Error("APK download returned an empty file"));
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        const dataUrl = String(reader.result || "");
+        const comma = dataUrl.indexOf(",");
+        if (comma === -1) {
+          reject(new Error("Unable to convert APK download"));
+          return;
+        }
+
+        resolve(dataUrl.slice(comma + 1));
+      };
+
+      reader.onerror = () => reject(new Error("Unable to read downloaded APK"));
+      reader.readAsDataURL(xhr.response);
+    };
+
+    xhr.onerror = () => reject(new Error("APK network request failed"));
+    xhr.onabort = () => reject(new Error("APK download was cancelled"));
+    xhr.send();
+  });
 }
 
 function compareVersions(a, b) {
