@@ -265,11 +265,24 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@v6
+
       - name: Build debug APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace --info
+          for attempt in 1 2 3; do
+            echo "Gradle build attempt $attempt"
+            if ./gradlew assembleDebug --stacktrace --info --refresh-dependencies; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Gradle dependency resolution/build failed; retrying in 10 seconds..."
+              sleep 10
+            fi
+          done
+          exit 1
 
       - name: Prepare APK artifact
         run: |
