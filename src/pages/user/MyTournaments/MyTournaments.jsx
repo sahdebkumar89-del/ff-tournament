@@ -6,6 +6,7 @@ export default function MyTournaments() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("ALL");
+  const [viewFilter, setViewFilter] = useState("ALL");
   const [now, setNow] = useState(Date.now());
   const [publishedResults, setPublishedResults] = useState({});
   const [playerStatsResults, setPlayerStatsResults] = useState({ played: 0, wins: 0, topThree: 0, kills: 0 });
@@ -105,9 +106,17 @@ export default function MyTournaments() {
   }, []);
 
   const visibleTournaments = useMemo(() => {
-    if (filter === "ALL") return tournaments;
-    return tournaments.filter((item) => item.tournaments?.mode === filter);
-  }, [tournaments, filter]);
+    let result = tournaments;
+    if (viewFilter === "HISTORY") {
+      result = result.filter((item) => item.tournaments?.status === "COMPLETED" || item.tournaments?.status === "CANCELLED" || item.status === "CANCELLED");
+    } else if (viewFilter === "LIVE") {
+      result = result.filter((item) => item.tournaments?.status === "STARTED");
+    } else if (viewFilter === "UPCOMING") {
+      result = result.filter((item) => item.tournaments?.status !== "COMPLETED" && item.tournaments?.status !== "CANCELLED" && item.status !== "CANCELLED");
+    }
+    if (filter !== "ALL") result = result.filter((item) => item.tournaments?.mode === filter);
+    return result;
+  }, [tournaments, filter, viewFilter]);
 
   const playerStats = useMemo(() => ({
     registered: tournaments.length,
@@ -145,6 +154,24 @@ export default function MyTournaments() {
             <Stat label="KILLS" value={playerStats.kills} />
           </div>
         </section>
+      )}
+
+      {!loading && !error && tournaments.length > 0 && (
+        <div style={styles.viewFilterBar}>
+          {["ALL", "UPCOMING", "LIVE", "HISTORY"].map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setViewFilter(item)}
+              style={{
+                ...styles.viewFilterButton,
+                ...(viewFilter === item ? styles.viewFilterActive : {}),
+              }}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
       )}
 
       {!loading && !error && tournaments.length > 0 && (
@@ -284,11 +311,17 @@ function TournamentCard({ item, tournament, now, results = [] }) {
 
       {results.length > 0 && (
         <div style={styles.resultBox}>
-          <div style={styles.resultTitle}>RESULT PUBLISHED</div>
+          <div style={styles.resultTitle}>MATCH RESULT</div>
           {results.map((r) => (
             <div key={r.result_id} style={styles.resultRow}>
-              <span>Position #{r.result_position} • {r.result_kills} kills</span>
-              <strong>৳{Number(r.total_payout).toFixed(0)}</strong>
+              <div style={styles.resultDetails}>
+                <span>Position <strong>#{r.result_position}</strong></span>
+                <span>Kills <strong>{r.result_kills}</strong></span>
+              </div>
+              <div style={styles.resultPayout}>
+                <strong>৳{Number(r.total_payout).toFixed(0)}</strong>
+                <span>{r.payout_approved ? "PAID" : "PENDING"}</span>
+              </div>
             </div>
           ))}
           <div style={styles.resultNote}>Wallet payout is credited only after Admin approval.</div>
@@ -419,6 +452,9 @@ const styles = {
   playerStatsTitle: { margin: "4px 0 0", fontSize: "17px" },
   statsBadge: { padding: "5px 7px", borderRadius: "7px", background: "#321a18", color: "#ff9b5a", fontSize: "8px", fontWeight: "900" },
   playerStatsGrid: { display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: "6px" },
+  viewFilterBar: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px", padding: "5px", borderRadius: "13px", background: "#121216", border: "1px solid #29272b", marginBottom: "8px" },
+  viewFilterButton: { border: "none", borderRadius: "9px", background: "transparent", color: "#77747d", padding: "8px 3px", fontSize: "8px", fontWeight: "900" },
+  viewFilterActive: { background: "#351b18", color: "#ff9b5a" },
   filterBar: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "7px", padding: "5px", borderRadius: "13px", background: "#121216", border: "1px solid #29272b", marginBottom: "15px" },
   filterButton: { border: "none", borderRadius: "9px", background: "transparent", color: "#77747d", padding: "9px 3px", fontSize: "9px", fontWeight: "900" },
   filterActive: { background: "#351b18", color: "#ff9b5a" },
@@ -446,6 +482,8 @@ const styles = {
   resultBox: { marginTop: "12px", padding: "12px", borderRadius: "12px", background: "#1b1715", border: "1px solid #5a3224" },
   resultTitle: { color: "#ff9b5a", fontSize: "9px", fontWeight: "900", letterSpacing: "1px", marginBottom: "8px" },
   resultRow: { display: "flex", justifyContent: "space-between", gap: "10px", padding: "7px 0", color: "#d6d1d3", fontSize: "10px", borderBottom: "1px solid #30272a" },
+  resultDetails: { display: "flex", flexDirection: "column", gap: "3px", color: "#aaa5a8", fontSize: "9px" },
+  resultPayout: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "3px" },
   resultNote: { marginTop: "8px", color: "#8f8a8d", fontSize: "9px" },
   footer: { marginTop: "12px", padding: "10px 11px", borderRadius: "10px", fontSize: "9px", lineHeight: 1.45 },
   stateCard: { padding: "38px 20px", borderRadius: "20px", background: "#121216", border: "1px solid #29272b", textAlign: "center" },
