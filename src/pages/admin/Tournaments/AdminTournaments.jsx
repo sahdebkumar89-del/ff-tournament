@@ -432,7 +432,6 @@ export default function AdminTournaments({ onBack }) {
     );
   }
 
-
   return (
     <div className="ff-admin" style={styles.page}>
       <div style={styles.header}>
