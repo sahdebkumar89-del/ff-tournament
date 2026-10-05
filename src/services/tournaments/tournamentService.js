@@ -64,6 +64,8 @@ export async function getTournaments() {
     const candidateDate = String(tournament.tournament_date);
     const candidateIsReady =
       candidateDate === tomorrow &&
+      tournament.status === "REGISTRATION" &&
+      tournament.is_enabled === true &&
       tournament.registration_opens_at &&
       new Date(tournament.registration_opens_at) <= now;
 
