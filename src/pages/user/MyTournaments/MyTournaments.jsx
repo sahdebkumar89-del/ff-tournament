@@ -6,10 +6,8 @@ export default function MyTournaments() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("ALL");
-  const [viewFilter, setViewFilter] = useState("ALL");
   const [now, setNow] = useState(Date.now());
   const [publishedResults, setPublishedResults] = useState({});
-  const [playerStatsResults, setPlayerStatsResults] = useState({ played: 0, wins: 0, topThree: 0, kills: 0 });
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -76,18 +74,7 @@ export default function MyTournaments() {
             const { data: resultData } = await supabase.rpc("get_my_published_tournament_results", { p_tournament_id: id });
             return [id, resultData || []];
           }));
-          const { data: statsData, error: statsError } = await supabase.rpc("get_my_player_stats");
-          if (statsError) throw statsError;
-
-          if (active) {
-            setPublishedResults(Object.fromEntries(entries));
-            setPlayerStatsResults({
-              played: Number(statsData?.[0]?.played || 0),
-              wins: Number(statsData?.[0]?.wins || 0),
-              topThree: Number(statsData?.[0]?.top_three || 0),
-              kills: Number(statsData?.[0]?.kills || 0),
-            });
-          }
+          if (active) setPublishedResults(Object.fromEntries(entries));
         }
       } catch (err) {
         if (active) {
@@ -106,25 +93,9 @@ export default function MyTournaments() {
   }, []);
 
   const visibleTournaments = useMemo(() => {
-    let result = tournaments;
-    if (viewFilter === "HISTORY") {
-      result = result.filter((item) => item.tournaments?.status === "COMPLETED" || item.tournaments?.status === "CANCELLED" || item.status === "CANCELLED");
-    } else if (viewFilter === "LIVE") {
-      result = result.filter((item) => item.tournaments?.status === "STARTED");
-    } else if (viewFilter === "UPCOMING") {
-      result = result.filter((item) => item.tournaments?.status !== "COMPLETED" && item.tournaments?.status !== "CANCELLED" && item.status !== "CANCELLED");
-    }
-    if (filter !== "ALL") result = result.filter((item) => item.tournaments?.mode === filter);
-    return result;
-  }, [tournaments, filter, viewFilter]);
-
-  const playerStats = useMemo(() => ({
-    registered: tournaments.length,
-    played: playerStatsResults.played,
-    wins: playerStatsResults.wins,
-    topThree: playerStatsResults.topThree,
-    kills: playerStatsResults.kills,
-  }), [tournaments.length, playerStatsResults]);
+    if (filter === "ALL") return tournaments;
+    return tournaments.filter((item) => item.tournaments?.mode === filter);
+  }, [tournaments, filter]);
 
   return (
     <main style={styles.page}>
@@ -136,43 +107,6 @@ export default function MyTournaments() {
         </div>
         <span style={styles.brBadge}>BR ONLY</span>
       </header>
-
-      {!loading && !error && tournaments.length > 0 && (
-        <section style={styles.playerStatsCard}>
-          <div style={styles.playerStatsHeader}>
-            <div>
-              <div style={styles.kicker}>PLAYER PERFORMANCE</div>
-              <h2 style={styles.playerStatsTitle}>My Stats</h2>
-            </div>
-            <span style={styles.statsBadge}>BR</span>
-          </div>
-          <div style={styles.playerStatsGrid}>
-            <Stat label="REGISTERED" value={playerStats.registered} />
-            <Stat label="PLAYED" value={playerStats.played} />
-            <Stat label="WINS" value={playerStats.wins} />
-            <Stat label="TOP 3" value={playerStats.topThree} />
-            <Stat label="KILLS" value={playerStats.kills} />
-          </div>
-        </section>
-      )}
-
-      {!loading && !error && tournaments.length > 0 && (
-        <div style={styles.viewFilterBar}>
-          {["ALL", "UPCOMING", "LIVE", "HISTORY"].map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setViewFilter(item)}
-              style={{
-                ...styles.viewFilterButton,
-                ...(viewFilter === item ? styles.viewFilterActive : {}),
-              }}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      )}
 
       {!loading && !error && tournaments.length > 0 && (
         <div style={styles.filterBar}>
@@ -311,17 +245,11 @@ function TournamentCard({ item, tournament, now, results = [] }) {
 
       {results.length > 0 && (
         <div style={styles.resultBox}>
-          <div style={styles.resultTitle}>MATCH RESULT</div>
+          <div style={styles.resultTitle}>RESULT PUBLISHED</div>
           {results.map((r) => (
             <div key={r.result_id} style={styles.resultRow}>
-              <div style={styles.resultDetails}>
-                <span>Position <strong>#{r.result_position}</strong></span>
-                <span>Kills <strong>{r.result_kills}</strong></span>
-              </div>
-              <div style={styles.resultPayout}>
-                <strong>৳{Number(r.total_payout).toFixed(0)}</strong>
-                <span>{r.payout_approved ? "PAID" : "PENDING"}</span>
-              </div>
+              <span>Position #{r.result_position} • {r.result_kills} kills</span>
+              <strong>৳{Number(r.total_payout).toFixed(0)}</strong>
             </div>
           ))}
           <div style={styles.resultNote}>Wallet payout is credited only after Admin approval.</div>
@@ -447,14 +375,6 @@ const styles = {
   title: { margin: "5px 0 0", fontSize: "27px", letterSpacing: "-.6px" },
   subtitle: { margin: "6px 0 0", color: "#85828a", fontSize: "11px", lineHeight: 1.45 },
   brBadge: { padding: "7px 9px", borderRadius: "8px", background: "#241719", color: "#ff8964", fontSize: "9px", fontWeight: "900", whiteSpace: "nowrap" },
-  playerStatsCard: { padding: "14px", borderRadius: "17px", background: "linear-gradient(145deg, #1b1413, #121216)", border: "1px solid #4b2925", marginBottom: "12px" },
-  playerStatsHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", marginBottom: "10px" },
-  playerStatsTitle: { margin: "4px 0 0", fontSize: "17px" },
-  statsBadge: { padding: "5px 7px", borderRadius: "7px", background: "#321a18", color: "#ff9b5a", fontSize: "8px", fontWeight: "900" },
-  playerStatsGrid: { display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: "6px" },
-  viewFilterBar: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px", padding: "5px", borderRadius: "13px", background: "#121216", border: "1px solid #29272b", marginBottom: "8px" },
-  viewFilterButton: { border: "none", borderRadius: "9px", background: "transparent", color: "#77747d", padding: "8px 3px", fontSize: "8px", fontWeight: "900" },
-  viewFilterActive: { background: "#351b18", color: "#ff9b5a" },
   filterBar: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "7px", padding: "5px", borderRadius: "13px", background: "#121216", border: "1px solid #29272b", marginBottom: "15px" },
   filterButton: { border: "none", borderRadius: "9px", background: "transparent", color: "#77747d", padding: "9px 3px", fontSize: "9px", fontWeight: "900" },
   filterActive: { background: "#351b18", color: "#ff9b5a" },
@@ -482,8 +402,6 @@ const styles = {
   resultBox: { marginTop: "12px", padding: "12px", borderRadius: "12px", background: "#1b1715", border: "1px solid #5a3224" },
   resultTitle: { color: "#ff9b5a", fontSize: "9px", fontWeight: "900", letterSpacing: "1px", marginBottom: "8px" },
   resultRow: { display: "flex", justifyContent: "space-between", gap: "10px", padding: "7px 0", color: "#d6d1d3", fontSize: "10px", borderBottom: "1px solid #30272a" },
-  resultDetails: { display: "flex", flexDirection: "column", gap: "3px", color: "#aaa5a8", fontSize: "9px" },
-  resultPayout: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "3px" },
   resultNote: { marginTop: "8px", color: "#8f8a8d", fontSize: "9px" },
   footer: { marginTop: "12px", padding: "10px 11px", borderRadius: "10px", fontSize: "9px", lineHeight: 1.45 },
   stateCard: { padding: "38px 20px", borderRadius: "20px", background: "#121216", border: "1px solid #29272b", textAlign: "center" },
