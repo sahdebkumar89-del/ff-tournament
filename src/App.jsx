@@ -8,7 +8,6 @@ import BottomNav from "./components/common/BottomNav.jsx";
 import Tournaments from "./pages/user/Tournaments/Tournaments.jsx";
 import Leaderboard from "./pages/user/Leaderboard/Leaderboard.jsx";
 import HelpRules from "./pages/user/HelpRules/HelpRules.jsx";
-import HelpInbox from "./pages/user/HelpInbox/HelpInbox.jsx";
 import TournamentDetails from "./pages/user/Tournaments/TournamentDetails.jsx";
 import MyTournaments from "./pages/user/MyTournaments/MyTournaments.jsx";
 import Profile from "./pages/user/Profile/Profile.jsx";
@@ -554,17 +553,7 @@ function Home({ isAdmin, onOpenAdmin }) {
               </span>
               <span>→</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setActivePage("help-inbox")}
-              style={styles.homeFeatureButton}
-            >
-              <span>
-                <strong>📩 Help Inbox</strong>
-                <small>Contact Admin about a problem or payment issue</small>
-              </span>
-              <span>→</span>
-            </button>
+
 
             <section style={styles.section}>
               <div style={styles.sectionHeader}>
@@ -632,7 +621,6 @@ function Home({ isAdmin, onOpenAdmin }) {
 
         {activePage === "leaderboard" && <Leaderboard />}
         {activePage === "help-rules" && <HelpRules />}
-        {activePage === "help-inbox" && <HelpInbox />}
 
         {activePage === "my-tournaments" && (
           <MyTournaments />
