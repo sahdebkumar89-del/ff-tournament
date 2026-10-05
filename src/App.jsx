@@ -31,6 +31,20 @@ export default function App() {
   const [roleLoading, setRoleLoading] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
 
+  useEffect(() => {
+    const listener = CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+      if (canGoBack) {
+        window.history.back();
+      } else {
+        window.dispatchEvent(new Event("ff-native-back"));
+      }
+    });
+
+    return () => {
+      listener.then((handle) => handle.remove());
+    };
+  }, []);
+
   if (authLoading) {
     return (
       <div style={styles.loadingPage}>
@@ -74,20 +88,6 @@ export default function App() {
   }
 
 
-  useEffect(() => {
-    const listener = CapacitorApp.addListener("backButton", ({ canGoBack }) => {
-      setActivePage((current) => {
-        if (current !== "home") return "home";
-        if (canGoBack) window.history.back();
-        else CapacitorApp.exitApp();
-        return current;
-      });
-    });
-
-    return () => {
-      listener.then((handle) => handle.remove());
-    };
-  }, []);
   return (
     <AuthenticatedApp
       user={user}
@@ -183,6 +183,19 @@ function Home({ isAdmin, onOpenAdmin }) {
   const [balance, setBalance] = useState(0);
 
   const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const handleBack = () => {
+      setActivePage((current) => {
+        if (current !== "home") return "home";
+        CapacitorApp.exitApp();
+        return current;
+      });
+    };
+
+    window.addEventListener("ff-native-back", handleBack);
+    return () => window.removeEventListener("ff-native-back", handleBack);
+  }, []);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
