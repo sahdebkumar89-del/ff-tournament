@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
-import { FileTransfer } from "@capacitor/file-transfer";
 import { FileOpener } from "@capacitor-community/file-opener";
 
 const APK_BASE_URL = "https://ff-tournament-livid.vercel.app/downloads/FF-Tournament.apk";
@@ -74,25 +73,55 @@ export default function UpdatePrompt() {
         path: APK_FILE_NAME,
       });
 
-      progressHandle = await FileTransfer.addListener("progress", (event) => {
-        if (event.type !== "download" || event.url !== apkUrl) return;
-
-        if (event.lengthComputable && event.contentLength > 0) {
-          const percent = Math.min(
-            100,
-            Math.round((event.bytes / event.contentLength) * 100)
-          );
-          setProgress(percent);
-        }
+      const response = await fetch(apkUrl, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
       });
 
-      await FileTransfer.downloadFile({
-        url: apkUrl,
-        path: fileInfo.uri,
-        progress: true,
-        headers: {
-          "Cache-Control": "no-cache",
-        },
+      if (!response.ok) {
+        throw new Error(`APK download returned HTTP ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error("APK download stream is unavailable");
+      }
+
+      const reader = response.body.getReader();
+      const chunks = [];
+      let received = 0;
+      const total = Number(response.headers.get("content-length")) || 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (!value) continue;
+
+        chunks.push(value);
+        received += value.byteLength;
+
+        if (total > 0) {
+          setProgress(Math.min(99, Math.round((received / total) * 100)));
+        }
+      }
+
+      const bytes = new Uint8Array(received);
+      let offset = 0;
+      for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+
+      let binary = "";
+      const sliceSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += sliceSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + sliceSize));
+      }
+
+      await Filesystem.writeFile({
+        directory: Directory.Cache,
+        path: APK_FILE_NAME,
+        data: btoa(binary),
+        recursive: true,
       });
 
       setProgress(100);
@@ -113,13 +142,8 @@ export default function UpdatePrompt() {
       );
       setDownloading(false);
     } finally {
-      if (progressHandle) {
-        try {
-          await progressHandle.remove();
-        } catch {
-          // Ignore listener cleanup errors.
-        }
-      }
+      // No native progress listener is needed; progress is tracked from the
+      // response stream above.
     }
   };
 
