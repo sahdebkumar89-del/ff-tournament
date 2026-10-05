@@ -93,10 +93,13 @@ export default function HelpInbox() {
 
     setSending(true);
     setMessage("");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setMessage("Please sign in again."); setSending(false); return; }
 
     const { data: ticket, error } = await supabase
       .from("support_tickets")
       .insert({
+        user_id: user.id,
         category,
         subject: subject.trim(),
       })
@@ -113,6 +116,7 @@ export default function HelpInbox() {
       .from("support_messages")
       .insert({
         ticket_id: ticket.id,
+        sender_user_id: user.id,
         sender_role: "USER",
         message: body.trim(),
       });
@@ -137,11 +141,14 @@ export default function HelpInbox() {
 
     setSending(true);
     setMessage("");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setMessage("Please sign in again."); setSending(false); return; }
 
     const { error } = await supabase
       .from("support_messages")
       .insert({
         ticket_id: selected.id,
+        sender_user_id: user.id,
         sender_role: "USER",
         message: reply.trim(),
       });
