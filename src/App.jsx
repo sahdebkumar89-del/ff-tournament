@@ -6,7 +6,6 @@ import AdminLogin from "./pages/admin/Auth/AdminLogin.jsx";
 import Signup from "./pages/user/Auth/Signup.jsx";
 import BottomNav from "./components/common/BottomNav.jsx";
 import Tournaments from "./pages/user/Tournaments/Tournaments.jsx";
-import Leaderboard from "./pages/user/Leaderboard/Leaderboard.jsx";
 import TournamentDetails from "./pages/user/Tournaments/TournamentDetails.jsx";
 import MyTournaments from "./pages/user/MyTournaments/MyTournaments.jsx";
 import Profile from "./pages/user/Profile/Profile.jsx";
@@ -530,20 +529,6 @@ function Home({ isAdmin, onOpenAdmin }) {
               </button>
             </section>
 
-            <button
-              type="button"
-              onClick={() => setActivePage("leaderboard")}
-              style={styles.leaderboardButton}
-            >
-              <span>
-                <strong style={styles.leaderboardTitle}>🏆 Leaderboard</strong>
-                <span style={styles.leaderboardText}>Weekly, Monthly & All Time rankings</span>
-              </span>
-              <span style={styles.allTournamentsArrow}>→</span>
-            </button>
-
-
-
             <section style={styles.section}>
               <div style={styles.sectionHeader}>
                 <div>
@@ -607,8 +592,6 @@ function Home({ isAdmin, onOpenAdmin }) {
         {activePage === "tournaments" && (
           <Tournaments />
         )}
-
-        {activePage === "leaderboard" && <Leaderboard />}
 
         {activePage === "my-tournaments" && (
           <MyTournaments />
@@ -967,46 +950,6 @@ const styles = {
     fontSize: "9px",
   },
 
-  homeFeatureButton: {
-    width: "100%",
-    marginTop: "10px",
-    padding: "13px 14px",
-    border: "1px solid #3b2a28",
-    borderRadius: "13px",
-    background: "#151216",
-    color: "#f7f7f8",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "12px",
-    textAlign: "left",
-  },
-  leaderboardButton: {
-    width: "100%",
-    marginTop: "8px",
-    padding: "11px 14px",
-    border: "1px solid #3f2925",
-    borderRadius: "12px",
-    background: "#151316",
-    color: "#f7f7f8",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "12px",
-    textAlign: "left",
-  },
-  leaderboardTitle: {
-    display: "block",
-    color: "#ffad68",
-    fontSize: "11px",
-    fontWeight: "900",
-  },
-  leaderboardText: {
-    display: "block",
-    marginTop: "2px",
-    color: "#77747d",
-    fontSize: "8px",
-  },
   allTournamentsArrow: {
     color: "#ff7130",
     fontSize: "20px",
