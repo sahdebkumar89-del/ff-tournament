@@ -1,9 +1,9 @@
 {
-  "version": "1.0.1",
-  "title": "FF Tournament 1.0.1",
+  "version": "1.0.2",
+  "title": "FF Tournament 1.0.2",
   "changelog": [
-    "In-app update notification is now active",
-    "Latest APK can be downloaded from the official update flow",
+    "One-tap in-app update download with live progress",
+    "Android installer opens automatically after download",
     "Performance and stability improvements"
   ]
 }
