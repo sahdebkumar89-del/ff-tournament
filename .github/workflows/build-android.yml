@@ -42,6 +42,225 @@ jobs:
           sed -i '/<manifest /a\    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />' "$MANIFEST"
           grep -n "REQUEST_INSTALL_PACKAGES" "$MANIFEST"
 
+      - name: Add native FF Tournament updater
+        run: |
+          set -euxo pipefail
+          MAIN="android/app/src/main/java/com/fftournament/app/MainActivity.java"
+          mkdir -p "$(dirname "$MAIN")"
+          cat > "$MAIN" <<'EOF'
+package com.fftournament.app;
+
+import android.app.DownloadManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.provider.Settings;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+    private static final String UPDATE_SCHEME = "ffupdate:";
+    private static final String UPDATE_HOST = "download";
+    private final Handler handler = new Handler();
+    private long downloadId = -1L;
+    private Uri pendingInstallUri;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        if (bridge == null) return;
+
+        WebView webView = bridge.getWebView();
+        final WebViewClient capacitorClient = webView.getWebViewClient();
+
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                if (handleUpdateUrl(request.getUrl())) return true;
+                return capacitorClient != null && capacitorClient.shouldOverrideUrlLoading(view, request);
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                if (handleUpdateUrl(Uri.parse(url))) return true;
+                return capacitorClient != null && capacitorClient.shouldOverrideUrlLoading(view, url);
+            }
+        });
+    }
+
+    private boolean handleUpdateUrl(Uri uri) {
+        if (uri == null) return false;
+        if (!UPDATE_SCHEME.equals(uri.getScheme()) || !UPDATE_HOST.equals(uri.getHost())) {
+            return false;
+        }
+
+        String downloadUrl = uri.getQueryParameter("url");
+        if (downloadUrl == null || downloadUrl.trim().isEmpty()) {
+            notifyJsError("Update URL is missing");
+            return true;
+        }
+
+        startNativeUpdate(downloadUrl);
+        return true;
+    }
+
+    private void startNativeUpdate(String downloadUrl) {
+        try {
+            DownloadManager manager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+
+            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(downloadUrl));
+            request.setTitle("FF Tournament update");
+            request.setDescription("Downloading the latest FF Tournament version");
+            request.setMimeType("application/vnd.android.package-archive");
+            request.setNotificationVisibility(
+                DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+            );
+            request.setDestinationInExternalFilesDir(
+                this,
+                Environment.DIRECTORY_DOWNLOADS,
+                "FF-Tournament-update.apk"
+            );
+
+            downloadId = manager.enqueue(request);
+            notifyJsProgress(0);
+            pollDownload(manager);
+        } catch (Exception e) {
+            notifyJsError(e.getMessage() == null ? "Unable to start APK download" : e.getMessage());
+        }
+    }
+
+    private void pollDownload(DownloadManager manager) {
+        handler.postDelayed(() -> {
+            if (downloadId < 0) return;
+
+            Cursor cursor = null;
+            try {
+                cursor = manager.query(new DownloadManager.Query().setFilterById(downloadId));
+                if (cursor == null || !cursor.moveToFirst()) {
+                    notifyJsError("APK download could not be found");
+                    return;
+                }
+
+                int status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+                long downloaded = cursor.getLong(cursor.getColumnIndexOrThrow(
+                    DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR
+                ));
+                long total = cursor.getLong(cursor.getColumnIndexOrThrow(
+                    DownloadManager.COLUMN_TOTAL_SIZE_BYTES
+                ));
+
+                if (total > 0) {
+                    int percent = (int) Math.min(99L, (downloaded * 100L) / total);
+                    notifyJsProgress(percent);
+                }
+
+                if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                    Uri fileUri = manager.getUriForDownloadedFile(downloadId);
+                    if (fileUri == null) {
+                        notifyJsError("Downloaded APK URI is unavailable");
+                        return;
+                    }
+
+                    notifyJsProgress(100);
+                    notifyJsComplete();
+                    pendingInstallUri = fileUri;
+
+                    handler.postDelayed(this::openInstaller, 450);
+                    return;
+                }
+
+                if (status == DownloadManager.STATUS_FAILED) {
+                    int reason = cursor.getInt(cursor.getColumnIndexOrThrow(
+                        DownloadManager.COLUMN_REASON
+                    ));
+                    notifyJsError("Android download failed (" + reason + ")");
+                    return;
+                }
+
+                pollDownload(manager);
+            } catch (Exception e) {
+                notifyJsError(e.getMessage() == null ? "Unable to check APK download" : e.getMessage());
+            } finally {
+                if (cursor != null) cursor.close();
+            }
+        }, 250);
+    }
+
+    private void openInstaller() {
+        if (pendingInstallUri == null) {
+            notifyJsError("APK installer URI is unavailable");
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+            && !getPackageManager().canRequestPackageInstalls()) {
+            Intent settings = new Intent(
+                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                Uri.parse("package:" + getPackageName())
+            );
+            startActivity(settings);
+            return;
+        }
+
+        try {
+            Intent install = new Intent(Intent.ACTION_VIEW);
+            install.setDataAndType(
+                pendingInstallUri,
+                "application/vnd.android.package-archive"
+            );
+            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(install);
+        } catch (Exception e) {
+            notifyJsError(e.getMessage() == null ? "Unable to open Android installer" : e.getMessage());
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (pendingInstallUri != null
+            && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+            && getPackageManager().canRequestPackageInstalls()) {
+            handler.postDelayed(this::openInstaller, 250);
+        }
+    }
+
+    private void notifyJsProgress(int percent) {
+        if (bridge == null) return;
+        bridge.eval("window.__ffUpdateProgress && window.__ffUpdateProgress(" + percent + ");", null);
+    }
+
+    private void notifyJsComplete() {
+        if (bridge == null) return;
+        bridge.eval("window.__ffUpdateComplete && window.__ffUpdateComplete();", null);
+    }
+
+    private void notifyJsError(String message) {
+        if (bridge == null) return;
+        String safe = message == null ? "Unknown update error" : message
+            .replace("\\", "\\\\")
+            .replace(""", "\\"");
+        bridge.eval(
+            "window.__ffUpdateError && window.__ffUpdateError(\"" + safe + "\");",
+            null
+        );
+    }
+}
+EOF
+          grep -n "class MainActivity" "$MAIN"
+
       - name: Prepare FF Tournament app icon
         run: |
           set -euxo pipefail
