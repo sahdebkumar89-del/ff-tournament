@@ -147,48 +147,81 @@ function TournamentCard({ tournament, now, type, onSelect }) {
   const finished = isFinishedForDisplay(tournament, now);
   const testing = type === "testing";
 
-  return (
-    <article style={{ ...styles.card, ...(testing ? styles.testingCard : styles.realCard), ...(finished ? styles.finishedCard : {}) }}>
-      {testing ? (
-        <div style={styles.testingVisual}>
-          <div style={styles.testingBadge}>TESTING</div>
-          <div style={styles.testingMode}>{mode}</div>
-          <div style={styles.testingSlot}>SLOT {tournament.slot_id ?? "—"}</div>
+  if (!testing) {
+    return (
+      <article key={tournament.id} style={styles.realOldCard}>
+        <div style={styles.cardTop}>
+          <div>
+            <span style={styles.modeBadge}>{mode}</span>
+            <h2 style={styles.time}>{formatTime(tournament.scheduled_start_time)}</h2>
+            <span style={styles.date}>{tournament.tournament_date}</span>
+          </div>
+          <div style={styles.headerStatus}>
+            <span style={statusStyle(tournament.status)}>
+              {tournament.status === "REGISTRATION" ? "OPEN" : tournament.status === "STARTED" ? "LIVE" : tournament.status}
+            </span>
+            <span style={styles.capacityMini}>{tournament.playerCount ?? 0}/{tournament.max_players} Players</span>
+            <span style={styles.neededMini}>{Math.max(0, Number(tournament.max_players) - Number(tournament.playerCount ?? 0))} needed</span>
+            {mode !== "SOLO" && <span style={styles.teamMini}>{tournament.teamCount ?? 0}/{tournament.max_teams} Teams</span>}
+          </div>
         </div>
-      ) : (
-        <div style={styles.realVisual}>
-          <div style={styles.realVisualMode}>{mode}</div>
+        <div style={styles.stats}>
+          <Stat label="ENTRY" value={`৳${Number(tournament.entry_fee).toFixed(0)}`} />
+          <Stat label="1ST PRIZE" value={`৳${Number(tournament.first_prize).toFixed(0)}`} />
+          <Stat label="KILL" value={`৳${Number(tournament.kill_reward).toFixed(0)}`} />
         </div>
-      )}
-
-      <div style={styles.cardBody}>
-        <div style={styles.modeTitle}>
-          <strong>{testing ? `${mode} Testing` : `${mode} Tournament`}</strong>
+        <div style={styles.countdownRow}>
+          <span style={styles.countdown}>{registrationLabel(tournament, now)}</span>
         </div>
-
-        {testing ? (
-          <>
-            <InfoRow text="FREE ENTRY" kind="green" />
-            <InfoRow text="NO PRIZE" kind="red" />
-            <div style={styles.slotRow}>
-              <span>START</span>
-              <strong>{formatTime(tournament.scheduled_start_time)}</strong>
-            </div>
-          </>
-        ) : (
-          <>
-            <InfoRow label="Entry Fee" value={money(tournament.entry_fee)} />
-            <InfoRow label="Prize" value={prizeText(tournament)} />
-            <InfoRow label="Kill Reward" value={money(tournament.kill_reward)} />
-          </>
-        )}
-
-        <button type="button" onClick={() => onSelect(tournament)} style={styles.actionButton}>
-          {testing ? "JOIN FREE" : "VIEW TOURNAMENT"}
+        <button type="button" onClick={() => onSelect(tournament)} style={styles.joinButton}>
+          {tournament.status === "REGISTRATION" ? "View & Join" : "View Tournament"}
         </button>
+      </article>
+    );
+  }
+
+  return (
+    <article style={{ ...styles.card, ...styles.testingCard, ...(finished ? styles.finishedCard : {}) }}>
+      <div style={styles.testingVisual}>
+        <div style={styles.testingBadge}>TESTING</div>
+        <div style={styles.testingMode}>{mode}</div>
+        <div style={styles.testingSlot}>SLOT {tournament.slot_id ?? "—"}</div>
+      </div>
+      <div style={styles.cardBody}>
+        <div style={styles.modeTitle}><strong>{mode} Testing</strong></div>
+        <InfoRow text="FREE ENTRY" kind="green" />
+        <InfoRow text="NO PRIZE" kind="red" />
+        <div style={styles.slotRow}><span>START</span><strong>{formatTime(tournament.scheduled_start_time)}</strong></div>
+        <button type="button" onClick={() => onSelect(tournament)} style={styles.actionButton}>JOIN FREE</button>
       </div>
     </article>
   );
+}
+
+function Stat({ label, value }) {
+  return <div style={styles.stat}><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function registrationLabel(tournament, now) {
+  if (tournament.status !== "REGISTRATION") return tournament.status.replace("_", " ");
+  const registrationOpen = tournament.registration_opens_at ? new Date(tournament.registration_opens_at).getTime() : Number.NEGATIVE_INFINITY;
+  if (now < registrationOpen) return "Registration not open yet";
+  const start = tournamentStartTimestamp(tournament);
+  const remaining = start - 30 * 60 * 1000 - now;
+  if (remaining <= 0) return "Registration closed";
+  if (remaining > 30 * 60 * 1000) return "Registration open";
+  return `Closes in ${formatCountdown(remaining)}`;
+}
+
+function formatCountdown(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(total / 60)}m ${String(total % 60).padStart(2, "0")}s`;
+}
+
+function statusStyle(status) {
+  if (status === "REGISTRATION") return { ...styles.status, background: "#162b20", color: "#7fe4a0" };
+  if (status === "STARTED") return { ...styles.status, background: "#382316", color: "#ffb267" };
+  return { ...styles.status, background: "#24252a", color: "#aaa9af" };
 }
 
 function InfoRow({ icon, text, label, value, kind }) {
@@ -277,8 +310,23 @@ const styles = {
   bannerArt:{position:"absolute",right:"-5px",bottom:"-18px",width:"47%",height:"115px",opacity:".95",overflow:"hidden",maskImage:"linear-gradient(90deg,transparent 0%,black 42%,black 100%)"},
   bannerArtReal:{width:"49%"},
   grid:{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:"7px",marginTop:"10px"},
+  realOldCard:{padding:"16px",borderRadius:"19px",background:"#121216",border:"1px solid #29272b",boxShadow:"0 8px 24px rgba(0,0,0,.18)"},
   card:{position:"relative",overflow:"hidden",borderRadius:"11px",background:"#0b0e11",border:"1px solid #3b3f43",boxShadow:"0 5px 16px rgba(0,0,0,.4)"},
-  testingCard:{borderColor:"#7b6815"},
+  testingCard:{borderColor:"#7b6815",background:"linear-gradient(180deg,#15130d,#0b0e11)"},
+  cardTop:{display:"flex",justifyContent:"space-between",alignItems:"start",gap:"10px"},
+  modeBadge:{display:"inline-block",padding:"5px 7px",borderRadius:"7px",background:"#311919",color:"#ff795f",fontSize:"9px",fontWeight:"900"},
+  time:{margin:"9px 0 1px",fontSize:"23px",fontWeight:"900"},
+  date:{color:"#77757c",fontSize:"10px"},
+  headerStatus:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"3px",minWidth:"90px"},
+  capacityMini:{color:"#d5d2d8",fontSize:"9px",fontWeight:"800",whiteSpace:"nowrap"},
+  neededMini:{color:"#77757c",fontSize:"8px",whiteSpace:"nowrap"},
+  teamMini:{color:"#77757c",fontSize:"8px",whiteSpace:"nowrap"},
+  stats:{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px",marginTop:"15px"},
+  stat:{padding:"10px",borderRadius:"11px",background:"#19181c",border:"1px solid #27262a",display:"grid",gap:"4px"},
+  countdownRow:{display:"flex",justifyContent:"flex-end",marginTop:"8px"},
+  countdown:{color:"#ffad68",fontWeight:"800",textAlign:"right"},
+  joinButton:{width:"100%",marginTop:"13px",padding:"12px",border:"1px solid #ff6a2a",borderRadius:"11px",background:"linear-gradient(135deg,#ff7a2f,#e84231)",color:"#fff",fontWeight:"900"},
+  status:{padding:"5px 8px",borderRadius:"8px",fontSize:"8px",fontWeight:"900",whiteSpace:"nowrap"},
   realCard:{borderColor:"#8d5a12"},
   finishedCard:{opacity:".78"},
   testingVisual:{height:"118px",padding:"13px",display:"flex",flexDirection:"column",justifyContent:"space-between",background:"radial-gradient(circle at 80% 20%,rgba(255,170,20,.14),transparent 42%),linear-gradient(145deg,#20180b,#0c1014)",borderBottom:"1px solid #463913"},
