@@ -17,13 +17,28 @@ export default function AdminResults({ onBack }) {
   useEffect(() => { loadTournaments(); }, []);
 
   async function loadTournaments() {
+    const { data: slots, error: slotError } = await supabase
+      .from("tournament_slots")
+      .select("id,slot_number")
+      .in("slot_number", [31, 32, 33]);
+
+    if (slotError) {
+      setMessage(slotError.message);
+      return;
+    }
+
+    const testingSlotIds = (slots || []).map((s) => s.id);
+    const statusFilter = "status.in.(STARTED,COMPLETED)";
+    const testingFilter = testingSlotIds.length ? ",slot_id.in.(" + testingSlotIds.join(",") + ")" : "";
+
     const { data, error } = await supabase
       .from("tournaments")
       .select("id,mode,tournament_date,scheduled_start_time,status,slot:tournament_slots(slot_number)")
-      .in("status", ["STARTED", "COMPLETED"])
+      .or(statusFilter + testingFilter)
       .order("tournament_date", { ascending: false })
       .order("scheduled_start_time", { ascending: false })
-      .limit(100);
+      .limit(200);
+
     if (error) setMessage(error.message);
     else setTournaments((data || []).map((t) => ({ ...t, slot_number: t.slot?.slot_number ?? null })));
   }
@@ -195,7 +210,12 @@ export default function AdminResults({ onBack }) {
   }
 
   const selected = tournaments.find((t) => String(t.id) === String(tournamentId));
-  const visibleTournaments = tournaments.filter((t) => resultType === "TESTING" ? [31, 32, 33].includes(Number(t.slot_number)) : ![31, 32, 33].includes(Number(t.slot_number)));
+  const visibleTournaments = tournaments.filter((t) => {
+    const isTesting = [31, 32, 33].includes(Number(t.slot_number));
+    return resultType === "TESTING"
+      ? isTesting
+      : !isTesting && ["STARTED", "COMPLETED"].includes(t.status);
+  });
   const hasResults = results.length > 0;
   const hasParticipants = participants.length > 0;
   const pendingCount = results.filter((r) => r.verification_status === "PENDING").length;
@@ -224,6 +244,15 @@ export default function AdminResults({ onBack }) {
       {message && <div style={s.message}>{message}</div>}
 
       <section style={s.card}>
+        <div style={s.typeToggle}>
+          <button type="button" onClick={() => { setResultType("REAL"); setTournamentId(""); setParticipants([]); setResults([]); setDrafts({}); }} style={{ ...s.typeButton, ...(resultType === "REAL" ? s.typeActive : {}) }}>
+            Real Tournament
+          </button>
+          <button type="button" onClick={() => { setResultType("TESTING"); setTournamentId(""); setParticipants([]); setResults([]); setDrafts({}); }} style={{ ...s.typeButton, ...(resultType === "TESTING" ? s.typeActive : {}) }}>
+            Testing Tournament
+          </button>
+        </div>
+
         <label style={s.label}>Tournament
           <select value={tournamentId} onChange={(e) => { setTournamentId(e.target.value); loadData(e.target.value); }} style={s.input}>
             <option value="">Select started/completed tournament</option>
