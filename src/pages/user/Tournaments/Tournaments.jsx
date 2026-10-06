@@ -133,7 +133,7 @@ function TournamentSection({ title, subtitle, type, tournaments, now, onSelect, 
           <div style={styles.sectionSubtitle}>{subtitle}</div>
         </div>
       </div>
-      <div style={styles.grid}>
+      <div style={{ ...styles.grid, ...(testing ? styles.testingGrid : styles.realGrid) }}>
         {tournaments.map((t) => (
           <TournamentCard key={t.id} tournament={t} now={now} type={type} onSelect={onSelect} />
         ))}
@@ -309,7 +309,9 @@ const styles = {
   sectionSubtitle:{marginTop:"5px",fontSize:"11px",color:"#b9bdc5",fontWeight:"650"},
   bannerArt:{position:"absolute",right:"-5px",bottom:"-18px",width:"47%",height:"115px",opacity:".95",overflow:"hidden",maskImage:"linear-gradient(90deg,transparent 0%,black 42%,black 100%)"},
   bannerArtReal:{width:"49%"},
-  grid:{display:"grid",gap:"10px",marginTop:"10px"},\n  realGrid:{gridTemplateColumns:"1fr"},\n  testingGrid:{gridTemplateColumns:"repeat(3,minmax(0,1fr))"},
+  grid:{display:"grid",gap:"10px",marginTop:"10px"},
+  realGrid:{gridTemplateColumns:"1fr"},
+  testingGrid:{gridTemplateColumns:"repeat(3,minmax(0,1fr))"},
   realOldCard:{padding:"16px",borderRadius:"19px",background:"#121216",border:"1px solid #29272b",boxShadow:"0 8px 24px rgba(0,0,0,.18)"},
   card:{position:"relative",overflow:"hidden",borderRadius:"11px",background:"#0b0e11",border:"1px solid #3b3f43",boxShadow:"0 5px 16px rgba(0,0,0,.4)"},
   testingCard:{borderColor:"#7b6815",background:"linear-gradient(180deg,#15130d,#0b0e11)"},
