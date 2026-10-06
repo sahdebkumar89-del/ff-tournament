@@ -327,7 +327,17 @@ export default function AdminResults({ onBack }) {
   );
 }
 
-function formatBangladeshTime(value) {\n  if (!value) return "—";\n  const raw = String(value).slice(0, 5);\n  const [hh, mm] = raw.split(":").map(Number);\n  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return raw;\n  const suffix = hh >= 12 ? "PM" : "AM";\n  const hour = hh % 12 || 12;\n  return `${hour}:${String(mm).padStart(2, "0")} ${suffix}`;\n}\n\nfunction badge(v) { return { ...s.badge, color: v === "VERIFIED" ? "#77e39b" : v === "REJECTED" ? "#ff6b6b" : "#ffc064" }; }
+function formatBangladeshTime(value) {
+  if (!value) return "—";
+  const raw = String(value).slice(0, 5);
+  const [hh, mm] = raw.split(":").map(Number);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return raw;
+  const suffix = hh >= 12 ? "PM" : "AM";
+  const hour = hh % 12 || 12;
+  return `${hour}:${String(mm).padStart(2, "0")} ${suffix}`;
+}
+
+function badge(v) { return { ...s.badge, color: v === "VERIFIED" ? "#77e39b" : v === "REJECTED" ? "#ff6b6b" : "#ffc064" }; }
 
 const s = {
   page:{minHeight:"100vh",background:"#0b0b0e",color:"#f7f7f8",padding:"20px 18px 40px",maxWidth:"760px",margin:"0 auto"},
@@ -341,7 +351,10 @@ const s = {
   emptyIcon:{width:38,height:38,borderRadius:"50%",background:"#2a1919",color:"#ff9b63",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px",fontWeight:900},
   emptyTitle:{margin:"0 0 6px",fontSize:18},
   emptyText:{margin:"0 auto 14px",maxWidth:480,color:"#8f8c93",fontSize:11,lineHeight:1.6},
-  typeToggle:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12},\n  typeButton:{padding:"10px 8px",border:"1px solid #3b2c2e",borderRadius:10,background:"#0f0e11",color:"#8f8c93",fontWeight:900,fontSize:10},\n  typeActive:{background:"linear-gradient(135deg,#ff7a2f,#e94231)",borderColor:"#ff7130",color:"#fff"},\n  label:{display:"grid",gap:6,marginTop:10,color:"#aaa4aa",fontSize:10,fontWeight:800},
+  typeToggle:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12},
+  typeButton:{padding:"10px 8px",border:"1px solid #3b2c2e",borderRadius:10,background:"#0f0e11",color:"#8f8c93",fontWeight:900,fontSize:10},
+  typeActive:{background:"linear-gradient(135deg,#ff7a2f,#e94231)",borderColor:"#ff7130",color:"#fff"},
+  label:{display:"grid",gap:6,marginTop:10,color:"#aaa4aa",fontSize:10,fontWeight:800},
   optional:{fontWeight:600,color:"#666"},
   input:{width:"100%",boxSizing:"border-box",border:"1px solid #3b2c2e",borderRadius:10,background:"#0f0e11",color:"#fff",padding:11,outline:"none"},
   sub:{fontSize:17,margin:"0 0 4px"},
