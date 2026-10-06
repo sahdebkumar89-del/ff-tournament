@@ -406,7 +406,7 @@ const styles = {
   testingFree: { color: "#7fe4a0", fontSize: "7px", fontWeight: "900" },
   testingNoPrize: { color: "#ff8c8c", fontSize: "7px", fontWeight: "900" },
   testingStatus: { color: "#c8c4ca", fontSize: "7px", fontWeight: "900" },
-  testingCapacity: { width: "100%", marginTop: "2px", padding: "6px 4px", borderRadius: "8px", background: "#1d1a1d", border: "1px solid #302a2e", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" },
+  testingCapacity: { width: "100%", marginTop: "1px", padding: "4px 3px", borderRadius: "7px", background: "#1d1a1d", border: "1px solid #302a2e", display: "flex", flexDirection: "column", alignItems: "center", gap: "1px", fontSize: "7px" },
   testingJoinButton: { width: "100%", marginTop: "2px", padding: "8px 4px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #ff9a3d 0%, #ff7130 48%, #d83d31 100%)", color: "#fff", fontSize: "8px", fontWeight: "900" },
   testingFullButton: { background: "#3a2426", color: "#ff9b9b" },
   testingDisabledButton: { opacity: ".55", cursor: "not-allowed" },
