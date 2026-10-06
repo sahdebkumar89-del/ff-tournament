@@ -37,12 +37,18 @@ export default function Tournaments() {
     year: "numeric", month: "2-digit", day: "2-digit",
   }).format(new Date());
 
-  const upcoming = filtered.filter((tournament) =>
+  const testingTournaments = filtered
+    .filter((tournament) => isTestingTournament(tournament))
+    .sort((a, b) => Number(a.slot_id) - Number(b.slot_id));
+
+  const realFiltered = filtered.filter((tournament) => !isTestingTournament(tournament));
+
+  const upcoming = realFiltered.filter((tournament) =>
     tournament.tournament_date === today &&
     !isFinishedForDisplay(tournament, now)
   );
 
-  const lowerSection = filtered.filter((tournament) =>
+  const lowerSection = realFiltered.filter((tournament) =>
     !(
       tournament.tournament_date === today &&
       !isFinishedForDisplay(tournament, now)
@@ -157,6 +163,15 @@ export default function Tournaments() {
 
       {!loading && !error && filtered.length > 0 && (
         <>
+          {testingTournaments.length > 0 && (
+            <>
+              <h2 style={styles.sectionTitle}>Testing Tournaments</h2>
+              <div style={styles.testingGrid}>
+                {testingTournaments.map((tournament) => renderTestingCard(tournament, now, setSelectedTournament))}
+              </div>
+            </>
+          )}
+
           {upcoming.length > 0 && (
             <>
               <h2 style={styles.sectionTitle}>Upcoming Tournaments</h2>
@@ -176,6 +191,33 @@ export default function Tournaments() {
       )}
     </main>
   );
+}
+
+function renderTestingCard(tournament, now, onSelect) {
+  const finished = isFinishedForDisplay(tournament, now);
+  return (
+    <article key={tournament.id} style={{ ...styles.testingCard, ...(finished ? styles.testingFinishedCard : {}) }}>
+      <span style={styles.testingBadge}>TEST</span>
+      <span style={styles.testingMode}>{tournament.mode}</span>
+      <strong style={styles.testingTime}>{formatTime(tournament.scheduled_start_time)}</strong>
+      <span style={styles.testingDate}>{formatDateDDMMYYYY(tournament.tournament_date)}</span>
+      <span style={styles.testingFree}>FREE ENTRY</span>
+      <span style={styles.testingNoPrize}>NO PRIZE</span>
+      <span style={styles.testingStatus}>{displayStatus(tournament, now)}</span>
+      <button
+        type="button"
+        onClick={() => onSelect(tournament)}
+        style={styles.testingJoinButton}
+      >
+        {tournament.status === "REGISTRATION" && !finished ? "JOIN FREE" : "VIEW"}
+      </button>
+    </article>
+  );
+}
+
+function isTestingTournament(tournament) {
+  const slotId = Number(tournament?.slot_id);
+  return slotId >= 31 && slotId <= 33;
 }
 
 function Stat({ label, value }) {
@@ -334,6 +376,17 @@ const styles = {
   filterActive: { background: "#351b18", color: "#ff9b5a" },
   sectionTitle: { margin: "0 0 11px", fontSize: "14px", fontWeight: "900", color: "#eee" },
   list: { display: "grid", gap: "12px" },
+  testingGrid: { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px", marginBottom: "20px" },
+  testingCard: { padding: "11px 8px", borderRadius: "14px", background: "#151316", border: "1px solid #6b4a1d", display: "flex", flexDirection: "column", alignItems: "center", gap: "5px", textAlign: "center", boxShadow: "0 7px 18px rgba(0,0,0,.16)" },
+  testingFinishedCard: { opacity: ".72" },
+  testingBadge: { padding: "4px 6px", borderRadius: "6px", background: "#ff8a3d", color: "#111", fontSize: "7px", fontWeight: "900", letterSpacing: ".6px" },
+  testingMode: { fontSize: "15px", fontWeight: "950", letterSpacing: ".5px" },
+  testingTime: { fontSize: "12px", color: "#ffad68" },
+  testingDate: { color: "#77757c", fontSize: "8px" },
+  testingFree: { color: "#7fe4a0", fontSize: "7px", fontWeight: "900" },
+  testingNoPrize: { color: "#ff8c8c", fontSize: "7px", fontWeight: "900" },
+  testingStatus: { color: "#c8c4ca", fontSize: "7px", fontWeight: "900" },
+  testingJoinButton: { width: "100%", marginTop: "2px", padding: "8px 4px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #ff9a3d 0%, #ff7130 48%, #d83d31 100%)", color: "#fff", fontSize: "8px", fontWeight: "900" },
   card: { padding: "16px", borderRadius: "19px", background: "#121216", border: "1px solid #29272b", boxShadow: "0 8px 24px rgba(0,0,0,.18)" },
   cardTop: { display: "flex", justifyContent: "space-between", alignItems: "start", gap: "10px" },
   modeBadge: { display: "inline-block", padding: "5px 7px", borderRadius: "7px", background: "#311919", color: "#ff795f", fontSize: "9px", fontWeight: "900" },
