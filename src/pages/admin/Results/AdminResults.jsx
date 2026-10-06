@@ -19,13 +19,13 @@ export default function AdminResults({ onBack }) {
   async function loadTournaments() {
     const { data, error } = await supabase
       .from("tournaments")
-      .select("id,mode,tournament_date,scheduled_start_time,status,slot_number")
+      .select("id,mode,tournament_date,scheduled_start_time,status,slot:tournament_slots(slot_number)")
       .in("status", ["STARTED", "COMPLETED"])
       .order("tournament_date", { ascending: false })
       .order("scheduled_start_time", { ascending: false })
       .limit(100);
     if (error) setMessage(error.message);
-    else setTournaments(data || []);
+    else setTournaments((data || []).map((t) => ({ ...t, slot_number: t.slot?.slot_number ?? null })));
   }
 
   function makeDrafts(list) {
