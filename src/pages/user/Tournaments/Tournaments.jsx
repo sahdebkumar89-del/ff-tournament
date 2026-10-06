@@ -4,6 +4,13 @@ import TournamentDetails from "./TournamentDetails.jsx";
 
 const FILTERS = ["ALL", "SOLO", "DUO", "SQUAD"];
 
+const CHARACTER_ART = {
+  maleA: "https://cdn.imgbin.com/16/1/14/imgbin-call-of-duty-modern-warfare-3-call-of-duty-ghosts-call-of-duty-advanced-warfare-call-of-duty-wwii-call-of-duty-black-ops-soldiers-game-characters-soldier-carrying-rifle-B69th5ftVjJtXfMq5sGjYxsiV.jpg",
+  femaleA: "https://staticdelivery.nexusmods.com/images/1151/32430455-1599756701.png",
+  maleB: "https://3dprop.store/uploads/product_images/original/240104_14AC_webshop_color_v02_01_2000px-texture-3388.jpg",
+  femaleB: "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2b0452ba-b660-467d-b111-121e4c627767/dfk6d06-f3fc7233-3064-4ac8-957e-03494ca8e44e.png/v1/fill/w_894%2Ch_894%2Cq_70%2Cstrp/call_of_duty_female_character_by_immortalxuniverse_dfk6d06-pre.jpg",
+};
+
 export default function Tournaments() {
   const { tournaments, loading, error } = useTournaments();
   const [selectedTournament, setSelectedTournament] = useState(null);
@@ -16,155 +23,47 @@ export default function Tournaments() {
   }, []);
 
   const filtered = useMemo(() => {
-    const byMode = filter === "ALL"
-      ? tournaments
-      : tournaments.filter((tournament) => tournament.mode === filter);
-
-    return [...byMode].sort((a, b) => {
-      const aFinished = isFinishedForDisplay(a, now);
-      const bFinished = isFinishedForDisplay(b, now);
-      if (aFinished !== bFinished) return aFinished ? 1 : -1;
-
-      const dateCompare = String(a.tournament_date).localeCompare(String(b.tournament_date));
-      if (dateCompare !== 0) return dateCompare;
-
-      return Number(a.slot_id) - Number(b.slot_id);
+    const list = filter === "ALL" ? tournaments : tournaments.filter((t) => String(t.mode).toUpperCase() === filter);
+    return [...list].sort((a, b) => {
+      const af = isFinishedForDisplay(a, now);
+      const bf = isFinishedForDisplay(b, now);
+      if (af !== bf) return af ? 1 : -1;
+      const dc = String(a.tournament_date).localeCompare(String(b.tournament_date));
+      return dc !== 0 ? dc : Number(a.slot_id) - Number(b.slot_id);
     });
   }, [tournaments, filter, now]);
 
   const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Dhaka",
-    year: "numeric", month: "2-digit", day: "2-digit",
+    timeZone: "Asia/Dhaka", year: "numeric", month: "2-digit", day: "2-digit",
   }).format(new Date());
 
-  const upcoming = filtered.filter((tournament) =>
-    tournament.tournament_date === today &&
-    !isFinishedForDisplay(tournament, now)
-  );
+  const visible = filtered.filter((t) => t.tournament_date === today && !isFinishedForDisplay(t, now));
+  const finished = filtered.filter((t) => !(t.tournament_date === today && !isFinishedForDisplay(t, now)));
 
-  const lowerSection = filtered.filter((tournament) =>
-    !(
-      tournament.tournament_date === today &&
-      !isFinishedForDisplay(tournament, now)
-    )
-  );
+  const testing = visible.filter(isTestingTournament);
+  const real = visible.filter((t) => !isTestingTournament(t));
+  const testingFinished = finished.filter(isTestingTournament);
+  const realFinished = finished.filter((t) => !isTestingTournament(t));
 
   if (selectedTournament) {
-    return (
-      <TournamentDetails
-        tournament={selectedTournament}
-        onBack={() => setSelectedTournament(null)}
-      />
-    );
+    return <TournamentDetails tournament={selectedTournament} onBack={() => setSelectedTournament(null)} />;
   }
-
-  const renderCard = (tournament) => {
-    const finished = isFinishedForDisplay(tournament, now);
-    const live = tournament.status === "STARTED" && !finished;
-    const mode = String(tournament.mode || "").toUpperCase();
-
-    return (
-      <article
-        key={tournament.id}
-        className={`tournament-card ${finished ? "is-finished" : ""} ${live ? "is-live" : ""}`}
-        style={styles.card}
-      >
-        <div style={styles.cardGlow} />
-        <div style={styles.poster}>
-          <HeroArt mode={mode} />
-          <div style={styles.posterShade} />
-          <div style={styles.posterLabel}>
-            <span style={styles.posterKicker}>BATTLE ROYALE</span>
-            <strong>{mode}</strong>
-            <span style={styles.posterSeason}>DAILY MATCH</span>
-          </div>
-          {live && <div style={styles.posterLive}>● LIVE</div>}
-        </div>
-        <div style={styles.cardContent}>
-          <div style={styles.cardTop}>
-          <div style={styles.cardIdentity}>
-            <div style={styles.modeRow}>
-              <span style={styles.modeBadge}><span style={styles.modeDot} />{mode}</span>
-              {live && <span style={styles.livePill}>● LIVE NOW</span>}
-            </div>
-            <h2 style={styles.time}>{formatTime(tournament.scheduled_start_time)}</h2>
-            <span style={styles.date}>{formatDateDDMMYYYY(tournament.tournament_date)}</span>
-          </div>
-          <div style={styles.headerStatus}>
-            <span style={statusStyle(tournament.status)}>{displayStatus(tournament, now)}</span>
-            <strong style={styles.capacityMini}>{tournament.playerCount ?? 0}/{tournament.max_players}</strong>
-            <span style={styles.neededMini}>
-              {Math.max(0, Number(tournament.max_players) - Number(tournament.playerCount ?? 0))} slots left
-            </span>
-            {tournament.mode !== "SOLO" && (
-              <span style={styles.teamMini}>{tournament.teamCount ?? 0}/{tournament.max_teams} teams</span>
-            )}
-          </div>
-        </div>
-
-        </div>
-        <div style={styles.divider} />
-
-        <div style={styles.stats}>
-          <Stat label="ENTRY FEE" value={`৳${Number(tournament.entry_fee).toFixed(0)}`} accent />
-          <Stat label="1ST PRIZE" value={`৳${Number(tournament.first_prize).toFixed(0)}`} />
-          <Stat label="PER KILL" value={`৳${Number(tournament.kill_reward).toFixed(0)}`} />
-        </div>
-
-        <div style={styles.actionRow}>
-          <div style={styles.countdownBlock}>
-            <span style={styles.countdownLabel}>{finished ? "NEXT REGISTRATION" : live ? "MATCH STATUS" : "REGISTRATION"}</span>
-            {finished &&
-            Number.isFinite(nextRegistrationOpenTimestamp(tournament)) &&
-            now < nextRegistrationOpenTimestamp(tournament) &&
-            tournament.nextRegistrationTournament?.tournament_date ? (
-              <div style={styles.reRegistrationInfo}>
-                <span style={styles.nextRegistrationDate}>
-                  {formatDateDDMMYYYY(tournament.nextRegistrationTournament.tournament_date)}
-                </span>
-                <span style={styles.openAgain}>
-                  Opens in {formatCountdown(nextRegistrationOpenTimestamp(tournament) - now)}
-                </span>
-              </div>
-            ) : (
-              <span style={{ ...styles.countdown, ...(live ? styles.countdownLive : {}), ...(finished ? styles.countdownFinished : {}) }}>
-                {registrationLabel(tournament, now)}
-              </span>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setSelectedTournament(tournament)}
-            style={{ ...styles.joinButton, ...(finished ? styles.viewButton : {}), ...(live ? styles.liveButton : {}) }}
-          >
-            <span>{tournament.status === "REGISTRATION" && !finished ? "VIEW & JOIN" : "VIEW TOURNAMENT"}</span>
-            <span style={styles.buttonArrow}>›</span>
-          </button>
-        </div>
-      </article>
-    );
-  };
 
   return (
     <main className="tournaments-page" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerCopy}>
-          <div style={styles.kicker}><span style={styles.kickerLine} /> FREE FIRE • BATTLE ROYALE</div>
-          <h1 style={styles.title}>Tournaments</h1>
-          <p style={styles.subtitle}>Choose your battle. Play hard. Win rewards.</p>
-        </div>
-        <div style={styles.brBadge}><span style={styles.brTiny}>BR</span><span>ONLY</span></div>
-      </div>
+      <header style={styles.header}>
+        <div style={styles.headerTitle}>Tournaments</div>
+        <div style={styles.ffLogo}><span>FREE</span> <b>F</b><span>RE</span></div>
+      </header>
 
       <div style={styles.filters}>
         {FILTERS.map((item) => (
           <button
             key={item}
             type="button"
-            className={`tournament-filter ${filter === item ? "is-active" : ""}`}
+            className={filter === item ? "tournament-filter is-active" : "tournament-filter"}
             onClick={() => setFilter(item)}
-            style={{ ...styles.filterButton, ...(filter === item ? styles.filterActive : null) }}
+            style={{ ...styles.filterButton, ...(filter === item ? styles.filterActive : {}) }}
           >
             {item}
           </button>
@@ -175,29 +74,55 @@ export default function Tournaments() {
       {error && <div style={styles.errorCard}>Unable to load tournaments right now. Please refresh once.</div>}
 
       {!loading && !error && filtered.length === 0 && (
-        <div style={styles.emptyCard}>
-          <div style={styles.emptyIcon}>◈</div>
-          <h2 style={styles.emptyTitle}>No upcoming tournaments</h2>
-          <p style={styles.emptyText}>New daily Battle Royale slots are generated automatically.</p>
-        </div>
+        <div style={styles.emptyCard}>No tournaments available.</div>
       )}
 
       {!loading && !error && filtered.length > 0 && (
         <>
-          {upcoming.length > 0 && (
-            <>
-              <h2 style={styles.sectionTitle}>Upcoming Tournaments</h2>
-              <div style={styles.list}>{upcoming.map(renderCard)}</div>
-            </>
+          {testing.length > 0 && (
+            <TournamentSection
+              title="TESTING TOURNAMENTS"
+              subtitle="Testing চলছে — No Entry Fee • No Prize"
+              type="testing"
+              tournaments={testing}
+              now={now}
+              onSelect={setSelectedTournament}
+            />
           )}
 
-          {lowerSection.length > 0 && (
-            <>
-              <h2 style={{ ...styles.sectionTitle, marginTop: "26px" }}>
-                Completed & Next Registration
-              </h2>
-              <div style={styles.list}>{lowerSection.map(renderCard)}</div>
-            </>
+          {real.length > 0 && (
+            <TournamentSection
+              title="REAL TOURNAMENTS"
+              subtitle="Regular prize tournaments"
+              type="real"
+              tournaments={real}
+              now={now}
+              onSelect={setSelectedTournament}
+            />
+          )}
+
+          {testingFinished.length > 0 && (
+            <TournamentSection
+              title="TESTING TOURNAMENTS"
+              subtitle="Completed & next registration"
+              type="testing"
+              tournaments={testingFinished}
+              now={now}
+              onSelect={setSelectedTournament}
+              lower
+            />
+          )}
+
+          {realFinished.length > 0 && (
+            <TournamentSection
+              title="REAL TOURNAMENTS"
+              subtitle="Completed & next registration"
+              type="real"
+              tournaments={realFinished}
+              now={now}
+              onSelect={setSelectedTournament}
+              lower
+            />
           )}
         </>
       )}
@@ -205,12 +130,88 @@ export default function Tournaments() {
   );
 }
 
-const CHARACTER_ART = {
-  maleA: "https://cdn.imgbin.com/16/1/14/imgbin-call-of-duty-modern-warfare-3-call-of-duty-ghosts-call-of-duty-advanced-warfare-call-of-duty-wwii-call-of-duty-black-ops-soldiers-game-characters-soldier-carrying-rifle-B69th5ftVjJtXfMq5sGjYxsiV.jpg",
-  femaleA: "https://staticdelivery.nexusmods.com/images/1151/32430455-1599756701.png",
-  maleB: "https://3dprop.store/uploads/product_images/original/240104_14AC_webshop_color_v02_01_2000px-texture-3388.jpg",
-  femaleB: "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2b0452ba-b660-467d-b111-121e4c627767/dfk6d06-f3fc7233-3064-4ac8-957e-03494ca8e44e.png/v1/fill/w_894%2Ch_894%2Cq_70%2Cstrp/call_of_duty_female_character_by_immortalxuniverse_dfk6d06-pre.jpg",
-};
+function TournamentSection({ title, subtitle, type, tournaments, now, onSelect, lower }) {
+  return (
+    <section style={{ ...styles.section, ...(lower ? styles.lowerSection : {}) }}>
+      <div style={styles.sectionBanner}>
+        <div style={styles.sectionIcon}>{type === "testing" ? "⚗" : "🏆"}</div>
+        <div style={styles.sectionCopy}>
+          <div style={styles.sectionTitle}>
+            <span style={type === "testing" ? styles.yellow : styles.orange}>{type === "testing" ? "TESTING" : "REAL"}</span>{" "}
+            <span>TOURNAMENTS</span>
+          </div>
+          <div style={styles.sectionSubtitle}>{subtitle}</div>
+        </div>
+        <div style={{ ...styles.bannerArt, ...(type === "real" ? styles.bannerArtReal : {}) }}>
+          <img src={type === "testing" ? CHARACTER_ART.maleB : CHARACTER_ART.femaleB} alt="" />
+        </div>
+      </div>
+      <div style={styles.grid}>
+        {tournaments.map((t) => (
+          <TournamentCard key={t.id} tournament={t} now={now} type={type} onSelect={onSelect} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TournamentCard({ tournament, now, type, onSelect }) {
+  const mode = String(tournament.mode || "").toUpperCase();
+  const finished = isFinishedForDisplay(tournament, now);
+  const live = tournament.status === "STARTED" && !finished;
+  const testing = type === "testing";
+
+  return (
+    <article style={{ ...styles.card, ...(testing ? styles.testingCard : styles.realCard), ...(finished ? styles.finishedCard : {}) }}>
+      <div style={styles.cardArtwork}>
+        <HeroArt mode={mode} />
+        <div style={styles.testingBadge}>{testing ? "TESTING" : ""}</div>
+      </div>
+
+      <div style={styles.cardBody}>
+        <div style={styles.modeTitle}>
+          <span style={styles.modeIcon}>{mode === "SOLO" ? "♟" : mode === "DUO" ? "♟♟" : "♟♟♟"}</span>
+          <strong>{mode}</strong>
+        </div>
+        <div style={styles.tournamentName}>{testing ? "Testing Tournament" : "Tournament"}</div>
+
+        {testing ? (
+          <>
+            <InfoRow icon="🎁" text="FREE ENTRY" kind="green" />
+            <InfoRow icon="🏆" text="NO PRIZE" kind="red" />
+            <InfoRow icon="⚗" text="Testing Only" kind="dark" />
+          </>
+        ) : (
+          <>
+            <InfoRow icon="▣" label="Entry Fee" value={money(tournament.entry_fee)} />
+            <InfoRow icon="🏆" label="Prize" value={prizeText(tournament)} />
+            <InfoRow icon="☠" label="Kill Reward" value={money(tournament.kill_reward)} />
+          </>
+        )}
+
+        <button type="button" onClick={() => onSelect(tournament)} style={styles.actionButton}>
+          {testing ? "JOIN FREE" : "VIEW TOURNAMENT"}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function InfoRow({ icon, text, label, value, kind }) {
+  if (text) {
+    return (
+      <div style={{ ...styles.infoRow, ...(kind === "green" ? styles.greenRow : kind === "red" ? styles.redRow : styles.darkRow) }}>
+        <span style={styles.infoIcon}>{icon}</span><strong>{text}</strong>
+      </div>
+    );
+  }
+  return (
+    <div style={styles.detailRow}>
+      <span style={styles.detailLeft}><span style={styles.detailIcon}>{icon}</span>{label}</span>
+      <strong style={styles.detailValue}>{value}</strong>
+    </div>
+  );
+}
 
 function HeroArt({ mode }) {
   const people = mode === "SOLO"
@@ -220,161 +221,44 @@ function HeroArt({ mode }) {
       : [CHARACTER_ART.maleA, CHARACTER_ART.femaleA, CHARACTER_ART.maleB, CHARACTER_ART.femaleB];
 
   return (
-    <div style={styles.heroArt} aria-hidden="true">
-      <div style={styles.posterSky} />
-      <div style={styles.posterHorizon} />
-      <div style={styles.posterSmoke} />
-      <div className={`poster-characters poster-characters-${people.length}`} style={styles.posterCharacters}>
-        {people.map((src, index) => (
-          <img
-            key={src + index}
-            src={src}
-            alt=""
-            className="poster-character"
-            style={{
-              ...styles.posterCharacter,
-              ...styles[`posterCharacter${people.length}`],
-              ...(index % 2 ? styles.posterCharacterAlt : {}),
-            }}
-            loading="lazy"
-            draggable="false"
-          />
-        ))}
-      </div>
-      <div style={styles.posterParticles} />
+    <div style={styles.heroArt}>
+      {people.map((src, index) => (
+        <img
+          key={src + index}
+          src={src}
+          alt=""
+          loading="lazy"
+          draggable="false"
+          style={{
+            ...styles.character,
+            ...(people.length === 1 ? styles.oneCharacter : {}),
+            ...(people.length === 2 ? styles.twoCharacter : {}),
+            ...(people.length === 4 ? styles.fourCharacter : {}),
+            ...(index % 2 ? styles.characterAlt : {}),
+          }}
+        />
+      ))}
     </div>
   );
 }
 
-function Stat({ label, value, accent }) {
-  return (
-    <div style={{ ...styles.stat, ...(accent ? styles.statAccent : {}) }}>
-      <span style={styles.statLabel}>{label}</span>
-      <strong style={styles.statValue}>{value}</strong>
-    </div>
-  );
+function isTestingTournament(t) {
+  return Number(t?.entry_fee || 0) === 0 && Number(t?.first_prize || 0) === 0;
 }
 
-function tournamentStartTimestamp(tournament) {
-  if (!tournament?.tournament_date || !tournament?.scheduled_start_time) return Number.POSITIVE_INFINITY;
-  return new Date(`${tournament.tournament_date}T${String(tournament.scheduled_start_time).slice(0, 8)}+06:00`).getTime();
+function money(value) {
+  return `৳${Number(value || 0).toFixed(0)}`;
 }
 
-function formatTime(value) {
-  if (!value) return "—";
-  const [hourText, minuteText] = String(value).slice(0, 5).split(":");
-  let hour = Number(hourText);
-  const minute = minuteText || "00";
-  const suffix = hour >= 12 ? "PM" : "AM";
-  hour = hour % 12 || 12;
-  return `${hour}:${minute} ${suffix}`;
+function prizeText(t) {
+  const values = [t.first_prize, t.second_prize, t.third_prize].filter((v) => v !== null && v !== undefined);
+  if (values.length >= 3) return values.map((v) => money(v)).join(" / ");
+  return money(t.first_prize);
 }
 
-function isFinishedForDisplay(tournament, now) {
-  if (!tournament) return false;
-  if (tournament.status === "COMPLETED" || tournament.status === "CANCELLED") {
-    return true;
-  }
-
-  const end = tournamentEndTimestamp(tournament);
-  return Number.isFinite(end) && now >= end;
-}
-
-function displayStatus(tournament, now) {
-  if (tournament.status === "CANCELLED") return "CANCELLED";
-  if (isFinishedForDisplay(tournament, now)) return "COMPLETED";
-  if (tournament.status === "STARTED") return "LIVE";
-  if (tournament.status === "REGISTRATION") return "OPEN";
-  return tournament.status;
-}
-
-function tournamentEndTimestamp(tournament) {
-  if (!tournament?.tournament_date || !tournament?.scheduled_end_time) {
-    return Number.POSITIVE_INFINITY;
-  }
-
-  const start = tournamentStartTimestamp(tournament);
-  const end = new Date(
-    `${tournament.tournament_date}T${String(tournament.scheduled_end_time).slice(0, 8)}+06:00`
-  ).getTime();
-
-  // The final 11:30 PM slot can end after midnight. In that case the
-  // end time belongs to the following day, not earlier on the same day.
-  if (Number.isFinite(start) && Number.isFinite(end) && end <= start) {
-    return end + 24 * 60 * 60 * 1000;
-  }
-
-  return end;
-}
-
-function nextRegistrationOpenTimestamp(tournament) {
-  // A completed slot may show a countdown only when the actual next-day
-  // tournament exists and is enabled. If Admin turned that next-day slot
-  // OFF, there is no next registration cycle to advertise.
-  const nextTournament = tournament?.nextRegistrationTournament;
-
-  if (!nextTournament?.is_enabled) {
-    return Number.POSITIVE_INFINITY;
-  }
-
-  if (!nextTournament.registration_opens_at) {
-    return Number.POSITIVE_INFINITY;
-  }
-
-  const nextOpen = new Date(
-    nextTournament.registration_opens_at
-  ).getTime();
-
-  return Number.isFinite(nextOpen)
-    ? nextOpen
-    : Number.POSITIVE_INFINITY;
-}
-
-function registrationLabel(tournament, now) {
-  if (tournament.status === "CANCELLED") return "CANCELLED";
-
-  if (isFinishedForDisplay(tournament, now)) {
-    const nextOpen = nextRegistrationOpenTimestamp(tournament);
-
-    if (Number.isFinite(nextOpen) && now < nextOpen) {
-      const nextDate = tournament.nextRegistrationTournament?.tournament_date;
-      return nextDate
-        ? `Registration opens again in ${formatCountdown(nextOpen - now)} • Next Registration: ${nextDate}`
-        : `Registration opens again in ${formatCountdown(nextOpen - now)}`;
-    }
-
-    // Do not claim that this completed slot is reopening. The next
-    // registration belongs to the separate next-day tournament instance.
-    if (!Number.isFinite(nextOpen)) {
-      return "COMPLETED";
-    }
-
-    return "Registration Open";
-  }
-
-  if (tournament.status !== "REGISTRATION") {
-    return tournament.status.replace("_", " ");
-  }
-
-  const registrationOpen = tournament.registration_opens_at
-    ? new Date(tournament.registration_opens_at).getTime()
-    : Number.NEGATIVE_INFINITY;
-
-  if (now < registrationOpen) return "Registration not open yet";
-
-  const start = tournamentStartTimestamp(tournament);
-  const remaining = start - 30 * 60 * 1000 - now;
-
-  if (remaining <= 0) return "Registration closed";
-  if (remaining > 30 * 60 * 1000) return "Registration open";
-
-  return `Closes in ${formatCountdown(remaining)}`;
-}
-
-function formatDateDDMMYYYY(value) {
-  if (!value) return "";
-  const [year, month, day] = String(value).slice(0, 10).split("-");
-  return day && month && year ? `${day}-${month}-${year}` : value;
+function tournamentStartTimestamp(t) {
+  if (!t?.tournament_date || !t?.scheduled_start_time) return Number.POSITIVE_INFINITY;
+  return new Date(`${t.tournament_date}T${String(t.scheduled_start_time).slice(0, 8)}+06:00`).getTime();
 }
 
 function formatCountdown(ms) {
@@ -382,92 +266,79 @@ function formatCountdown(ms) {
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
   const seconds = total % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${String(minutes).padStart(2, "0")}m`;
-  }
-
-  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+  return hours > 0 ? `${hours}h ${String(minutes).padStart(2, "0")}m` : `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 }
 
-function statusStyle(status) {
-  if (status === "REGISTRATION") return { ...styles.status, background: "#162b20", color: "#7fe4a0" };
-  if (status === "STARTED") return { ...styles.status, background: "#382316", color: "#ffb267" };
-  return { ...styles.status, background: "#24252a", color: "#aaa9af" };
+function tournamentEndTimestamp(t) {
+  if (!t?.tournament_date || !t?.scheduled_end_time) return Number.POSITIVE_INFINITY;
+  const start = tournamentStartTimestamp(t);
+  const end = new Date(`${t.tournament_date}T${String(t.scheduled_end_time).slice(0, 8)}+06:00`).getTime();
+  return Number.isFinite(start) && Number.isFinite(end) && end <= start ? end + 86400000 : end;
+}
+
+function isFinishedForDisplay(t, now) {
+  if (!t) return false;
+  if (t.status === "COMPLETED" || t.status === "CANCELLED") return true;
+  const end = tournamentEndTimestamp(t);
+  return Number.isFinite(end) && now >= end;
+}
+
+function nextRegistrationOpenTimestamp(t) {
+  const next = t?.nextRegistrationTournament;
+  if (!next?.is_enabled || !next.registration_opens_at) return Number.POSITIVE_INFINITY;
+  const ts = new Date(next.registration_opens_at).getTime();
+  return Number.isFinite(ts) ? ts : Number.POSITIVE_INFINITY;
 }
 
 const styles = {
-  page:{maxWidth:"780px",margin:"0 auto",padding:"0 14px 42px",minHeight:"calc(100vh - 80px)",background:"radial-gradient(circle at 85% 0%,rgba(255,82,28,.13),transparent 28%),radial-gradient(circle at 0% 38%,rgba(205,32,32,.08),transparent 25%)"},
-  header:{position:"relative",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",margin:"0 -14px",padding:"22px 18px 20px",overflow:"hidden",borderBottom:"1px solid #292328",background:"linear-gradient(135deg,#171012 0%,#0c0c10 58%,#120d0e 100%)"},
-  headerCopy:{position:"relative",zIndex:1},
-  kicker:{display:"flex",alignItems:"center",gap:"7px",color:"#ff7134",fontSize:"8px",fontWeight:"950",letterSpacing:"1.5px"},
-  kickerLine:{width:"17px",height:"2px",borderRadius:"3px",background:"#ff7134",boxShadow:"0 0 10px rgba(255,113,52,.55)"},
-  title:{margin:"7px 0 0",fontSize:"32px",lineHeight:1,fontWeight:"950",letterSpacing:"-1.2px"},
-  subtitle:{margin:"8px 0 0",color:"#77727a",fontSize:"9px",fontWeight:"700"},
-  brBadge:{position:"relative",zIndex:1,display:"flex",alignItems:"center",gap:"5px",flexShrink:0,padding:"7px 9px",border:"1px solid #663025",borderRadius:"9px",background:"rgba(38,19,19,.9)",color:"#ff9360",fontSize:"8px",fontWeight:"950",letterSpacing:".6px",boxShadow:"0 0 24px rgba(245,73,35,.08)"},
-  brTiny:{display:"grid",placeItems:"center",width:"19px",height:"19px",borderRadius:"6px",background:"linear-gradient(135deg,#ff8b3d,#d63b31)",color:"#fff",fontSize:"7px"},
-  filters:{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:"5px",marginTop:"12px",padding:"5px",borderRadius:"14px",background:"rgba(14,14,18,.96)",border:"1px solid #29272d",boxShadow:"0 10px 26px rgba(0,0,0,.28)"},
-  filterButton:{border:"1px solid transparent",borderRadius:"10px",background:"transparent",color:"#77737b",padding:"10px 4px",fontSize:"9px",fontWeight:"950",letterSpacing:".5px"},
-  filterActive:{background:"linear-gradient(135deg,#4a211b,#2a1718)",borderColor:"#683126",color:"#ff9b5c",boxShadow:"0 0 18px rgba(255,91,39,.08),inset 0 0 14px rgba(255,91,39,.05)"},
-  sectionTitle:{margin:"19px 0 10px",paddingLeft:"8px",borderLeft:"3px solid #ff6931",fontSize:"15px",lineHeight:1,fontWeight:"950",color:"#f0ecef",letterSpacing:"-.2px"},
-  list:{display:"grid",gap:"12px"},
-  card:{position:"relative",overflow:"hidden",padding:"15px",borderRadius:"18px",background:"linear-gradient(145deg,rgba(27,22,25,.99) 0%,rgba(14,14,18,.99) 72%)",border:"1px solid #342d32",boxShadow:"0 12px 30px rgba(0,0,0,.28)"},
-  cardGlow:{position:"absolute",top:"-65px",right:"-45px",width:"150px",height:"150px",borderRadius:"50%",background:"radial-gradient(circle,rgba(255,80,32,.12),transparent 66%)",pointerEvents:"none"},
-  poster:{position:"relative",height:"168px",margin:"-15px -15px 13px",overflow:"hidden",background:"#0b0b0e",borderBottom:"1px solid #3b2b2d"},
-  heroArt:{position:"absolute",inset:0,overflow:"hidden",background:"linear-gradient(135deg,#171116 0%,#0a0a0d 58%,#160d0d 100%)"},
-  posterSky:{position:"absolute",inset:"-20%",background:"radial-gradient(circle at 68% 28%,rgba(255,120,54,.38),transparent 24%),radial-gradient(circle at 18% 42%,rgba(119,28,22,.32),transparent 32%),linear-gradient(135deg,rgba(255,100,42,.08),transparent 42%)"},
-  posterHorizon:{position:"absolute",left:0,right:0,bottom:"-8px",height:"62%",background:"linear-gradient(180deg,transparent,#07070a 72%),repeating-linear-gradient(112deg,rgba(255,103,46,.11) 0 1px,transparent 1px 34px)",transform:"skewY(-4deg)"},
-  posterSmoke:{position:"absolute",inset:"10% -10% 0",background:"radial-gradient(ellipse at 35% 65%,rgba(255,111,45,.18),transparent 36%),radial-gradient(ellipse at 80% 55%,rgba(120,33,28,.2),transparent 34%)",filter:"blur(12px)"},
-  posterCharacters:{position:"absolute",inset:"-8px 8px 0",display:"flex",alignItems:"flex-end",justifyContent:"center",gap:"-2px",overflow:"hidden"},
-  posterCharacter:{height:"118%",width:"auto",maxWidth:"58%",objectFit:"contain",objectPosition:"center bottom",filter:"drop-shadow(0 8px 14px rgba(0,0,0,.7)) saturate(1.08) contrast(1.04)",userSelect:"none",pointerEvents:"none",mixBlendMode:"normal"},
-  posterCharacter1:{height:"132%",maxWidth:"82%"},
-  posterCharacter2:{height:"116%",maxWidth:"58%"},
-  posterCharacter4:{height:"108%",maxWidth:"38%"},
-  posterCharacterAlt:{transform:"translateY(3px) scale(.97)"},
-  posterParticles:{position:"absolute",inset:0,pointerEvents:"none",background:"radial-gradient(circle at 14% 22%,rgba(255,170,93,.7) 0 1px,transparent 2px),radial-gradient(circle at 77% 18%,rgba(255,125,60,.55) 0 1px,transparent 2px),radial-gradient(circle at 52% 34%,rgba(255,205,126,.4) 0 1px,transparent 2px),linear-gradient(90deg,rgba(255,89,42,.12),transparent 28%,transparent 72%,rgba(255,89,42,.08))"},
-  posterShade:{position:"absolute",inset:0,background:"linear-gradient(90deg,rgba(7,7,9,.5),rgba(7,7,9,.03) 38%,rgba(7,7,9,.42) 100%),linear-gradient(0deg,rgba(7,7,9,.76),transparent 54%)"},
-  posterLabel:{position:"absolute",left:"13px",bottom:"12px",display:"flex",flexDirection:"column",alignItems:"flex-start",textShadow:"0 2px 10px rgba(0,0,0,.8)"},
-  posterKicker:{color:"#ff8c55",fontSize:"6px",fontWeight:"950",letterSpacing:"1.4px"},
-  posterLabelStrong:{},
-  posterSeason:{marginTop:"2px",color:"#b7a9a9",fontSize:"6px",fontWeight:"850",letterSpacing:"1px"},
-  posterLive:{position:"absolute",top:"10px",right:"11px",padding:"5px 8px",borderRadius:"7px",background:"rgba(68,24,18,.9)",border:"1px solid #a34a30",color:"#ffb16e",fontSize:"7px",fontWeight:"950"},
-  cardContent:{position:"relative",zIndex:1},
-  cardTop:{position:"relative",zIndex:1,display:"flex",justifyContent:"space-between",alignItems:"start",gap:"12px"},
-  cardIdentity:{minWidth:0},
-  modeRow:{display:"flex",alignItems:"center",flexWrap:"wrap",gap:"6px"},
-  modeBadge:{display:"inline-flex",alignItems:"center",gap:"6px",padding:"6px 9px",borderRadius:"7px",background:"linear-gradient(135deg,#3b1b19,#241619)",border:"1px solid #5a2925",color:"#ff886c",fontSize:"8px",fontWeight:"950",letterSpacing:".8px"},
-  modeDot:{width:"5px",height:"5px",borderRadius:"50%",background:"#ff7548",boxShadow:"0 0 8px rgba(255,117,72,.7)"},
-  livePill:{padding:"5px 7px",borderRadius:"6px",background:"#3a2118",color:"#ffae68",fontSize:"7px",fontWeight:"950",letterSpacing:".5px"},
-  time:{margin:"10px 0 2px",fontSize:"26px",lineHeight:1,fontWeight:"950",letterSpacing:"-.8px",textShadow:"0 2px 16px rgba(0,0,0,.35)"},
-  date:{color:"#77727b",fontSize:"9px",fontWeight:"750"},
-  headerStatus:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"4px",minWidth:"104px",paddingTop:"1px"},
-  status:{padding:"5px 8px",borderRadius:"7px",fontSize:"7px",fontWeight:"950",letterSpacing:".5px",whiteSpace:"nowrap",border:"1px solid transparent"},
-  capacityMini:{color:"#eee9ee",fontSize:"12px",fontWeight:"950"},
-  neededMini:{color:"#716d75",fontSize:"7px",whiteSpace:"nowrap"},
-  teamMini:{color:"#77727b",fontSize:"7px",whiteSpace:"nowrap"},
-  divider:{height:"1px",margin:"13px 0 10px",background:"linear-gradient(90deg,#322c31,rgba(50,44,49,.2),transparent)"},
-  stats:{position:"relative",zIndex:1,display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:"7px"},
-  stat:{minWidth:0,padding:"9px 9px 10px",borderRadius:"10px",background:"linear-gradient(145deg,#1b1a1f,#151519)",border:"1px solid #29272d"},
-  statAccent:{borderColor:"#583025",background:"linear-gradient(145deg,#241918,#171519)"},
-  statLabel:{display:"block",color:"#68646d",fontSize:"6px",fontWeight:"950",letterSpacing:".85px"},
-  statValue:{display:"block",marginTop:"4px",color:"#f0ebef",fontSize:"12px",fontWeight:"950"},
-  actionRow:{position:"relative",zIndex:1,display:"flex",alignItems:"center",justifyContent:"space-between",gap:"10px",marginTop:"11px"},
-  countdownBlock:{minWidth:0,display:"flex",flexDirection:"column",gap:"3px"},
-  countdownLabel:{color:"#5f5b63",fontSize:"6px",fontWeight:"950",letterSpacing:".9px"},
-  countdown:{color:"#aaa5ad",fontSize:"9px",lineHeight:1.3,fontWeight:"850"},
-  countdownLive:{color:"#ffb267"},
-  countdownFinished:{color:"#918b94"},
-  reRegistrationInfo:{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:"2px",fontSize:"9px",lineHeight:1.2},
-  nextRegistrationDate:{color:"#ddd8df",fontWeight:"950"},
-  openAgain:{color:"#ffad68",fontWeight:"850"},
-  joinButton:{flexShrink:0,minWidth:"136px",display:"flex",alignItems:"center",justifyContent:"center",gap:"5px",padding:"11px",border:"1px solid rgba(255,170,88,.25)",borderRadius:"10px",background:"linear-gradient(135deg,#ff9e47 0%,#ff7132 52%,#d94232 100%)",color:"#fff",fontSize:"8px",fontWeight:"950",letterSpacing:".4px",boxShadow:"0 8px 20px rgba(238,70,39,.2)"},
-  buttonArrow:{fontSize:"16px",lineHeight:"8px",marginTop:"-1px"},
-  viewButton:{background:"linear-gradient(145deg,#26242a,#1b1a1f)",borderColor:"#37333a",color:"#bcb7c0",boxShadow:"none"},
-  liveButton:{background:"linear-gradient(135deg,#ffae50,#df4c35)"},
-  statusCard:{marginTop:"14px",padding:"17px",borderRadius:"15px",background:"#121216",border:"1px solid #29272d",color:"#908b94",fontSize:"11px"},
-  errorCard:{marginTop:"14px",padding:"17px",borderRadius:"15px",background:"#2b1518",border:"1px solid #713038",color:"#ffaaa8",fontSize:"11px"},
-  emptyCard:{marginTop:"14px",padding:"42px 20px",borderRadius:"19px",background:"linear-gradient(145deg,#17161b,#111115)",border:"1px solid #29272d",textAlign:"center"},
-  emptyIcon:{color:"#ff7130",fontSize:"26px",marginBottom:"9px"},
-  emptyTitle:{margin:"0 0 7px",fontSize:"18px",fontWeight:"950"},
-  emptyText:{margin:0,color:"#87828b",fontSize:"11px",lineHeight:1.5},
+  page:{maxWidth:"780px",margin:"0 auto",padding:"0 8px 32px",minHeight:"calc(100vh - 80px)",background:"#050607",color:"#f7f7f7"},
+  header:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"22px 12px 16px"},
+  headerTitle:{fontSize:"30px",fontWeight:"950",letterSpacing:"-.8px"},
+  ffLogo:{fontSize:"17px",fontStyle:"italic",fontWeight:"950",letterSpacing:"-1px",color:"#f7f7f7"},
+  ffLogo b:{color:"#ff9d00"},
+  filters:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"7px",padding:"0 6px 10px"},
+  filterButton:{height:"40px",border:"1px solid #34383e",borderRadius:"9px",background:"linear-gradient(#15191d,#0e1114)",color:"#aeb4c0",fontSize:"12px",fontWeight:"900"},
+  filterActive:{background:"linear-gradient(135deg,#ff7a14,#ff4d12)",borderColor:"#ff8a21",color:"#111",boxShadow:"0 5px 14px rgba(255,91,20,.2)"},
+  section:{marginTop:"10px"},
+  lowerSection:{marginTop:"24px",paddingTop:"18px",borderTop:"1px solid #25282c"},
+  sectionBanner:{position:"relative",height:"88px",overflow:"hidden",display:"flex",alignItems:"center",gap:"12px",padding:"0 15px",border:"1px solid #34383e",borderRadius:"14px",background:"linear-gradient(90deg,#0b0d10,#11151a 55%,#14100e)"},
+  sectionIcon:{position:"relative",zIndex:2,fontSize:"31px",color:"#ff9f00",filter:"drop-shadow(0 2px 5px rgba(255,145,0,.25))"},
+  sectionCopy:{position:"relative",zIndex:3},
+  sectionTitle:{fontSize:"22px",fontWeight:"950",letterSpacing:"-.4px",whiteSpace:"nowrap"},
+  yellow:{color:"#ffd21f"},
+  orange:{color:"#ff7418"},
+  sectionSubtitle:{marginTop:"5px",fontSize:"11px",color:"#b9bdc5",fontWeight:"650"},
+  bannerArt:{position:"absolute",right:"-5px",bottom:"-18px",width:"47%",height:"115px",opacity:".95",overflow:"hidden",maskImage:"linear-gradient(90deg,transparent 0%,black 42%,black 100%)"},
+  bannerArtReal:{width:"49%"},
+  bannerArt img:{width:"100%",height:"100%",objectFit:"contain",objectPosition:"right bottom",filter:"drop-shadow(0 4px 8px rgba(0,0,0,.7))"},
+  grid:{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:"9px",marginTop:"10px"},
+  card:{position:"relative",overflow:"hidden",borderRadius:"11px",background:"#0b0e11",border:"1px solid #3b3f43",boxShadow:"0 5px 16px rgba(0,0,0,.4)"},
+  testingCard:{borderColor:"#7b6815"},
+  realCard:{borderColor:"#8d5a12"},
+  finishedCard:{opacity:".78"},
+  cardArtwork:{position:"relative",height:"142px",overflow:"hidden",background:"#111"},
+  heroArt:{position:"absolute",inset:0,display:"flex",alignItems:"flex-end",justifyContent:"center",overflow:"hidden",background:"linear-gradient(135deg,#2b130d,#08111e)"},
+  character:{height:"118%",width:"auto",maxWidth:"68%",objectFit:"contain",objectPosition:"center bottom",filter:"drop-shadow(0 3px 7px rgba(0,0,0,.8)) saturate(1.12) contrast(1.05)"},
+  oneCharacter:{height:"132%",maxWidth:"92%"},
+  twoCharacter:{height:"122%",maxWidth:"59%"},
+  fourCharacter:{height:"112%",maxWidth:"42%"},
+  characterAlt:{transform:"translateY(2px) scale(.96)"},
+  testingBadge:{position:"absolute",top:"7px",right:"7px",minHeight:"22px",padding:"4px 7px",borderRadius:"5px",background:"#ffd719",color:"#111",fontSize:"9px",fontWeight:"950",boxShadow:"0 2px 6px rgba(0,0,0,.35)"},
+  cardBody:{padding:"8px 8px 9px"},
+  modeTitle:{display:"flex",alignItems:"center",gap:"7px",fontSize:"15px",fontWeight:"950"},
+  modeIcon:{fontSize:"19px",color:"#fff",lineHeight:1},
+  tournamentName:{margin:"4px 0 7px",fontSize:"12px",fontWeight:"800",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"},
+  infoRow:{display:"flex",alignItems:"center",gap:"7px",height:"35px",marginTop:"5px",padding:"0 8px",borderRadius:"7px",fontSize:"11px",fontWeight:"900",border:"1px solid transparent"},
+  infoIcon:{fontSize:"17px",width:"20px",textAlign:"center"},
+  greenRow:{background:"linear-gradient(90deg,#073b1d,#052719)",borderColor:"#08762f",color:"#f0fff3"},
+  redRow:{background:"linear-gradient(90deg,#4d1117,#270b0f)",borderColor:"#d31e2e",color:"#fff0f0"},
+  darkRow:{background:"linear-gradient(#24282d,#181b1f)",borderColor:"#333840",color:"#e9ebef"},
+  detailRow:{display:"flex",alignItems:"center",justifyContent:"space-between",minHeight:"42px",padding:"0 3px",borderBottom:"1px solid #30343a",fontSize:"11px"},
+  detailLeft:{display:"flex",alignItems:"center",gap:"7px",color:"#c6cad0"},
+  detailIcon:{fontSize:"17px",color:"#fff"},
+  detailValue:{color:"#ffd600",fontSize:"14px",whiteSpace:"nowrap"},
+  actionButton:{width:"100%",height:"40px",marginTop:"8px",border:0,borderRadius:"8px",background:"linear-gradient(135deg,#ff8a18,#ff4e10)",color:"#111",fontSize:"11px",fontWeight:"950",letterSpacing:".1px",boxShadow:"0 4px 10px rgba(255,76,12,.22)"},
+  statusCard:{margin:"14px 6px",padding:"18px",borderRadius:"12px",background:"#101317",border:"1px solid #292d33",color:"#aeb3bb"},
+  errorCard:{margin:"14px 6px",padding:"18px",borderRadius:"12px",background:"#2a1014",border:"1px solid #6d2730",color:"#ffb2b7"},
+  emptyCard:{margin:"20px 6px",padding:"35px",textAlign:"center",borderRadius:"14px",background:"#101317",border:"1px solid #292d33",color:"#9ea4ad"}
 };
