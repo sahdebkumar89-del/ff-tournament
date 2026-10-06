@@ -4,13 +4,6 @@ import TournamentDetails from "./TournamentDetails.jsx";
 
 const FILTERS = ["ALL", "SOLO", "DUO", "SQUAD"];
 
-const CHARACTER_ART = {
-  maleA: "https://cdn.imgbin.com/16/1/14/imgbin-call-of-duty-modern-warfare-3-call-of-duty-ghosts-call-of-duty-advanced-warfare-call-of-duty-wwii-call-of-duty-black-ops-soldiers-game-characters-soldier-carrying-rifle-B69th5ftVjJtXfMq5sGjYxsiV.jpg",
-  femaleA: "https://staticdelivery.nexusmods.com/images/1151/32430455-1599756701.png",
-  maleB: "https://3dprop.store/uploads/product_images/original/240104_14AC_webshop_color_v02_01_2000px-texture-3388.jpg",
-  femaleB: "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2b0452ba-b660-467d-b111-121e4c627767/dfk6d06-f3fc7233-3064-4ac8-957e-03494ca8e44e.png/v1/fill/w_894%2Ch_894%2Cq_70%2Cstrp/call_of_duty_female_character_by_immortalxuniverse_dfk6d06-pre.jpg",
-};
-
 export default function Tournaments() {
   const { tournaments, loading, error } = useTournaments();
   const [selectedTournament, setSelectedTournament] = useState(null);
@@ -40,7 +33,7 @@ export default function Tournaments() {
   const visible = filtered.filter((t) => t.tournament_date === today && !isFinishedForDisplay(t, now));
   const finished = filtered.filter((t) => !(t.tournament_date === today && !isFinishedForDisplay(t, now)));
 
-  const testing = visible.filter(isTestingTournament);
+  const testing = visible.filter(isTestingTournament).slice(0, 3);
   const real = visible.filter((t) => !isTestingTournament(t));
   const testingFinished = finished.filter(isTestingTournament);
   const realFinished = finished.filter((t) => !isTestingTournament(t));
@@ -131,19 +124,13 @@ export default function Tournaments() {
 }
 
 function TournamentSection({ title, subtitle, type, tournaments, now, onSelect, lower }) {
+  const testing = type === "testing";
   return (
     <section style={{ ...styles.section, ...(lower ? styles.lowerSection : {}) }}>
-      <div style={styles.sectionBanner}>
-        <div style={styles.sectionIcon}>{type === "testing" ? "⚗" : "🏆"}</div>
+      <div style={{ ...styles.sectionBanner, ...(testing ? styles.testingBanner : styles.realBanner) }}>
         <div style={styles.sectionCopy}>
-          <div style={styles.sectionTitle}>
-            <span style={type === "testing" ? styles.yellow : styles.orange}>{type === "testing" ? "TESTING" : "REAL"}</span>{" "}
-            <span>TOURNAMENTS</span>
-          </div>
+          <div style={styles.sectionTitle}>{title}</div>
           <div style={styles.sectionSubtitle}>{subtitle}</div>
-        </div>
-        <div style={{ ...styles.bannerArt, ...(type === "real" ? styles.bannerArtReal : {}) }}>
-          <img src={type === "testing" ? CHARACTER_ART.maleB : CHARACTER_ART.femaleB} alt="" />
         </div>
       </div>
       <div style={styles.grid}>
@@ -158,34 +145,41 @@ function TournamentSection({ title, subtitle, type, tournaments, now, onSelect, 
 function TournamentCard({ tournament, now, type, onSelect }) {
   const mode = String(tournament.mode || "").toUpperCase();
   const finished = isFinishedForDisplay(tournament, now);
-  const live = tournament.status === "STARTED" && !finished;
   const testing = type === "testing";
 
   return (
     <article style={{ ...styles.card, ...(testing ? styles.testingCard : styles.realCard), ...(finished ? styles.finishedCard : {}) }}>
-      <div style={styles.cardArtwork}>
-        <HeroArt mode={mode} />
-        <div style={styles.testingBadge}>{testing ? "TESTING" : ""}</div>
-      </div>
+      {testing ? (
+        <div style={styles.testingVisual}>
+          <div style={styles.testingBadge}>TESTING</div>
+          <div style={styles.testingMode}>{mode}</div>
+          <div style={styles.testingSlot}>SLOT {tournament.slot_id ?? "—"}</div>
+        </div>
+      ) : (
+        <div style={styles.realVisual}>
+          <div style={styles.realVisualMode}>{mode}</div>
+        </div>
+      )}
 
       <div style={styles.cardBody}>
         <div style={styles.modeTitle}>
-          <span style={styles.modeIcon}>{mode === "SOLO" ? "♟" : mode === "DUO" ? "♟♟" : "♟♟♟"}</span>
-          <strong>{mode}</strong>
+          <strong>{testing ? `${mode} Testing` : `${mode} Tournament`}</strong>
         </div>
-        <div style={styles.tournamentName}>{testing ? "Testing Tournament" : "Tournament"}</div>
 
         {testing ? (
           <>
-            <InfoRow icon="🎁" text="FREE ENTRY" kind="green" />
-            <InfoRow icon="🏆" text="NO PRIZE" kind="red" />
-            <InfoRow icon="⚗" text="Testing Only" kind="dark" />
+            <InfoRow text="FREE ENTRY" kind="green" />
+            <InfoRow text="NO PRIZE" kind="red" />
+            <div style={styles.slotRow}>
+              <span>START</span>
+              <strong>{formatTime(tournament.scheduled_start_time)}</strong>
+            </div>
           </>
         ) : (
           <>
-            <InfoRow icon="▣" label="Entry Fee" value={money(tournament.entry_fee)} />
-            <InfoRow icon="🏆" label="Prize" value={prizeText(tournament)} />
-            <InfoRow icon="☠" label="Kill Reward" value={money(tournament.kill_reward)} />
+            <InfoRow label="Entry Fee" value={money(tournament.entry_fee)} />
+            <InfoRow label="Prize" value={prizeText(tournament)} />
+            <InfoRow label="Kill Reward" value={money(tournament.kill_reward)} />
           </>
         )}
 
@@ -209,35 +203,6 @@ function InfoRow({ icon, text, label, value, kind }) {
     <div style={styles.detailRow}>
       <span style={styles.detailLeft}><span style={styles.detailIcon}>{icon}</span>{label}</span>
       <strong style={styles.detailValue}>{value}</strong>
-    </div>
-  );
-}
-
-function HeroArt({ mode }) {
-  const people = mode === "SOLO"
-    ? [CHARACTER_ART.maleA]
-    : mode === "DUO"
-      ? [CHARACTER_ART.maleA, CHARACTER_ART.femaleA]
-      : [CHARACTER_ART.maleA, CHARACTER_ART.femaleA, CHARACTER_ART.maleB, CHARACTER_ART.femaleB];
-
-  return (
-    <div style={styles.heroArt}>
-      {people.map((src, index) => (
-        <img
-          key={src + index}
-          src={src}
-          alt=""
-          loading="lazy"
-          draggable="false"
-          style={{
-            ...styles.character,
-            ...(people.length === 1 ? styles.oneCharacter : {}),
-            ...(people.length === 2 ? styles.twoCharacter : {}),
-            ...(people.length === 4 ? styles.fourCharacter : {}),
-            ...(index % 2 ? styles.characterAlt : {}),
-          }}
-        />
-      ))}
     </div>
   );
 }
@@ -310,7 +275,6 @@ const styles = {
   sectionSubtitle:{marginTop:"5px",fontSize:"11px",color:"#b9bdc5",fontWeight:"650"},
   bannerArt:{position:"absolute",right:"-5px",bottom:"-18px",width:"47%",height:"115px",opacity:".95",overflow:"hidden",maskImage:"linear-gradient(90deg,transparent 0%,black 42%,black 100%)"},
   bannerArtReal:{width:"49%"},
-  "bannerArt img":{width:"100%",height:"100%",objectFit:"contain",objectPosition:"right bottom",filter:"drop-shadow(0 4px 8px rgba(0,0,0,.7))"},
   grid:{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:"7px",marginTop:"10px"},
   card:{position:"relative",overflow:"hidden",borderRadius:"11px",background:"#0b0e11",border:"1px solid #3b3f43",boxShadow:"0 5px 16px rgba(0,0,0,.4)"},
   testingCard:{borderColor:"#7b6815"},
