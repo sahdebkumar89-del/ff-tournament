@@ -195,7 +195,7 @@ export default function AdminResults({ onBack }) {
   }
 
   const selected = tournaments.find((t) => String(t.id) === String(tournamentId));
-  const visibleTournaments = tournaments.filter((t) => resultType === "TESTING" ? Number(t.slot_number) >= 31 && Number(t.slot_number) <= 33 : !(Number(t.slot_number) >= 31 && Number(t.slot_number) <= 33));
+  const visibleTournaments = tournaments.filter((t) => resultType === "TESTING" ? [31, 32, 33].includes(Number(t.slot_number)) : ![31, 32, 33].includes(Number(t.slot_number)));
   const hasResults = results.length > 0;
   const hasParticipants = participants.length > 0;
   const pendingCount = results.filter((r) => r.verification_status === "PENDING").length;
