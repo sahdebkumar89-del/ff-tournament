@@ -213,11 +213,6 @@ function registrationLabel(tournament, now) {
   return `Closes in ${formatCountdown(remaining)}`;
 }
 
-function formatCountdown(ms) {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  return `${Math.floor(total / 60)}m ${String(total % 60).padStart(2, "0")}s`;
-}
-
 function statusStyle(status) {
   if (status === "REGISTRATION") return { ...styles.status, background: "#162b20", color: "#7fe4a0" };
   if (status === "STARTED") return { ...styles.status, background: "#382316", color: "#ffb267" };
