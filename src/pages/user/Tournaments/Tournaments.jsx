@@ -195,6 +195,15 @@ export default function Tournaments() {
 
 function renderTestingCard(tournament, now, onSelect) {
   const finished = isFinishedForDisplay(tournament, now);
+  const playerCount = Number(tournament.playerCount ?? 0);
+  const teamCount = Number(tournament.teamCount ?? 0);
+  const isTeamMode = tournament.mode !== "SOLO";
+  const currentCount = isTeamMode ? teamCount : playerCount;
+  const maxCount = isTeamMode
+    ? Number(tournament.max_teams ?? 0)
+    : Number(tournament.max_players ?? 0);
+  const isFull = maxCount > 0 && currentCount >= maxCount;
+
   return (
     <article key={tournament.id} style={{ ...styles.testingCard, ...(finished ? styles.testingFinishedCard : {}) }}>
       <span style={styles.testingBadge}>TEST</span>
@@ -204,12 +213,23 @@ function renderTestingCard(tournament, now, onSelect) {
       <span style={styles.testingFree}>FREE ENTRY</span>
       <span style={styles.testingNoPrize}>NO PRIZE</span>
       <span style={styles.testingStatus}>{displayStatus(tournament, now)}</span>
+
+      <div style={styles.testingCapacity}>
+        <strong>{currentCount} / {maxCount}</strong>
+        <span>{isTeamMode ? "Teams" : "Players"}</span>
+      </div>
+
       <button
         type="button"
         onClick={() => onSelect(tournament)}
-        style={styles.testingJoinButton}
+        disabled={isFull || finished || tournament.status !== "REGISTRATION"}
+        style={{
+          ...styles.testingJoinButton,
+          ...(isFull ? styles.testingFullButton : null),
+          ...(finished || tournament.status !== "REGISTRATION" ? styles.testingDisabledButton : null),
+        }}
       >
-        {tournament.status === "REGISTRATION" && !finished ? "JOIN FREE" : "VIEW"}
+        {isFull ? "FULL" : tournament.status === "REGISTRATION" && !finished ? "JOIN FREE" : "VIEW"}
       </button>
     </article>
   );
@@ -386,7 +406,10 @@ const styles = {
   testingFree: { color: "#7fe4a0", fontSize: "7px", fontWeight: "900" },
   testingNoPrize: { color: "#ff8c8c", fontSize: "7px", fontWeight: "900" },
   testingStatus: { color: "#c8c4ca", fontSize: "7px", fontWeight: "900" },
+  testingCapacity: { width: "100%", marginTop: "2px", padding: "6px 4px", borderRadius: "8px", background: "#1d1a1d", border: "1px solid #302a2e", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" },
   testingJoinButton: { width: "100%", marginTop: "2px", padding: "8px 4px", border: "none", borderRadius: "8px", background: "linear-gradient(135deg, #ff9a3d 0%, #ff7130 48%, #d83d31 100%)", color: "#fff", fontSize: "8px", fontWeight: "900" },
+  testingFullButton: { background: "#3a2426", color: "#ff9b9b" },
+  testingDisabledButton: { opacity: ".55", cursor: "not-allowed" },
   card: { padding: "16px", borderRadius: "19px", background: "#121216", border: "1px solid #29272b", boxShadow: "0 8px 24px rgba(0,0,0,.18)" },
   cardTop: { display: "flex", justifyContent: "space-between", alignItems: "start", gap: "10px" },
   modeBadge: { display: "inline-block", padding: "5px 7px", borderRadius: "7px", background: "#311919", color: "#ff795f", fontSize: "9px", fontWeight: "900" },
