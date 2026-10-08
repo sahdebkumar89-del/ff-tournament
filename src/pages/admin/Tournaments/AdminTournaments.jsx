@@ -989,6 +989,42 @@ function isRolloverEligible(tournament) {
   return joinedUnits > 0 && missingUnits <= 3;
 }
 
+function isRolloverEligible(tournament) {
+  if (!tournament) return false;
+
+  const today = dhakaDate(0);
+
+  if (tournament.tournament_date !== today) {
+    return false;
+  }
+
+  if (!["REGISTRATION", "FULL"].includes(tournament.status)) {
+    return false;
+  }
+
+  if (Date.now() < scheduledStart(tournament)) {
+    return false;
+  }
+
+  const joinedUnits =
+    tournament.mode === "SOLO"
+      ? Number(tournament.playerCount ?? 0)
+      : Number(tournament.teamCount ?? 0);
+
+  const capacityUnits =
+    tournament.mode === "SOLO"
+      ? Number(tournament.max_players ?? 0)
+      : Number(tournament.max_teams ?? 0);
+
+  const missingUnits = Math.max(0, capacityUnits - joinedUnits);
+
+  // Rollover / Pending is only an admin shortlist:
+  // full matches or matches within 3 players/teams of capacity.
+  // This does not change the actual rollover lifecycle.
+  return joinedUnits > 0 && missingUnits <= 3;
+}
+
+
 function isRegistrationOpen(tournament) {
   if (!tournament?.registration_opens_at) return false;
   return Date.now() >= new Date(tournament.registration_opens_at).getTime();
