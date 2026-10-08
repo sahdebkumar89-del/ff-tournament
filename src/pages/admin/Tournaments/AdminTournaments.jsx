@@ -469,7 +469,8 @@ export default function AdminTournaments({ onBack }) {
         </button>
         <button type="button" onClick={() => setShowResults(true)} style={styles.navButton}>Results</button>
         <button type="button" onClick={() => setShowWallet(true)} style={styles.navButton}>Wallet</button>
-        <button type="button" onClick={() => setShowNotifications(true)} style={styles.navButton}>Notify</button>\n        <button type="button" onClick={() => setShowHelpInbox(true)} style={styles.navButton}>Help</button>
+        <button type="button" onClick={() => setShowNotifications(true)} style={styles.navButton}>Notify</button>
+        <button type="button" onClick={() => setShowHelpInbox(true)} style={styles.navButton}>Help</button>
       </div>
 
       <div style={styles.summaryGrid}>
@@ -1498,27 +1499,3 @@ const styles = {
     borderRadius: "10px",
     background: "#291716",
     color: "#ffae6d",
-    fontWeight: "900",
-  },
-
-  releaseInfo: {
-    marginTop: "10px",
-    color: "#858087",
-    fontSize: "9px",
-    lineHeight: 1.5,
-  },
-
-  roomLoading: {
-    padding: "12px",
-    color: "#8f8c93",
-    fontSize: "11px",
-  },
-
-  empty: {
-    padding: "18px",
-    borderRadius: "15px",
-    background: "#121216",
-    border: "1px solid #29272b",
-    color: "#8f8c93",
-  },
-};
