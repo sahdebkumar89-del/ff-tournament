@@ -33,10 +33,14 @@ export function useTournaments() {
     loadTournaments();
 
     const refreshTimer = window.setInterval(loadTournaments, 60 * 1000);
+    const handleTournamentJoined = () => loadTournaments();
+
+    window.addEventListener("tournament:joined", handleTournamentJoined);
 
     return () => {
       active = false;
       window.clearInterval(refreshTimer);
+      window.removeEventListener("tournament:joined", handleTournamentJoined);
     };
   }, []);
 
