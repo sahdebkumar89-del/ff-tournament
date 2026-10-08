@@ -1499,3 +1499,27 @@ const styles = {
     borderRadius: "10px",
     background: "#291716",
     color: "#ffae6d",
+    fontWeight: "900",
+  },
+
+  releaseInfo: {
+    marginTop: "10px",
+    color: "#858087",
+    fontSize: "9px",
+    lineHeight: 1.5,
+  },
+
+  roomLoading: {
+    padding: "12px",
+    color: "#8f8c93",
+    fontSize: "11px",
+  },
+
+  empty: {
+    padding: "18px",
+    borderRadius: "15px",
+    background: "#121216",
+    border: "1px solid #29272b",
+    color: "#8f8c93",
+  },
+};
