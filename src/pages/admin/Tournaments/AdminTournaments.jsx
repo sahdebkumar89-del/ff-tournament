@@ -360,7 +360,18 @@ export default function AdminTournaments({ onBack }) {
     setRoomReleasing(false);
   }
 
-  function scheduledStart(tournament) {
+  function formatTime12Hour(value) {
+  if (!value) return "";
+  const parts = String(value).split(":");
+  const hour = Number(parts[0]);
+  const minute = parts[1] ?? "00";
+  if (!Number.isFinite(hour)) return value;
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minute} ${suffix}`;
+}
+
+function scheduledStart(tournament) {
     if (
       !tournament?.tournament_date ||
       !tournament?.scheduled_start_time
@@ -647,9 +658,8 @@ export default function AdminTournaments({ onBack }) {
                 </span>
 
                 <span>
-                  {tournament.scheduled_start_time?.slice(
-                    0,
-                    5
+                  {formatTime12Hour(
+                    tournament.scheduled_start_time
                   )}
                 </span>
 
