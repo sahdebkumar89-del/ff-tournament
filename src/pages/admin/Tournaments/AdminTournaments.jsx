@@ -230,7 +230,7 @@ export default function AdminTournaments({ onBack }) {
 
   async function startTournament(tournament) {
     const confirmed = window.confirm(
-      "Tournament is not full. Are you sure you want to start this tournament?"
+      "Are you sure you want to start this tournament now?"
     );
 
     if (!confirmed) return;
@@ -405,8 +405,16 @@ export default function AdminTournaments({ onBack }) {
       capacityPlayers - joinedPlayers
     );
 
-    // Manual start is only available for the approved 1–2 player short case.
-    // Empty and heavily under-filled tournaments move to the next-day cycle automatically.
+    // Real tournaments: Admin may manually start once the scheduled time has arrived
+    // whenever at least one player is joined. If the tournament is short, the same
+    // tournament will roll to the next day only when Admin does not start it.
+    const isTesting = [31, 32, 33].includes(Number(tournament.slot_id));
+
+    if (!isTesting) {
+      return joinedPlayers > 0;
+    }
+
+    // Keep the existing testing-only manual-start restriction unchanged.
     return joinedPlayers > 0 && missingPlayers >= 1 && missingPlayers <= 2;
   }
 
