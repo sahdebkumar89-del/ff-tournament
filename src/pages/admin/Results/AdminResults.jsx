@@ -28,12 +28,15 @@ export default function AdminResults({ onBack }) {
     }
 
     const testingSlotIds = (slots || []).map((s) => s.id);
+    const today = dhakaDate();
+
     const statusFilter = "status.in.(STARTED,COMPLETED)";
     const testingFilter = testingSlotIds.length ? ",slot_id.in.(" + testingSlotIds.join(",") + ")" : "";
 
     const { data, error } = await supabase
       .from("tournaments")
       .select("id,mode,tournament_date,scheduled_start_time,status,slot:tournament_slots(slot_number)")
+      .eq("tournament_date", today)
       .or(statusFilter + testingFilter)
       .order("tournament_date", { ascending: false })
       .order("scheduled_start_time", { ascending: false })
@@ -354,6 +357,15 @@ export default function AdminResults({ onBack }) {
       </section>
     </main>
   );
+}
+
+function dhakaDate() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Dhaka",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 }
 
 function formatBangladeshTime(value) {
