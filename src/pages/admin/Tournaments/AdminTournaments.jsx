@@ -66,12 +66,13 @@ export default function AdminTournaments({ onBack }) {
 
     const today = dhakaDate(0);
     const tomorrow = dhakaDate(1);
+    const horizon = dhakaDate(7);
 
     const { data, error } = await supabase
       .from("tournaments")
       .select("*")
       .gte("tournament_date", today)
-      .lte("tournament_date", tomorrow)
+      .lte("tournament_date", horizon)
       .order("tournament_date", {
         ascending: true,
       })
@@ -500,11 +501,32 @@ export default function AdminTournaments({ onBack }) {
           Tomorrow&apos;s Matches
           <span style={styles.dayCount}>{tournaments.filter((t) => t.tournament_date === dhakaDate(1)).length}</span>
         </button>
+        <button
+          type="button"
+          onClick={() => setDayView("pending")}
+          style={dayView === "pending" ? styles.dayButtonActive : styles.dayButton}
+        >
+          Rollover / Pending
+          <span style={styles.dayCount}>{tournaments.filter((t) => t.tournament_date > dhakaDate(1) && !["COMPLETED","CANCELLED"].includes(t.status)).length}</span>
+        </button>
       </div>
 
       <div style={styles.dayHeading}>
-        <strong>{dayView === "today" ? "Today’s Matches" : "Tomorrow’s Matches"}</strong>
-        <span>{dayView === "today" ? dhakaDate(0) : dhakaDate(1)} · 30-slot main schedule</span>
+        <strong>
+          {dayView === "today"
+            ? "Today’s Matches"
+            : dayView === "tomorrow"
+              ? "Tomorrow’s Matches"
+              : "Rollover / Pending Matches"}
+        </strong>
+        <span>
+          {dayView === "today"
+            ? dhakaDate(0)
+            : dayView === "tomorrow"
+              ? dhakaDate(1)
+              : "Future dates · same tournament records"}
+          {" · 30-slot main schedule"}
+        </span>
       </div>
 
       {showCreate && (
@@ -586,7 +608,14 @@ export default function AdminTournaments({ onBack }) {
         </div>
       ) : (
         <div style={styles.list}>
-          {tournaments.filter((tournament) => tournament.tournament_date === dhakaDate(dayView === "today" ? 0 : 1)).map((tournament) => (
+          {tournaments.filter((tournament) =>
+            dayView === "today"
+              ? tournament.tournament_date === dhakaDate(0)
+              : dayView === "tomorrow"
+                ? tournament.tournament_date === dhakaDate(1)
+                : tournament.tournament_date > dhakaDate(1) &&
+                  !["COMPLETED", "CANCELLED"].includes(tournament.status)
+          ).map((tournament) => (
             <article
               key={tournament.id}
               style={styles.card}
@@ -623,7 +652,7 @@ export default function AdminTournaments({ onBack }) {
                   )}
                 </span>
 
-                {dayView === "tomorrow" && (
+                {dayView !== "today" && (
                   <span
                     style={
                       isRegistrationOpen(tournament)
@@ -676,7 +705,7 @@ export default function AdminTournaments({ onBack }) {
                     >
                       Room
                     </button>
-                  ) : (
+                  ) : dayView === "tomorrow" ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -688,7 +717,7 @@ export default function AdminTournaments({ onBack }) {
                     >
                       Edit Time
                     </button>
-                  )}
+                  ) : null}
                 </div>
               )}
 
