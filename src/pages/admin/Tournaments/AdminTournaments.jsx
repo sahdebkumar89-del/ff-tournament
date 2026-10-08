@@ -508,7 +508,7 @@ export default function AdminTournaments({ onBack }) {
           style={dayView === "pending" ? styles.dayButtonActive : styles.dayButton}
         >
           Rollover / Pending
-          <span style={styles.dayCount}>{tournaments.filter((t) => t.tournament_date > dhakaDate(1) && !["COMPLETED","CANCELLED"].includes(t.status)).length}</span>
+          <span style={styles.dayCount}>{tournaments.filter(isRolloverEligible).length}</span>
         </button>
       </div>
 
@@ -525,8 +525,8 @@ export default function AdminTournaments({ onBack }) {
             ? dhakaDate(0)
             : dayView === "tomorrow"
               ? dhakaDate(1)
-              : "Future dates · same tournament records"}
-          {" · 30-slot main schedule"}
+              : "Eligible near-full/full matches · same tournament records"}
+          {dayView === "pending" ? " · Admin rollover shortlist" : " · 30-slot main schedule"}
         </span>
       </div>
 
@@ -614,8 +614,7 @@ export default function AdminTournaments({ onBack }) {
               ? tournament.tournament_date === dhakaDate(0)
               : dayView === "tomorrow"
                 ? tournament.tournament_date === dhakaDate(1)
-                : tournament.tournament_date > dhakaDate(1) &&
-                  !["COMPLETED", "CANCELLED"].includes(tournament.status)
+                : isRolloverEligible(tournament)
           ).map((tournament) => (
             <article
               key={tournament.id}
@@ -952,6 +951,41 @@ export default function AdminTournaments({ onBack }) {
 
     </div>
   );
+}
+
+function isRolloverEligible(tournament) {
+  if (!tournament) return false;
+
+  const today = dhakaDate(0);
+
+  if (tournament.tournament_date !== today) {
+    return false;
+  }
+
+  if (!["REGISTRATION", "FULL"].includes(tournament.status)) {
+    return false;
+  }
+
+  if (Date.now() < scheduledStart(tournament)) {
+    return false;
+  }
+
+  const joinedUnits =
+    tournament.mode === "SOLO"
+      ? Number(tournament.playerCount ?? 0)
+      : Number(tournament.teamCount ?? 0);
+
+  const capacityUnits =
+    tournament.mode === "SOLO"
+      ? Number(tournament.max_players ?? 0)
+      : Number(tournament.max_teams ?? 0);
+
+  const missingUnits = Math.max(0, capacityUnits - joinedUnits);
+
+  // Rollover / Pending is only an admin shortlist:
+  // full matches or matches within 3 players/teams of capacity.
+  // This does not change the actual rollover lifecycle.
+  return joinedUnits > 0 && missingUnits <= 3;
 }
 
 function isRegistrationOpen(tournament) {
