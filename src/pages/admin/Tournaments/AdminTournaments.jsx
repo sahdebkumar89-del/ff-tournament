@@ -65,20 +65,27 @@ export default function AdminTournaments({ onBack }) {
     setMessage("");
 
     const today = dhakaDate(0);
-    const tomorrow = dhakaDate(1);
     const horizon = dhakaDate(7);
 
-    const { data, error } = await supabase
+    const { data: realData, error: realError } = await supabase
       .from("tournaments")
       .select("*")
       .gte("tournament_date", today)
       .lte("tournament_date", horizon)
-      .order("tournament_date", {
-        ascending: true,
-      })
-      .order("scheduled_start_time", {
-        ascending: true,
-      });
+      .not("slot_id", "gte", 31)
+      .order("tournament_date", { ascending: true })
+      .order("scheduled_start_time", { ascending: true });
+
+    const { data: testingData, error: testingError } = await supabase
+      .from("tournaments")
+      .select("*")
+      .gte("slot_id", 31)
+      .lte("slot_id", 33)
+      .order("tournament_date", { ascending: true })
+      .order("scheduled_start_time", { ascending: true });
+
+    const error = realError || testingError;
+    const data = [...(realData || []), ...(testingData || [])];
 
     if (error) {
       setMessage(error.message);
@@ -414,21 +421,9 @@ function scheduledStart(tournament) {
         : Number(tournament.max_teams ?? 0) *
           (tournament.mode === "DUO" ? 2 : 4);
 
-    const missingPlayers = Math.max(
-      0,
-      capacityPlayers - joinedPlayers
-    );
-
-    const isTesting = [31, 32, 33].includes(Number(tournament.slot_id));
-
-    if (!isTesting) {
-      // Real tournament: today's card shows the Start button whenever at
-      // least one player has joined. The database still blocks an early
-      // click until the scheduled time has arrived.
-      return joinedPlayers > 0;
-    }
-
-    return joinedPlayers > 0 && missingPlayers >= 1 && missingPlayers <= 2;
+    // Testing follows the same manual-start rule as Real tournaments.
+    // The only difference is its separate Testing view and zero-value rewards.
+    return joinedPlayers > 0;
   }
 
   if (showWallet) {
@@ -485,10 +480,10 @@ function scheduledStart(tournament) {
       </div>
 
       <div style={styles.summaryGrid}>
-        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Today</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.tournament_date === dhakaDate(0)).length}</strong></div>
-        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Open</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.status === "REGISTRATION" && t.is_enabled !== false).length}</strong></div>
-        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Live</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.status === "STARTED").length}</strong></div>
-        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Off</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => t.is_enabled === false).length}</strong></div>
+        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Today</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => !isTestingTournament(t) && t.tournament_date === dhakaDate(0)).length}</strong></div>
+        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Tomorrow</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => !isTestingTournament(t) && t.tournament_date === dhakaDate(1)).length}</strong></div>
+        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Testing</span><strong style={styles.summaryCardValue}>{tournaments.filter(isTestingTournament).length}</strong></div>
+        <div style={styles.summaryCard}><span style={styles.summaryCardLabel}>Live</span><strong style={styles.summaryCardValue}>{tournaments.filter((t) => !isTestingTournament(t) && t.status === "STARTED").length}</strong></div>
       </div>
 
       {message && (
@@ -504,7 +499,7 @@ function scheduledStart(tournament) {
           style={dayView === "today" ? styles.dayButtonActive : styles.dayButton}
         >
           Today&apos;s Matches
-          <span style={styles.dayCount}>{tournaments.filter((t) => t.tournament_date === dhakaDate(0)).length}</span>
+          <span style={styles.dayCount}>{tournaments.filter((t) => !isTestingTournament(t) && t.tournament_date === dhakaDate(0)).length}</span>
         </button>
         <button
           type="button"
@@ -512,7 +507,15 @@ function scheduledStart(tournament) {
           style={dayView === "tomorrow" ? styles.dayButtonActive : styles.dayButton}
         >
           Tomorrow&apos;s Matches
-          <span style={styles.dayCount}>{tournaments.filter((t) => t.tournament_date === dhakaDate(1)).length}</span>
+          <span style={styles.dayCount}>{tournaments.filter((t) => !isTestingTournament(t) && t.tournament_date === dhakaDate(1)).length}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setDayView("testing")}
+          style={dayView === "testing" ? styles.dayButtonActive : styles.dayButton}
+        >
+          Testing
+          <span style={styles.dayCount}>{tournaments.filter(isTestingTournament).length}</span>
         </button>
         <button
           type="button"
@@ -527,18 +530,22 @@ function scheduledStart(tournament) {
       <div style={styles.dayHeading}>
         <strong>
           {dayView === "today"
-            ? "Today’s Matches"
+            ? "Today’s Real Matches"
             : dayView === "tomorrow"
-              ? "Tomorrow’s Matches"
-              : "Rollover / Pending Matches"}
+              ? "Tomorrow’s Real Matches"
+              : dayView === "testing"
+                ? "Testing Tournaments"
+                : "Rollover / Pending Matches"}
         </strong>
         <span>
           {dayView === "today"
             ? dhakaDate(0)
             : dayView === "tomorrow"
               ? dhakaDate(1)
-              : "Eligible near-full/full matches · same tournament records"}
-          {dayView === "pending" ? " · Admin rollover shortlist" : " · 30-slot main schedule"}
+              : dayView === "testing"
+                ? "Separate testing pool"
+                : "Eligible near-full/full matches · same tournament records"}
+          {dayView === "pending" ? " · Admin rollover shortlist" : dayView === "testing" ? " · Not part of Today/Tomorrow" : " · 30-slot main schedule"}
         </span>
       </div>
 
@@ -623,10 +630,12 @@ function scheduledStart(tournament) {
         <div style={styles.list}>
           {tournaments.filter((tournament) =>
             dayView === "today"
-              ? tournament.tournament_date === dhakaDate(0)
+              ? !isTestingTournament(tournament) && tournament.tournament_date === dhakaDate(0)
               : dayView === "tomorrow"
-                ? tournament.tournament_date === dhakaDate(1)
-                : isRolloverEligible(tournament)
+                ? !isTestingTournament(tournament) && tournament.tournament_date === dhakaDate(1)
+                : dayView === "testing"
+                  ? isTestingTournament(tournament)
+                  : isRolloverEligible(tournament)
           ).map((tournament) => (
             <article
               key={tournament.id}
@@ -663,7 +672,7 @@ function scheduledStart(tournament) {
                   )}
                 </span>
 
-                {dayView !== "today" && (
+                {dayView !== "today" && dayView !== "testing" && (
                   <span
                     style={
                       isRegistrationOpen(tournament)
@@ -708,7 +717,7 @@ function scheduledStart(tournament) {
                     </button>
                   )}
 
-                  {dayView === "today" ? (
+                  {dayView === "today" || dayView === "testing" ? (
                     <button
                       type="button"
                       onClick={() => openRoomManager(tournament.id)}
@@ -737,8 +746,7 @@ function scheduledStart(tournament) {
                   type="button"
                   disabled={
                     busyId === tournament.id ||
-                    (!([31, 32, 33].includes(Number(tournament.slot_id))) &&
-                      Date.now() < scheduledStart(tournament))
+                    Date.now() < scheduledStart(tournament)
                   }
                   onClick={() =>
                     startTournament(
@@ -964,8 +972,12 @@ function scheduledStart(tournament) {
   );
 }
 
+function isTestingTournament(tournament) {
+  return [31, 32, 33].includes(Number(tournament?.slot_id));
+}
+
 function isRolloverEligible(tournament) {
-  if (!tournament) return false;
+  if (!tournament || isTestingTournament(tournament)) return false;
 
   const today = dhakaDate(0);
 
