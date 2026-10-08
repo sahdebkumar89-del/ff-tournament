@@ -377,15 +377,17 @@ export default function AdminTournaments({ onBack }) {
   }
 
   function canManualStart(tournament) {
+    // Start control is only for today's matches. Tomorrow/rollover matches
+    // must not show a Start button.
+    if (tournament.tournament_date !== dhakaDate(0)) {
+      return false;
+    }
+
     if (
       !["REGISTRATION", "FULL"].includes(
         tournament.status
       )
     ) {
-      return false;
-    }
-
-    if (Date.now() < scheduledStart(tournament)) {
       return false;
     }
 
@@ -406,16 +408,15 @@ export default function AdminTournaments({ onBack }) {
       capacityPlayers - joinedPlayers
     );
 
-    // Real tournaments: Admin may manually start once the scheduled time has arrived
-    // whenever at least one player is joined. If the tournament is short, the same
-    // tournament will roll to the next day only when Admin does not start it.
     const isTesting = [31, 32, 33].includes(Number(tournament.slot_id));
 
     if (!isTesting) {
+      // Real tournament: today's card shows the Start button whenever at
+      // least one player has joined. The database still blocks an early
+      // click until the scheduled time has arrived.
       return joinedPlayers > 0;
     }
 
-    // Keep the existing testing-only manual-start restriction unchanged.
     return joinedPlayers > 0 && missingPlayers >= 1 && missingPlayers <= 2;
   }
 
@@ -725,7 +726,9 @@ export default function AdminTournaments({ onBack }) {
                 <button
                   type="button"
                   disabled={
-                    busyId === tournament.id
+                    busyId === tournament.id ||
+                    (!([31, 32, 33].includes(Number(tournament.slot_id))) &&
+                      Date.now() < scheduledStart(tournament))
                   }
                   onClick={() =>
                     startTournament(
@@ -736,7 +739,9 @@ export default function AdminTournaments({ onBack }) {
                 >
                   {busyId === tournament.id
                     ? "Starting..."
-                    : "Start Tournament"}
+                    : Date.now() < scheduledStart(tournament)
+                      ? "Start Tournament (waiting for time)"
+                      : "Start Tournament"}
                 </button>
               )}
 
