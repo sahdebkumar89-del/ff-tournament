@@ -967,7 +967,17 @@ function isRolloverEligible(tournament) {
     return false;
   }
 
-  if (Date.now() < scheduledStart(tournament)) {
+  if (!tournament.scheduled_start_time) {
+    return false;
+  }
+
+  const scheduledTime = new Date(
+    tournament.tournament_date + "T" +
+      tournament.scheduled_start_time.slice(0, 8) +
+      "+06:00"
+  ).getTime();
+
+  if (Date.now() < scheduledTime) {
     return false;
   }
 
