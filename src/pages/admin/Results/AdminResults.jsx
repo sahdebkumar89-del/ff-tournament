@@ -17,27 +17,13 @@ export default function AdminResults({ onBack }) {
   useEffect(() => { loadTournaments(); }, []);
 
   async function loadTournaments() {
-    const { data: slots, error: slotError } = await supabase
-      .from("tournament_slots")
-      .select("id,slot_number")
-      .in("slot_number", [31, 32, 33]);
-
-    if (slotError) {
-      setMessage(slotError.message);
-      return;
-    }
-
-    const testingSlotIds = (slots || []).map((s) => s.id);
     const today = dhakaDate();
-
-    const statusFilter = "status.in.(STARTED,COMPLETED)";
-    const testingFilter = testingSlotIds.length ? ",slot_id.in.(" + testingSlotIds.join(",") + ")" : "";
 
     const { data, error } = await supabase
       .from("tournaments")
       .select("id,mode,tournament_date,scheduled_start_time,status,slot:tournament_slots(slot_number)")
       .eq("tournament_date", today)
-      .or(statusFilter + testingFilter)
+      .in("status", ["STARTED", "COMPLETED"])
       .order("tournament_date", { ascending: false })
       .order("scheduled_start_time", { ascending: false })
       .limit(200);
