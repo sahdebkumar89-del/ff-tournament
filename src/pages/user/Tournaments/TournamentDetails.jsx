@@ -133,6 +133,7 @@ export default function TournamentDetails({ tournament, onBack }) {
 
     try {
       await confirmTournamentJoin(requestId);
+      window.dispatchEvent(new Event("tournament:joined"));
 
       setMessage(
         isTeamMode
